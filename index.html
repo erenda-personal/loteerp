@@ -329,44 +329,44 @@ tbody tr.clickable{cursor:pointer}
       </div>
     </nav>
     <!-- Perfil na base da sidebar -->
-    <div style="padding:10px 12px;border-top:0.5px solid var(--border-tertiary);position:relative" id="perfil-wrap">
-      <div onclick="togglePerfil()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:7px 8px;border-radius:8px;transition:background .12s" onmouseenter="this.style.background='var(--bg-secondary)'" onmouseleave="this.style.background='transparent'">
-        <div style="width:30px;height:30px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent);flex-shrink:0">JM</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="perfil-nome-sidebar">João Mendes</div>
-          <div style="font-size:10px;color:var(--text-secondary)">Admin</div>
-        </div>
-        <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="color:var(--text-tertiary);flex-shrink:0"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div id="perfil-menu" style="display:none;position:absolute;bottom:calc(100% + 4px);left:8px;right:8px;background:var(--bg-primary);border:0.5px solid var(--border-secondary);border-radius:10px;box-shadow:0 -4px 16px rgba(0,0,0,.12);z-index:500;overflow:hidden">
-        <div style="padding:10px 12px;border-bottom:0.5px solid var(--border-tertiary)">
-          <div style="font-size:12px;font-weight:600;color:var(--text-primary)">João Mendes</div>
-          <div style="font-size:11px;color:var(--text-secondary);margin-top:1px">joao@horizonte.com.br</div>
-          <div style="margin-top:5px"><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:var(--danger-bg);color:var(--danger);font-weight:600">Admin</span></div>
-        </div>
-        <div style="padding:5px">
-          <div onclick="showPage('configuracoes',null);togglePerfil()" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text-primary)" onmouseenter="this.style.background='var(--bg-secondary)'" onmouseleave="this.style.background='transparent'">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            Configurações
-          </div>
-          <div onclick="alterarUsuario()" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text-primary)" onmouseenter="this.style.background='var(--bg-secondary)'" onmouseleave="this.style.background='transparent'">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            Alterar usuário
-          </div>
-          <div style="height:0.5px;background:var(--border-tertiary);margin:3px 0"></div>
-          <div onclick="sairDaPlataforma()" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--danger)" onmouseenter="this.style.background='var(--danger-bg)'" onmouseleave="this.style.background='transparent'">
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Sair da plataforma
-          </div>
-        </div>
-      </div>
-    </div>
   </aside>
 
   <!-- MAIN -->
   <div class="main">
     <div class="topbar">
-      <span class="topbar-title" id="topbar-title" style="font-size:17px;font-weight:700;color:#111">Dashboard executivo</span>
+      <span class="topbar-title" id="topbar-title" style="font-size:18px;font-weight:700;color:#111">Dashboard executivo</span>
+      <div style="margin-left:auto;position:relative" id="perfil-wrap">
+        <div onclick="togglePerfil()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 10px;border-radius:9px;border:0.5px solid var(--border-tertiary);background:var(--bg-primary);transition:background .12s" onmouseenter="this.style.background='var(--bg-secondary)'" onmouseleave="this.style.background='var(--bg-primary)'">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0">JM</div>
+          <div style="line-height:1.3">
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary)" id="perfil-nome-topbar">João Mendes</div>
+            <div style="font-size:10px;color:var(--text-secondary)">Admin</div>
+          </div>
+          <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="color:var(--text-tertiary);margin-left:2px"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div id="perfil-menu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg-primary);border:0.5px solid var(--border-secondary);border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.13);min-width:210px;z-index:600;overflow:hidden">
+          <div style="padding:12px 14px;border-bottom:0.5px solid var(--border-tertiary)">
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary)" id="perfil-nome-menu">João Mendes</div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:1px">joao@horizonte.com.br</div>
+            <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--danger-bg);color:var(--danger);font-weight:600">Admin</span></div>
+          </div>
+          <div style="padding:5px">
+            <div onclick="showPage('configuracoes',null);togglePerfil()" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text-primary)" onmouseenter="this.style.background='var(--bg-secondary)'" onmouseleave="this.style.background='transparent'">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Configurações
+            </div>
+            <div onclick="alterarUsuario()" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text-primary)" onmouseenter="this.style.background='var(--bg-secondary)'" onmouseleave="this.style.background='transparent'">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Alterar usuário
+            </div>
+            <div style="height:0.5px;background:var(--border-tertiary);margin:3px 0"></div>
+            <div onclick="sairDaPlataforma()" style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--danger)" onmouseenter="this.style.background='var(--danger-bg)'" onmouseleave="this.style.background='transparent'">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Sair da plataforma
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="content">
@@ -454,11 +454,11 @@ tbody tr.clickable{cursor:pointer}
         </div>
         <div class="card">
           <table>
-            <thead><tr><th style="width:180px">Nome</th><th style="width:80px">Fase</th><th>Cidade / UF</th><th>Lotes</th><th>VGV</th><th>Lançamento</th><th style="width:90px">Status</th><th style="width:60px"></th></tr></thead>
+            <thead><tr><th style="width:180px">Nome</th><th style="width:80px">Fase</th><th>Cidade / UF</th><th>Lotes</th><th>VGV</th><th>Lançamento</th><th style="width:90px">Status</th><th style="width:120px">Ações</th></tr></thead>
             <tbody id="tbody-loteamentos">
-              <tr class="clickable" onclick="showPage('lotes',null)"><td style="font-weight:600;color:var(--accent)">Res. Verde Vale</td><td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">Fase 1</span></td><td>Sorocaba / SP</td><td>240 lotes</td><td>R$ 20,4M</td><td>Mar/2024</td><td><span class="badge badge-green">Ativo</span></td><td><button class="btn btn-sm" style="font-size:10px" onclick="editarFaseLoteamento(this,'Res. Verde Vale')">Editar</button></td></tr>
-              <tr class="clickable"><td style="font-weight:600;color:var(--accent)">Cond. Jardins do Sul</td><td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">Fase 2</span></td><td>Campinas / SP</td><td>180 lotes</td><td>R$ 16,2M</td><td>Jun/2025</td><td><span class="badge badge-blue">Em obras</span></td><td><button class="btn btn-sm" style="font-size:10px" onclick="editarFaseLoteamento(this,'Cond. Jardins do Sul')">Editar</button></td></tr>
-              <tr class="clickable"><td style="font-weight:600;color:var(--accent)">Res. Nova Esperança</td><td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">Fase 3</span></td><td>Jundiaí / SP</td><td>320 lotes</td><td>R$ 28,0M</td><td>Jan/2026</td><td><span class="badge badge-amber">Planejado</span></td><td><button class="btn btn-sm" style="font-size:10px" onclick="editarFaseLoteamento(this,'Res. Nova Esperança')">Editar</button></td></tr>
+              <tr class="clickable" onclick="showPage('lotes',null)"><td style="font-weight:600;color:var(--accent)">Res. Verde Vale</td><td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">Fase 1</span></td><td>Sorocaba / SP</td><td>240 lotes</td><td>R$ 20,4M</td><td>Mar/2024</td><td><span class="badge badge-green">Ativo</span></td><td style="white-space:nowrap"><button class="btn btn-sm" style="font-size:10px" onclick="event.stopPropagation();editarFaseLoteamento(this,'Res. Verde Vale')">✏️</button> <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger)" onclick="event.stopPropagation();excluirLoteamento(this,'Res. Verde Vale')">✕</button></td></tr>
+              <tr class="clickable"><td style="font-weight:600;color:var(--accent)">Cond. Jardins do Sul</td><td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">Fase 2</span></td><td>Campinas / SP</td><td>180 lotes</td><td>R$ 16,2M</td><td>Jun/2025</td><td><span class="badge badge-blue">Em obras</span></td><td style="white-space:nowrap"><button class="btn btn-sm" style="font-size:10px" onclick="event.stopPropagation();editarFaseLoteamento(this,'Cond. Jardins do Sul')">✏️</button> <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger)" onclick="event.stopPropagation();excluirLoteamento(this,'Cond. Jardins do Sul')">✕</button></td></tr>
+              <tr class="clickable"><td style="font-weight:600;color:var(--accent)">Res. Nova Esperança</td><td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">Fase 3</span></td><td>Jundiaí / SP</td><td>320 lotes</td><td>R$ 28,0M</td><td>Jan/2026</td><td><span class="badge badge-amber">Planejado</span></td><td style="white-space:nowrap"><button class="btn btn-sm" style="font-size:10px" onclick="event.stopPropagation();editarFaseLoteamento(this,'Res. Nova Esperança')">✏️</button> <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger)" onclick="event.stopPropagation();excluirLoteamento(this,'Res. Nova Esperança')">✕</button></td></tr>
             </tbody>
           </table>
         </div>
@@ -3398,11 +3398,11 @@ document.addEventListener('click',function(e){
 function alterarUsuario(){
   const nome=prompt('Nome do usuário:','João Mendes');
   if(nome){
-    const el=document.querySelector('#perfil-wrap [style*="font-size:12px;font-weight:600"]');
-    if(el) el.textContent=nome;
+    const els=['perfil-nome-topbar','perfil-nome-menu'];
+    els.forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=nome;});
   }
   const m=document.getElementById('perfil-menu');
-  if(m) m.style.display='none';
+  if(m)m.style.display='none';
 }
 function sairDaPlataforma(){
   if(confirm('Tem certeza que deseja sair da plataforma?')){
@@ -3646,8 +3646,127 @@ function initFinanceiro(){
 // ================================================================
 // LOTEAMENTO — FASE
 // ================================================================
-function editarFaseLoteamento(btn,nome){
-  const span=btn.closest('tr').querySelector('td:nth-child(2) span');
+// ================================================================
+// SINCRONIZAR FILTRO DE LOTEAMENTO NA SIDEBAR
+// ================================================================
+function slugLoteamento(nome){
+  return nome.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'');
+}
+
+function syncFiltroLoteamento(nome, fase, acao){
+  // acao: 'add' | 'remove'
+  const container=document.getElementById('global-lot-filter');
+  if(!container) return;
+
+  const slug=slugLoteamento(nome);
+  const label=fase?nome+' · '+fase:nome;
+
+  if(acao==='remove'){
+    // Remover do filtro sidebar
+    const el=container.querySelector('[data-lot="'+slug+'"]');
+    if(el) el.remove();
+    // Remover do filtro de lotes (chips)
+    const chip=document.querySelector('.lot-chip[data-lot="'+slug+'"]');
+    if(chip) chip.remove();
+    // Garantir que globalLots não mantém referência excluída
+    globalLots.delete(slug);
+    if(globalLots.size===0){
+      globalLots.add('todos');
+      const todoEl=container.querySelector('[data-lot="todos"]');
+      if(todoEl) todoEl.classList.add('active');
+    }
+    // Remover do dashDados para não aparecer no dashboard
+    delete dashDados[slug];
+    atualizarDashboard();
+
+  } else {
+    // Adicionar ao filtro sidebar
+    if(!container.querySelector('[data-lot="'+slug+'"]')){
+      const lbl=document.createElement('label');
+      lbl.className='glot-item';
+      lbl.dataset.lot=slug;
+      lbl.setAttribute('onclick','toggleGlobalLot(this)');
+      lbl.innerHTML='<span class="glot-check"></span> '+nome;
+      container.appendChild(lbl);
+    }
+    // Adicionar ao filtro de chips de lotes
+    const chipWrap=document.getElementById('lot-filter-wrap');
+    if(chipWrap && !chipWrap.querySelector('[data-lot="'+slug+'"]')){
+      const chip=document.createElement('div');
+      chip.className='lot-chip';
+      chip.dataset.lot=slug;
+      chip.setAttribute('onclick','toggleLotChip(this)');
+      chip.textContent=label;
+      chipWrap.appendChild(chip);
+    }
+    // Adicionar ao dashDados para que o filtro funcione
+    if(!dashDados[slug]){
+      dashDados[slug]={
+        vgvTotal:'—',vgvVend:'—',receb:'—',inad:'—%',
+        inadDelta:'0 contratos em atraso',vgvDelta:nome+(fase?' · '+fase:''),
+        obrasLabel:nome+(fase?' · '+fase:''),
+        lotesLabel:label,lotesTotal:0,
+        lotes:{disp:0,vend:0,res:0,inad:0,dist:0},obras:[]
+      };
+    }
+  }
+}
+
+function excluirLoteamento(btn, nome){
+  if(!confirm(
+    'Excluir o loteamento "'+nome+'"?\n\n'+
+    'Esta ação removerá permanentemente:\n'+
+    '  • Todos os lotes do loteamento\n'+
+    '  • Contratos vinculados\n'+
+    '  • Clientes sem outros contratos\n'+
+    '  • Leads e visitas relacionados\n'+
+    '  • Aportes de investidores vinculados\n'+
+    '  • Lançamentos financeiros deste loteamento\n\n'+
+    'Essa ação não pode ser desfeita.'
+  )) return;
+
+  // 1. Remover linha da tabela de loteamentos
+  const tr=btn.closest('tr');
+  if(tr) tr.remove();
+
+  // 2. Remover lotes da tabela de lotes (filtra por data-lot)
+  document.querySelectorAll('#tbody-obras tr').forEach(r=>{
+    if((r.dataset.lot||'').includes(nome.split(' ').slice(-2).join(' '))) r.remove();
+  });
+
+  // 3. Remover lançamentos financeiros do loteamento
+  if(typeof lancamentos!=='undefined'){
+    const nomeBase=nome.split(' ').slice(-2).join(' '); // ex: "Verde Vale"
+    lancamentos=lancamentos.filter(l=>!(l.loteamento||'').includes(nomeBase));
+    if(typeof renderLancamentos==='function') renderLancamentos();
+    if(typeof atualizarKpisFinanceiro==='function') atualizarKpisFinanceiro();
+  }
+
+  // 4. Remover aportes de investidores vinculados
+  if(typeof aportes!=='undefined'){
+    aportes=aportes.filter(a=>!(a.loteamento||'').includes(nome));
+    if(typeof renderInvestidores==='function') renderInvestidores();
+  }
+
+  // 5. Remover leads do loteamento
+  if(typeof leads!=='undefined'){
+    leads=leads.filter(l=>!l.lote.includes(nome.split(' ').slice(-2).join(' ')));
+    if(typeof renderLeads==='function') renderLeads();
+  }
+
+  // 6. Atualizar KPIs do dashboard
+  if(typeof atualizarDashboard==='function') atualizarDashboard();
+
+  // Remover do filtro da sidebar e dos chips de lotes
+  syncFiltroLoteamento(nome, null, 'remove');
+
+  showToast('Loteamento "'+nome+'" e todos os dados relacionados foram excluídos.','error');
+}
+
+function editarFaseLoteamento(btn,nome){  const span=btn.closest('tr').querySelector('td:nth-child(2) span');
   const atual=span?span.textContent:'';
   const novaFase=prompt('Fase do loteamento "'+nome+'":',atual);
   if(novaFase&&novaFase.trim()){
@@ -3670,13 +3789,15 @@ function salvarLoteamento(){
   if(tbody){
     const tr=document.createElement('tr');tr.className='clickable';
     const nomeSafe=nome.replace(/'/g,"\\'");
-    tr.innerHTML=`<td style="font-weight:600;color:var(--accent)">${nome}</td><td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">${fase}</span></td><td>${cidade} / ${estado}</td><td>${lotes} lotes</td><td>—</td><td>—</td><td><span class="badge ${badgeCls[status]||'badge-gray'}">${status}</span></td><td><button class="btn btn-sm" style="font-size:10px" onclick="editarFaseLoteamento(this,'${nomeSafe}')">Editar</button></td>`;
+    tr.innerHTML=`<td style="font-weight:600;color:var(--accent)">${nome}</td><td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">${fase}</span></td><td>${cidade} / ${estado}</td><td>${lotes} lotes</td><td>—</td><td>—</td><td><span class="badge ${badgeCls[status]||'badge-gray'}">${status}</span></td><td style="white-space:nowrap"><button class="btn btn-sm" style="font-size:10px" onclick="event.stopPropagation();editarFaseLoteamento(this,'${nomeSafe}')">✏️</button> <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger)" onclick="event.stopPropagation();excluirLoteamento(this,'${nomeSafe}')">✕</button></td>`;
     tbody.appendChild(tr);
     const sel=document.getElementById('fin-loteamento');
     if(sel){const opt=document.createElement('option');opt.value=nome+' · '+fase;opt.textContent=nome+' · '+fase;sel.appendChild(opt);}
   }
   closeModal('modal-new-loteamento');
   ['nl-nome','nl-fase','nl-cep','nl-end','nl-matricula'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  // Adicionar ao filtro da sidebar e aos chips de lotes
+  syncFiltroLoteamento(nome, fase, 'add');
   showToast('Loteamento "'+nome+'" cadastrado!');
 }
 
