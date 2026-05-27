@@ -5191,7 +5191,7 @@ function renderTabelaInvestidores(){
       <td style="text-align:center;font-size:12px;font-weight:600;color:var(--accent)">${tir>0?tir.toFixed(2)+'%':'—'}</td>
       <td><span class="badge ${inv.status==='Ativo'?'badge-teal':'badge-gray'}">${inv.status}</span></td>
       <td style="text-align:center;white-space:nowrap">
-        <button class="btn btn-sm" style="font-size:10px;padding:3px 7px" onclick="abrirEditarInvestidor(${inv.id})" title="Editar">✏️</button>
+        <button class="btn btn-sm" style="font-size:10px;padding:3px 7px" onclick="abrirEditarInvestidor('${inv.id}')" title="Editar">✏️</button>
         <button class="btn btn-sm" style="font-size:10px;padding:3px 7px;color:var(--danger);border-color:var(--danger)" onclick="excluirInvestidor(${inv.id})" title="Excluir">✕</button>
       </td>
     </tr>`;
@@ -5428,9 +5428,9 @@ function salvarInvestidor(){
 }
 
 function abrirEditarInvestidor(id){
-  const inv=investidores.find(x=>x.id===id);
-  if(!inv)return;
-  editInvestidorId=id;
+  const inv=investidores.find(x=>String(x.id)===String(id));
+  if(!inv){showToast('Investidor não encontrado.','error');return;}
+  editInvestidorId=inv.id;
   const t=document.getElementById('edit-inv-titulo');if(t)t.textContent='Editar — '+inv.nome;
   const sv=(elId,v)=>{const el=document.getElementById(elId);if(el)el.value=v||'';};
   sv('ei-nome',inv.nome);sv('ei-doc',inv.doc);sv('ei-email',inv.email);sv('ei-tel',inv.tel);sv('ei-banco',inv.banco);sv('ei-pix',inv.pix);
@@ -5440,21 +5440,27 @@ function abrirEditarInvestidor(id){
   openModal('modal-edit-investidor');
 }
 
-function salvarEdicaoInvestidor(){
-  const inv=investidores.find(x=>x.id===editInvestidorId);
+async function salvarEdicaoInvestidor(){
+  const inv=investidores.find(x=>String(x.id)===String(editInvestidorId));
   if(!inv)return;
   const nome=document.getElementById('ei-nome')?.value?.trim();
   if(!nome){showToast('Informe o nome.','error');return;}
-  inv.nome=nome;inv.doc=document.getElementById('ei-doc')?.value?.trim()||inv.doc;
-  inv.email=document.getElementById('ei-email')?.value?.trim()||inv.email;
-  inv.tel=document.getElementById('ei-tel')?.value?.trim()||inv.tel;
-  inv.banco=document.getElementById('ei-banco')?.value?.trim()||inv.banco;
-  inv.pix=document.getElementById('ei-pix')?.value?.trim()||inv.pix;
-  inv.perfil=document.getElementById('ei-perfil')?.value||inv.perfil;
-  inv.tipo=document.getElementById('ei-tipo')?.value||inv.tipo;
-  inv.status=document.getElementById('ei-status')?.value||inv.status;
+  showLoading('Salvando...');
+  const row={
+    nome,
+    doc:   document.getElementById('ei-doc')?.value?.trim()||null,
+    email: document.getElementById('ei-email')?.value?.trim()||null,
+    telefone: document.getElementById('ei-tel')?.value?.trim()||null,
+    banco: document.getElementById('ei-banco')?.value?.trim()||null,
+    pix:   document.getElementById('ei-pix')?.value?.trim()||null,
+    perfil:document.getElementById('ei-perfil')?.value||inv.perfil,
+    tipo:  document.getElementById('ei-tipo')?.value||inv.tipo,
+    status:document.getElementById('ei-status')?.value||inv.status,
+  };
+  await dbUpdate('investidores', editInvestidorId, row);
+  hideLoading();
   closeModal('modal-edit-investidor');
-  renderInvestidores();
+  carregarInvestidoresDB();
   showToast('Investidor "'+nome+'" atualizado!');
   editInvestidorId=null;
 }
