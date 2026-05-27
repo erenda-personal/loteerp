@@ -289,6 +289,10 @@ tbody tr.clickable{cursor:pointer}
         Inadimplência
         <span class="nav-badge">12</span>
       </div>
+      <div class="nav-item" onclick="showPage('contas-bancarias',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4.5" width="13" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 7.5h13" stroke="currentColor" stroke-width="1.3"/><circle cx="4.5" cy="10.5" r="1" fill="currentColor"/></svg>
+        Contas bancárias
+      </div>
       <div class="nav-item" onclick="showPage('investidores',this)">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 12l3-4 3 2 3-5 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 14h12" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         Investidores
@@ -851,12 +855,13 @@ tbody tr.clickable{cursor:pointer}
           <table id="fin-table" style="table-layout:fixed;width:100%">
             <thead><tr>
               <th style="width:80px">Data</th>
-              <th style="width:72px">Tipo</th>
-              <th style="width:130px">Descrição</th>
-              <th style="width:100px">Categoria</th>
-              <th style="width:120px">Loteamento / Fase</th>
-              <th style="width:130px;text-align:right">Valor</th>
-              <th style="width:80px;text-align:center">Ações</th>
+              <th style="width:68px">Tipo</th>
+              <th style="width:120px">Descrição</th>
+              <th style="width:95px">Categoria</th>
+              <th style="width:110px">Loteamento</th>
+              <th style="width:110px">Conta bancária</th>
+              <th style="width:115px;text-align:right">Valor</th>
+              <th style="width:75px;text-align:center">Ações</th>
             </tr></thead>
             <tbody id="fin-tbody"></tbody>
           </table>
@@ -1229,6 +1234,27 @@ tbody tr.clickable{cursor:pointer}
 
       </div>
 
+      <!-- ===== CONTAS BANCÁRIAS ===== -->
+      <div class="page" id="page-contas-bancarias">
+
+        <!-- KPIs -->
+        <div class="stat-row" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+          <div class="stat-mini"><div class="stat-mini-label">Contas ativas</div><div class="stat-mini-val" id="cb-kpi-total" style="color:var(--success)">3</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Saldo consolidado</div><div class="stat-mini-val" id="cb-kpi-saldo" style="font-size:14px;margin-top:2px">R$ 0,00</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Entradas (mês)</div><div class="stat-mini-val" id="cb-kpi-entradas" style="color:var(--success);font-size:14px;margin-top:2px">R$ 0,00</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Saídas (mês)</div><div class="stat-mini-val" id="cb-kpi-saidas" style="color:var(--danger);font-size:14px;margin-top:2px">R$ 0,00</div></div>
+        </div>
+
+        <!-- Botão nova conta -->
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+          <button class="btn btn-primary" onclick="openModal('modal-new-conta')">+ Nova conta</button>
+        </div>
+
+        <!-- Lista de contas -->
+        <div id="cb-lista" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:16px"></div>
+
+      </div>
+
       <!-- ===== SIMULADOR ===== -->
       <div class="page" id="page-simulador">
         <div class="grid2">
@@ -1517,6 +1543,17 @@ tbody tr.clickable{cursor:pointer}
               <div><div style="font-size:10px;color:var(--text-secondary)">MOIC estimado</div><div style="font-weight:600;font-size:13px;color:var(--accent)" id="ap-prev-moic">—</div></div>
             </div>
           </div>
+          <div class="form-row col2">
+            <div class="field"><label>Conta bancária do aporte</label>
+              <select id="ap-conta">
+                <option value="">Selecione a conta</option>
+                <option value="Res. Verde Vale — Itaú 0001 / 12345-6">Verde Vale — Itaú Ag.0001 / CC 12345-6</option>
+                <option value="Cond. Jardins do Sul — Bradesco 0042 / 98765-4">Jardins do Sul — Bradesco Ag.0042 / CC 98765-4</option>
+                <option value="Res. Nova Esperança — Caixa 0125 / 11223-3">Nova Esperança — Caixa Ag.0125 / CC 11223-3</option>
+              </select>
+            </div>
+            <div class="field"><label>Nº do documento (TED/PIX)</label><input id="ap-docbancario" placeholder="Protocolo ou autenticação"></div>
+          </div>
           <div class="form-row"><div class="field"><label>Observações</label><input id="ap-obs" placeholder="Condições especiais, cláusulas..."></div></div>
           <div class="modal-footer">
             <button class="btn" onclick="closeModal('modal-new-aporte')">Cancelar</button>
@@ -1623,6 +1660,11 @@ tbody tr.clickable{cursor:pointer}
               <select id="eap-status"><option value="Ativo">Ativo</option><option value="Encerrado">Encerrado</option><option value="Vencido">Vencido</option></select>
             </div>
           </div>
+          <div class="form-row">
+            <div class="field"><label>Conta bancária do aporte</label>
+              <select id="eap-conta"><option value="">Selecione a conta</option></select>
+            </div>
+          </div>
           <div class="modal-footer">
             <button class="btn" onclick="closeModal('modal-edit-aporte')">Cancelar</button>
             <button class="btn btn-primary" onclick="salvarEdicaoAporte()">Salvar alterações</button>
@@ -1706,6 +1748,161 @@ tbody tr.clickable{cursor:pointer}
           <div class="modal-footer">
             <button class="btn" onclick="closeModal('modal-edit-investidor')">Cancelar</button>
             <button class="btn btn-primary" onclick="salvarEdicaoInvestidor()">Salvar alterações</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Nova Conta Bancária -->
+      <div class="modal-overlay" id="modal-new-conta" onclick="if(event.target===this)closeModal('modal-new-conta')">
+        <div class="modal-box" style="width:560px">
+          <div class="modal-header">
+            <span class="modal-title">Nova conta bancária</span>
+            <button class="modal-close" onclick="closeModal('modal-new-conta')">✕</button>
+          </div>
+          <div class="form-section">Logo personalizada (opcional)</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+            <div id="nc3-logo-preview" style="width:52px;height:52px;border-radius:10px;background:var(--bg-secondary);border:1.5px dashed var(--border-secondary);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-tertiary);overflow:hidden;flex-shrink:0">Logo</div>
+            <div>
+              <button class="btn btn-sm" onclick="document.getElementById('nc3-logo-input').click()">⬆ Fazer upload</button>
+              <input type="file" id="nc3-logo-input" accept="image/*" style="display:none" onchange="handleContaLogoUpload(this,'new')">
+              <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px">PNG, JPG ou SVG · recomendado 64×64px</div>
+            </div>
+          </div>
+          <div class="form-section">Vínculo com loteamento</div>
+          <div class="form-row col2">
+            <div class="field"><label>Loteamento *</label>
+              <select id="nc3-loteamento">
+                <option value="">Selecione o loteamento</option>
+                <option value="Verde Vale">Res. Verde Vale</option>
+                <option value="Jardins do Sul">Cond. Jardins do Sul</option>
+                <option value="Nova Esperança">Res. Nova Esperança</option>
+              </select>
+            </div>
+            <div class="field"><label>Tipo de conta *</label>
+              <select id="nc3-tipo">
+                <option value="Corrente">Conta corrente</option>
+                <option value="Poupança">Poupança</option>
+                <option value="Pagamento">Conta pagamento</option>
+                <option value="Escrow">Conta escrow / SPE</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-section">Dados bancários</div>
+          <div class="form-row">
+            <div class="field">
+              <label>Banco *</label>
+              <input id="nc3-banco" list="bancos-list" placeholder="Digite ou selecione o banco..." autocomplete="off" oninput="onBancoInput()">
+              <datalist id="bancos-list">
+                <option value="Itaú Unibanco">
+                <option value="Bradesco">
+                <option value="Banco do Brasil">
+                <option value="Caixa Econômica Federal">
+                <option value="Santander">
+                <option value="Nubank">
+                <option value="BTG Pactual">
+                <option value="XP Investimentos">
+                <option value="Inter">
+                <option value="Sicoob">
+                <option value="Sicredi">
+                <option value="C6 Bank">
+                <option value="Safra">
+                <option value="Votorantim">
+                <option value="Banrisul">
+                <option value="BRB">
+                <option value="Mercado Pago">
+                <option value="PicPay">
+                <option value="Pagseguro">
+                <option value="Stone">
+                <option value="Starkbank">
+              </datalist>
+              <div id="nc3-banco-preview" style="margin-top:6px;display:none;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary)"></div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Titular</label><input id="nc3-titular" placeholder="Razão social ou nome da empresa"></div>
+          </div>
+          <div class="form-row col3">
+            <div class="field"><label>Agência</label><input id="nc3-agencia" placeholder="0000"></div>
+            <div class="field"><label>Conta / Dígito</label><input id="nc3-conta" placeholder="00000-0"></div>
+            <div class="field"><label>CNPJ / CPF</label><input id="nc3-doc" placeholder="00.000.000/0001-00"></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>Chave PIX</label><input id="nc3-pix" placeholder="CNPJ, e-mail, telefone ou chave aleatória"></div>
+            <div class="field"><label>Saldo inicial (R$)</label><input id="nc3-saldo" type="text" placeholder="0,00" oninput="maskMoney(this)"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn" onclick="closeModal('modal-new-conta')">Cancelar</button>
+            <button class="btn btn-primary" onclick="salvarConta()">Salvar conta</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Editar Conta Bancária -->
+      <div class="modal-overlay" id="modal-edit-conta" onclick="if(event.target===this)closeModal('modal-edit-conta')">
+        <div class="modal-box" style="width:560px">
+          <div class="modal-header">
+            <span class="modal-title">Editar conta bancária</span>
+            <button class="modal-close" onclick="closeModal('modal-edit-conta')">✕</button>
+          </div>
+          <div class="form-section">Logo personalizada (opcional)</div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+            <div id="ec-logo-preview" style="width:52px;height:52px;border-radius:10px;background:var(--bg-secondary);border:1.5px dashed var(--border-secondary);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-tertiary);overflow:hidden;flex-shrink:0">Logo</div>
+            <div>
+              <button class="btn btn-sm" onclick="document.getElementById('ec-logo-input').click()">⬆ Fazer upload</button>
+              <input type="file" id="ec-logo-input" accept="image/*" style="display:none" onchange="handleContaLogoUpload(this,'edit')">
+              <button class="btn btn-sm" style="margin-left:6px;color:var(--danger)" onclick="removerLogoContaEdit()">✕ Remover</button>
+              <div style="font-size:10px;color:var(--text-tertiary);margin-top:4px">PNG, JPG ou SVG · recomendado 64×64px</div>
+            </div>
+          </div>
+          <div class="form-section">Vínculo com loteamento</div>
+          <div class="form-row col2">
+            <div class="field"><label>Loteamento *</label>
+              <select id="ec-loteamento">
+                <option value="Verde Vale">Res. Verde Vale</option>
+                <option value="Jardins do Sul">Cond. Jardins do Sul</option>
+                <option value="Nova Esperança">Res. Nova Esperança</option>
+              </select>
+            </div>
+            <div class="field"><label>Tipo de conta</label>
+              <select id="ec-tipo">
+                <option value="Corrente">Conta corrente</option>
+                <option value="Poupança">Poupança</option>
+                <option value="Pagamento">Conta pagamento</option>
+                <option value="Escrow">Conta escrow / SPE</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Banco *</label>
+              <input id="ec-banco" list="bancos-list-edit" placeholder="Digite ou selecione o banco..." autocomplete="off" oninput="onBancoInputEdit()">
+              <datalist id="bancos-list-edit">
+                <option value="Itaú Unibanco"><option value="Bradesco"><option value="Banco do Brasil">
+                <option value="Caixa Econômica Federal"><option value="Santander"><option value="Nubank">
+                <option value="BTG Pactual"><option value="XP Investimentos"><option value="Inter">
+                <option value="Sicoob"><option value="Sicredi"><option value="C6 Bank">
+                <option value="Safra"><option value="Votorantim"><option value="Banrisul">
+                <option value="BRB"><option value="Mercado Pago"><option value="PicPay">
+                <option value="Pagseguro"><option value="Stone"><option value="Starkbank">
+              </datalist>
+              <div id="ec-banco-preview" style="margin-top:6px;display:none;align-items:center;gap:8px;font-size:12px;color:var(--text-secondary)"></div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Titular</label><input id="ec-titular" placeholder="Razão social ou nome da empresa"></div>
+          </div>
+          <div class="form-row col3">
+            <div class="field"><label>Agência</label><input id="ec-agencia" placeholder="0000"></div>
+            <div class="field"><label>Conta / Dígito</label><input id="ec-conta" placeholder="00000-0"></div>
+            <div class="field"><label>CNPJ / CPF</label><input id="ec-doc" placeholder="00.000.000/0001-00"></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>Chave PIX</label><input id="ec-pix" placeholder="CNPJ, e-mail, telefone ou chave aleatória"></div>
+            <div class="field"><label>Saldo atual (R$)</label><input id="ec-saldo" type="text" placeholder="0,00" oninput="maskMoney(this)"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn" onclick="closeModal('modal-edit-conta')">Cancelar</button>
+            <button class="btn btn-primary" onclick="salvarEdicaoConta()">Salvar alterações</button>
           </div>
         </div>
       </div>
@@ -1943,6 +2140,23 @@ tbody tr.clickable{cursor:pointer}
           <div class="form-row col3"><div class="field"><label>Área total (m²)</label><input id="nl-area" type="text" placeholder="0,00" oninput="maskMoney(this)"></div><div class="field"><label>Qtd. de lotes</label><input id="nl-lotes" type="number" placeholder="0"></div><div class="field"><label>Data de lançamento</label><input id="nl-data" type="date"></div></div>
           <div class="form-row"><div class="field"><label>Matrícula / Registro</label><input id="nl-matricula" placeholder="Nº matrícula no cartório"></div></div>
           <div class="form-row"><div class="field"><label>Descrição / observações</label><textarea id="nl-obs" rows="2" style="font-size:12px;padding:7px 10px;border-radius:6px;border:0.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);resize:vertical;outline:none;width:100%" placeholder="Informações adicionais..."></textarea></div></div>
+          <div class="form-section">Conta bancária do empreendimento</div>
+          <div class="form-row col3">
+            <div class="field"><label>Banco</label><input id="nl-banco" placeholder="Ex: Itaú, Caixa, BTG..."></div>
+            <div class="field"><label>Agência</label><input id="nl-agencia" placeholder="0000"></div>
+            <div class="field"><label>Conta / Dígito</label><input id="nl-conta" placeholder="00000-0"></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>Tipo de conta</label>
+              <select id="nl-tipo-conta">
+                <option value="Corrente">Conta corrente</option>
+                <option value="Poupança">Poupança</option>
+                <option value="Pagamento">Conta pagamento</option>
+                <option value="Escrow">Conta escrow</option>
+              </select>
+            </div>
+            <div class="field"><label>Chave PIX</label><input id="nl-pix" placeholder="CNPJ, e-mail, telefone ou chave aleatória"></div>
+          </div>
           <div class="modal-footer"><button class="btn" onclick="closeModal('modal-new-loteamento')">Cancelar</button><button class="btn btn-primary" onclick="salvarLoteamento()">Salvar loteamento</button></div>
         </div>
       </div>
@@ -2047,7 +2261,7 @@ tbody tr.clickable{cursor:pointer}
             <div class="fin-tipo-btn danger" id="btn-tipo-desp" onclick="setFinTipo('DESPESA')" style="flex:1;text-align:center">− Despesa</div>
           </div>
           <div class="form-row"><div class="field"><label>Descrição *</label><input id="fin-desc" placeholder="Ex: Parcela contrato #1042"></div></div>
-          <div class="form-row col3">
+          <div class="form-row col2">
             <div class="field"><label>Categoria *</label>
               <select id="fin-cat">
                 <optgroup label="Receitas" id="fin-cat-rec"><option value="Parcela">Parcela recebida</option><option value="Entrada">Entrada</option><option value="Juros">Juros / Multa</option><option value="Taxa">Taxa cartório</option><option value="Outros-R">Outros (receita)</option></optgroup>
@@ -2055,6 +2269,9 @@ tbody tr.clickable{cursor:pointer}
               </select>
             </div>
             <div class="field"><label>Loteamento</label><select id="fin-loteamento"><option value="">—</option><option value="Verde Vale · Fase 1">Verde Vale · Fase 1</option><option value="Jardins do Sul · Fase 2">Jardins do Sul · Fase 2</option><option value="Nova Esperança · Fase 3">Nova Esperança · Fase 3</option></select></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>Conta bancária</label><select id="fin-conta-bancaria"><option value="">— Selecione —</option></select></div>
             <div class="field"><label>Fase</label><select id="fin-fase"><option value="">—</option><option value="Fase 1">Fase 1</option><option value="Fase 2">Fase 2</option><option value="Fase 3">Fase 3</option></select></div>
           </div>
           <div class="form-row col2"><div class="field"><label>Valor (R$) *</label><input id="fin-valor" type="text" placeholder="0,00" oninput="maskMoney(this)"></div><div class="field"><label>Data *</label><input id="fin-data" type="date"></div></div>
@@ -2070,8 +2287,81 @@ tbody tr.clickable{cursor:pointer}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const pageTitles={dashboard:'Dashboard executivo',loteamentos:'Loteamentos',lotes:'Lotes',clientes:'Clientes',contrato_detalhe:'Contrato #1042',contratos:'Contratos','cliente-detalhe':'Maria Aparecida Souza — Ficha','contrato-detalhe':'Contrato #1042 — Detalhes',financeiro:'Financeiro',inadimplencia:'Inadimplência',obras:'Obras',crm:'CRM / Leads',simulador:'Simulador Price / SAC',configuracoes:'Configurações do sistema',corretores:'Corretores',investidores:'Investidores'};
+// ── Supabase client ────────────────────────────────────────────
+const SUPA_URL = 'https://lwsrpmgkvofezapmouce.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3c3JwbWdrdm9mZXphcG1vdWNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NzAzMzMsImV4cCI6MjA5NTM0NjMzM30.MEEhkbWEhQ4PduxMJgWpryO6HmJarUApmBwrBzVnMw0';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── helpers ───────────────────────────────────────────────────
+async function dbSelect(table, opts={}) {
+  let q = sb.from(table).select(opts.select||'*');
+  if(opts.filter) opts.filter.forEach(([col,op,val])=>{ q=q.filter(col,op,val); });
+  if(opts.order)  q = q.order(opts.order, {ascending: opts.asc!==false});
+  if(opts.limit)  q = q.limit(opts.limit);
+  const {data,error} = await q;
+  if(error){ console.error(table, error.message); return []; }
+  return data||[];
+}
+async function dbInsert(table, row) {
+  const {data,error} = await sb.from(table).insert(row).select().single();
+  if(error){ showToast('Erro ao salvar: '+error.message,'error'); return null; }
+  return data;
+}
+async function dbUpdate(table, id, row) {
+  const {data,error} = await sb.from(table).update(row).eq('id',id).select().single();
+  if(error){ showToast('Erro ao atualizar: '+error.message,'error'); return null; }
+  return data;
+}
+async function dbDelete(table, id) {
+  const {error} = await sb.from(table).delete().eq('id',id);
+  if(error){ showToast('Erro ao excluir: '+error.message,'error'); return false; }
+  return true;
+}
+async function dbUpsert(table, row, conflict='id') {
+  const {data,error} = await sb.from(table).upsert(row,{onConflict:conflict}).select().single();
+  if(error){ showToast('Erro: '+error.message,'error'); return null; }
+  return data;
+}
+
+// ── AUTH helpers ──────────────────────────────────────────────
+async function getUser() {
+  const {data:{user}} = await sb.auth.getUser();
+  return user;
+}
+async function signIn(email, password) {
+  const {error} = await sb.auth.signInWithPassword({email, password});
+  if(error) throw error;
+}
+async function signOut() {
+  await sb.auth.signOut();
+}
+
+// ── Loading overlay ───────────────────────────────────────────
+function showLoading(msg='Carregando...') {
+  let el=document.getElementById('sb-loading');
+  if(!el){
+    el=document.createElement('div');
+    el.id='sb-loading';
+    el.style.cssText='position:fixed;inset:0;background:rgba(255,255,255,.7);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;backdrop-filter:blur(2px)';
+    el.innerHTML='<div style="width:32px;height:32px;border:3px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite"></div><div style="font-size:13px;color:var(--text-secondary)">'+msg+'</div>';
+    if(!document.getElementById('spin-style')){
+      const s=document.createElement('style');s.id='spin-style';
+      s.textContent='@keyframes spin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(s);
+    }
+    document.body.appendChild(el);
+  } else {
+    el.querySelector('div:last-child').textContent=msg;
+    el.style.display='flex';
+  }
+}
+function hideLoading() {
+  const el=document.getElementById('sb-loading');
+  if(el) el.style.display='none';
+}
+const pageTitles={dashboard:'Dashboard executivo',loteamentos:'Loteamentos',lotes:'Lotes',clientes:'Clientes',contrato_detalhe:'Contrato #1042',contratos:'Contratos','cliente-detalhe':'Maria Aparecida Souza — Ficha','contrato-detalhe':'Contrato #1042 — Detalhes',financeiro:'Financeiro',inadimplencia:'Inadimplência',obras:'Obras',crm:'CRM / Leads',simulador:'Simulador Price / SAC',configuracoes:'Configurações do sistema',corretores:'Corretores',investidores:'Investidores','contas-bancarias':'Contas Bancárias'};
 
 function showPage(id,navEl){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -2083,10 +2373,8 @@ function showPage(id,navEl){
   if(id==='contrato-detalhe')buildParcelas();
   if(id==='simulador')calcSim();
   if(id==='configuracoes')renderConfiguracoes();
-  if(id==='financeiro')initFinanceiro();
-  if(id==='crm'){renderLeads();}
-  if(id==='corretores')renderCorretores();
-  if(id==='investidores')renderInvestidores();
+  // Carrega dados do Supabase
+  if(typeof initPageDB==='function') initPageDB(id);
 }
 
 function switchTab(el,which){
@@ -3469,24 +3757,6 @@ function setFinTipo(tipo){
   if(gd) gd.style.display=tipo==='DESPESA'?'':'none';
 }
 
-function addLancamento(){
-  const desc=document.getElementById('fin-desc')?.value?.trim();
-  const cat=document.getElementById('fin-cat')?.value;
-  const valorRaw=document.getElementById('fin-valor')?.value||'0';
-  const data=document.getElementById('fin-data')?.value;
-  const valor=parseFloat(valorRaw.replace(/\./g,'').replace(',','.'))||0;
-  if(!desc){showToast('Preencha a descrição.','error');return;}
-  if(!valor||valor<=0){showToast('Informe um valor válido.','error');return;}
-  if(!data){showToast('Informe a data.','error');return;}
-  lancamentos.unshift({id:Date.now(),tipo:finTipoAtual,cat,desc,valor,data});
-  document.getElementById('fin-desc').value='';
-  document.getElementById('fin-valor').value='';
-  document.getElementById('fin-data').value='';
-  renderLancamentos();
-  atualizarKpisFinanceiro();
-  atualizarGrafico();
-  showToast(finTipoAtual==='RECEITA'?'Receita registrada!':'Despesa registrada!');
-}
 
 function removerLancamento(id){
   lancamentos=lancamentos.filter(l=>l.id!==id);
@@ -3640,6 +3910,7 @@ function atualizarGrafico(){
 
 function initFinanceiro(){
   setFinTipo('RECEITA');renderLancamentos();atualizarKpisFinanceiro();
+  if(typeof atualizarSelectContas==='function') atualizarSelectContas();
   setTimeout(atualizarGrafico,80);
 }
 
@@ -3810,11 +4081,19 @@ function addLancamento(){
   const valorRaw=document.getElementById('fin-valor')?.value||'0';
   const data=document.getElementById('fin-data')?.value;
   const loteamento=document.getElementById('fin-loteamento')?.value||'—';
+  const contaId=parseInt(document.getElementById('fin-conta-bancaria')?.value||'0')||null;
   const valor=parseFloat(valorRaw.replace(/\./g,'').replace(',','.'))||0;
   if(!desc){showToast('Preencha a descrição.','error');return;}
   if(!valor||valor<=0){showToast('Informe um valor válido.','error');return;}
   if(!data){showToast('Informe a data.','error');return;}
-  lancamentos.unshift({id:Date.now(),tipo:finTipoAtual,cat,desc,valor,data,loteamento});
+  const contaNome=contaId?(()=>{const cb=typeof contasBancarias!=='undefined'?contasBancarias.find(c=>c.id===contaId):null;return cb?cb.banco+' '+cb.conta:'';})():'';
+  lancamentos.unshift({id:Date.now(),tipo:finTipoAtual,cat,desc,valor,data,loteamento,contaId,contaNome});
+  // Registrar movimentação bancária
+  if(contaId&&typeof movimentacoes!=='undefined'){
+    movimentacoes.unshift({id:Date.now()+1,data,tipo:finTipoAtual==='RECEITA'?'Crédito':'Débito',desc,loteamento:loteamento.split(' · ')[0],contaId,valor});
+    const cb=typeof contasBancarias!=='undefined'?contasBancarias.find(c=>c.id===contaId):null;
+    if(cb)cb.saldo+=finTipoAtual==='RECEITA'?valor:-valor;
+  }
   document.getElementById('fin-desc').value='';
   document.getElementById('fin-valor').value='';
   document.getElementById('fin-data').value='';
@@ -3846,12 +4125,28 @@ function renderLancamentos(){
     const bc=isRec?'badge-teal':'badge-red';
     const sinal=isRec?'+':'−'; const cor=isRec?'var(--success)':'var(--danger)';
     const lot=l.loteamento||'—';
+    // Conta bancária com mini-logo
+    let contaExib='—';
+    if(l.contaId&&typeof contasBancarias!=='undefined'&&typeof getBancoLogo==='function'){
+      const cb=contasBancarias.find(c=>c.id===l.contaId);
+      if(cb){
+        const lg=getBancoLogo(cb.banco);
+        const fs=lg.letra.length>2?7:8;
+        contaExib=`<span style="display:inline-flex;align-items:center;gap:4px;max-width:100px">
+          <span style="width:16px;height:16px;border-radius:3px;background:${lg.cor};display:inline-flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;color:${lg.textColor||'#fff'};flex-shrink:0">${lg.letra.substring(0,2)}</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px">${cb.banco.split(' ')[0]}</span>
+        </span>`;
+      }
+    } else if(l.contaNome){
+      contaExib=`<span style="font-size:11px;color:var(--text-secondary)">${l.contaNome.split(' ')[0]}</span>`;
+    }
     return `<tr>
       <td style="color:var(--text-secondary);font-size:11px">${d}</td>
       <td><span class="badge ${bc}">${isRec?'Receita':'Despesa'}</span></td>
-      <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px" title="${l.desc}">${l.desc}</td>
+      <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.desc}">${l.desc}</td>
       <td style="color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${catLabel[l.cat]||l.cat}</td>
       <td style="font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lot}</td>
+      <td>${contaExib}</td>
       <td style="text-align:right;font-weight:600;color:${cor};white-space:nowrap">${sinal} ${fmt(l.valor)}</td>
       <td style="text-align:center;white-space:nowrap;min-width:80px">
         <button class="btn btn-sm" style="font-size:11px;padding:3px 8px;margin-right:2px" onclick="abrirEditarLancamento(${l.id})" title="Editar">✏️</button>
@@ -4297,6 +4592,10 @@ function toggleGlobalLot(el){
   showToast('Filtro: '+(isAll?'todos os loteamentos':[...globalLots].join(', ')));
   atualizarDashboard();
   atualizarKpisLotes();
+  // Atualizar contas bancárias se a página estiver visível
+  if(document.getElementById('page-contas-bancarias')?.classList.contains('active')){
+    if(typeof renderContasBancarias==='function') renderContasBancarias();
+  }
 }
 
 // CSS kanban injetado dinamicamente
@@ -5174,6 +5473,1033 @@ function salvarEdicaoDividendo(){
   showToast('Dividendo atualizado!');
   editDividendoId=null;
 }
+
+// ================================================================
+// CONTAS BANCÁRIAS
+// ================================================================
+const BANCO_LOGOS={
+  'itaú':{cor:'#EC7000',letra:'I'},'itau':{cor:'#EC7000',letra:'I'},
+  'bradesco':{cor:'#CC092F',letra:'B'},
+  'banco do brasil':{cor:'#F9DD16',letra:'BB',textColor:'#003882'},
+  'caixa':{cor:'#005CA9',letra:'C'},
+  'santander':{cor:'#EC0000',letra:'S'},
+  'nubank':{cor:'#820AD1',letra:'N'},
+  'btg':{cor:'#003153',letra:'B'},
+  'xp':{cor:'#000000',letra:'XP'},
+  'inter':{cor:'#FF7A00',letra:'I'},
+  'sicoob':{cor:'#006534',letra:'S'},
+  'sicredi':{cor:'#009A3C',letra:'S'},
+  'c6':{cor:'#232323',letra:'C6'},
+  'safra':{cor:'#003087',letra:'S'},
+  'votorantim':{cor:'#E60028',letra:'V'},
+  'banrisul':{cor:'#003DA5',letra:'B'},
+  'brb':{cor:'#003DA5',letra:'B'},
+  'mercado pago':{cor:'#009EE3',letra:'MP'},
+  'picpay':{cor:'#21C25E',letra:'P'},
+  'pagseguro':{cor:'#00B624',letra:'P'},
+  'stone':{cor:'#03A63C',letra:'S'},
+  'starkbank':{cor:'#00B2FF',letra:'SK'},
+  'stark':{cor:'#00B2FF',letra:'SK'},
+};
+
+function getBancoLogo(nome){
+  if(!nome)return{cor:'#888780',letra:'B'};
+  const key=nome.toLowerCase().split(' ').slice(0,2).join(' ');
+  for(const k in BANCO_LOGOS){if(key.includes(k))return BANCO_LOGOS[k];}
+  return{cor:'#'+Math.abs(nome.split('').reduce((h,c)=>h*31+c.charCodeAt(0),0)%0xFFFFFF).toString(16).padStart(6,'0'),
+         letra:nome.substring(0,2).toUpperCase()};
+}
+
+function bancoAvatar(nome,size=32){
+  const lg=getBancoLogo(nome);
+  const fs=lg.letra.length>2?9:lg.letra.length>1?11:13;
+  return `<div style="width:${size}px;height:${size}px;border-radius:8px;background:${lg.cor};display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;color:${lg.textColor||'#fff'};flex-shrink:0;letter-spacing:-0.5px">${lg.letra}</div>`;
+}
+
+// Preview do logo ao digitar o banco
+function onBancoInput(){
+  const val=document.getElementById('nc3-banco')?.value||'';
+  const preview=document.getElementById('nc3-banco-preview');
+  if(!preview)return;
+  if(val.trim()){
+    preview.style.display='flex';
+    preview.innerHTML=bancoAvatar(val,28)+'<span>'+val+'</span>';
+  } else {
+    preview.style.display='none';
+  }
+}
+
+function renderContasBancarias(){
+  // ── Filtro global de loteamento ──────────────────────────────
+  let filtroGlobal=[];
+  if(typeof globalLots!=='undefined'&&!globalLots.has('todos')){
+    filtroGlobal=[...globalLots].map(s=>
+      s==='verde-vale'?'Verde Vale':s==='jardins-sul'?'Jardins do Sul':s==='nova-esperanca'?'Nova Esperança':s
+    );
+  }
+  const fl=document.getElementById('cb-filtro-lot')?.value||'';
+
+  const contas=contasBancarias.filter(c=>{
+    if(!c.ativa)return false;
+    if(fl&&!c.loteamento.includes(fl))return false;
+    if(filtroGlobal.length&&!filtroGlobal.some(f=>c.loteamento.includes(f)))return false;
+    return true;
+  });
+
+  // ── KPIs filtrados ───────────────────────────────────────────
+  const saldoTotal=contas.reduce((s,c)=>s+c.saldo,0);
+  const hoje=new Date();const mes=hoje.getMonth(),ano=hoje.getFullYear();
+  const deMes=m=>{const d=new Date(m.data+'T12:00');return d.getMonth()===mes&&d.getFullYear()===ano;};
+  const movFilt=movimentacoes.filter(m=>deMes(m)&&contas.some(c=>c.id===m.contaId));
+  const entradas=movFilt.filter(m=>m.tipo==='Crédito').reduce((s,m)=>s+m.valor,0);
+  const saidas=movFilt.filter(m=>m.tipo==='Débito').reduce((s,m)=>s+m.valor,0);
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  sv('cb-kpi-total',contas.length);sv('cb-kpi-saldo',fmt(saldoTotal));
+  sv('cb-kpi-entradas',fmt(entradas));sv('cb-kpi-saidas',fmt(saidas));
+
+  // ── Cards com logo do banco ──────────────────────────────────
+  const lista=document.getElementById('cb-lista');
+  if(lista){
+    lista.innerHTML=contas.map(c=>{
+      const ultMov=movimentacoes.filter(m=>m.contaId===c.id).sort((a,b)=>b.data.localeCompare(a.data))[0];
+      const avatar=c.logoImg
+        ? `<div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0"><img src="${c.logoImg}" alt="${c.banco}" style="width:100%;height:100%;object-fit:contain"></div>`
+        : bancoAvatar(c.banco,36);
+      return `<div class="card" style="padding:14px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            ${avatar}
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${c.banco}</div>
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:1px">Ag. ${c.agencia} · ${c.tipo} ${c.conta}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-left:8px">
+            <span style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--accent-light);color:var(--accent-text);font-weight:600;white-space:nowrap">${c.loteamento}</span>
+            <button class="btn btn-sm" style="font-size:10px;padding:3px 8px" onclick="abrirEditarConta(${c.id})">✏️ Editar</button>
+          </div>
+        </div>
+        <div style="border-top:0.5px solid var(--border-tertiary);padding-top:10px">
+          <div style="font-size:10px;color:var(--text-secondary)">Saldo disponível</div>
+          <div style="font-size:20px;font-weight:700;color:${c.saldo>=0?'var(--success)':'var(--danger)'}">${fmt(c.saldo)}</div>
+        </div>
+        <div style="margin-top:8px;display:flex;justify-content:space-between">
+          <div style="font-size:10px;color:var(--text-secondary)">PIX: ${c.pix||'—'}</div>
+          ${ultMov?`<div style="font-size:10px;color:var(--text-tertiary)">Última mov.: ${new Date(ultMov.data+'T12:00').toLocaleDateString('pt-BR')}</div>`:''}
+        </div>
+      </div>`;
+    }).join('')||'<div style="font-size:13px;color:var(--text-secondary);padding:20px 0">Nenhuma conta cadastrada para este filtro.</div>';
+  }
+}
+
+function salvarConta(){
+  const lot=document.getElementById('nc3-loteamento')?.value;
+  const banco=document.getElementById('nc3-banco')?.value?.trim();
+  if(!lot){showToast('Selecione o loteamento.','error');return;}
+  if(!banco){showToast('Informe o nome do banco.','error');return;}
+  const agencia=document.getElementById('nc3-agencia')?.value?.trim()||'—';
+  const conta=document.getElementById('nc3-conta')?.value?.trim()||'—';
+  const tipo=document.getElementById('nc3-tipo')?.value||'Corrente';
+  const titular=document.getElementById('nc3-titular')?.value?.trim()||'—';
+  const doc=document.getElementById('nc3-doc')?.value?.trim()||'—';
+  const pix=document.getElementById('nc3-pix')?.value?.trim()||'—';
+  const saldoRaw=document.getElementById('nc3-saldo')?.value||'0';
+  const saldo=parseFloat(saldoRaw.replace(/\./g,'').replace(',','.'))||0;
+  const logoImg=window._nc3LogoImg||null;
+  contasBancarias.push({id:Date.now(),loteamento:lot,banco,agencia,conta,tipo,titular,doc,pix,saldo,logoImg,ativa:true});
+  window._nc3LogoImg=null;
+  atualizarSelectContas();
+  closeModal('modal-new-conta');
+  ['nc3-banco','nc3-titular','nc3-doc','nc3-agencia','nc3-conta','nc3-pix','nc3-saldo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const prev=document.getElementById('nc3-banco-preview');if(prev)prev.style.display='none';
+  const lp=document.getElementById('nc3-logo-preview');if(lp){lp.innerHTML='Logo';lp.style.background='var(--bg-secondary)';}
+  renderContasBancarias();
+  showToast('Conta '+banco+' Ag.'+agencia+' / '+conta+' cadastrada!');
+}
+
+// ── Upload de logo da conta ────────────────────────────────────
+function handleContaLogoUpload(input, mode){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const dataUrl=e.target.result;
+    if(mode==='new'){
+      window._nc3LogoImg=dataUrl;
+      const prev=document.getElementById('nc3-logo-preview');
+      if(prev){prev.innerHTML=`<img src="${dataUrl}" style="width:100%;height:100%;object-fit:contain">`;prev.style.background='transparent';}
+    } else {
+      window._ecLogoImg=dataUrl;
+      const prev=document.getElementById('ec-logo-preview');
+      if(prev){prev.innerHTML=`<img src="${dataUrl}" style="width:100%;height:100%;object-fit:contain">`;prev.style.background='transparent';}
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerLogoContaEdit(){
+  window._ecLogoImg='__remove__';
+  const prev=document.getElementById('ec-logo-preview');
+  if(prev){prev.innerHTML='Logo';prev.style.background='var(--bg-secondary)';}
+}
+
+function onBancoInputEdit(){
+  const val=document.getElementById('ec-banco')?.value||'';
+  const preview=document.getElementById('ec-banco-preview');
+  if(!preview)return;
+  if(val.trim()){
+    preview.style.display='flex';
+    preview.innerHTML=bancoAvatar(val,24)+'<span>'+val+'</span>';
+  } else {
+    preview.style.display='none';
+  }
+}
+
+// ── Editar conta bancária ──────────────────────────────────────
+let editContaId=null;
+
+function abrirEditarConta(id){
+  const c=contasBancarias.find(x=>x.id===id);
+  if(!c)return;
+  editContaId=id;
+  window._ecLogoImg=undefined;
+
+  const sv=(elId,v)=>{const el=document.getElementById(elId);if(el)el.value=v||'';};
+  sv('ec-banco',c.banco);sv('ec-titular',c.titular);sv('ec-agencia',c.agencia);
+  sv('ec-conta',c.conta);sv('ec-doc',c.doc);sv('ec-pix',c.pix);
+  sv('ec-saldo',c.saldo.toLocaleString('pt-BR',{minimumFractionDigits:2}));
+
+  const selLot=document.getElementById('ec-loteamento');
+  if(selLot)[...selLot.options].forEach(o=>o.selected=o.value===c.loteamento);
+  const selTipo=document.getElementById('ec-tipo');
+  if(selTipo)[...selTipo.options].forEach(o=>o.selected=o.value===c.tipo);
+
+  // Preview logo atual
+  const prev=document.getElementById('ec-logo-preview');
+  if(prev){
+    if(c.logoImg){
+      prev.innerHTML=`<img src="${c.logoImg}" style="width:100%;height:100%;object-fit:contain">`;
+      prev.style.background='transparent';
+    } else {
+      prev.innerHTML=bancoAvatar(c.banco,36);
+      prev.style.background='transparent';
+    }
+  }
+
+  // Preview banco no input
+  const bp=document.getElementById('ec-banco-preview');
+  if(bp){bp.style.display='flex';bp.innerHTML=bancoAvatar(c.banco,24)+'<span>'+c.banco+'</span>';}
+
+  openModal('modal-edit-conta');
+}
+
+function salvarEdicaoConta(){
+  const c=contasBancarias.find(x=>x.id===editContaId);
+  if(!c){showToast('Conta não encontrada.','error');return;}
+  const banco=document.getElementById('ec-banco')?.value?.trim();
+  if(!banco){showToast('Informe o nome do banco.','error');return;}
+  c.loteamento=document.getElementById('ec-loteamento')?.value||c.loteamento;
+  c.tipo=document.getElementById('ec-tipo')?.value||c.tipo;
+  c.banco=banco;
+  c.titular=document.getElementById('ec-titular')?.value?.trim()||c.titular;
+  c.agencia=document.getElementById('ec-agencia')?.value?.trim()||c.agencia;
+  c.conta=document.getElementById('ec-conta')?.value?.trim()||c.conta;
+  c.doc=document.getElementById('ec-doc')?.value?.trim()||c.doc;
+  c.pix=document.getElementById('ec-pix')?.value?.trim()||c.pix;
+  const saldoRaw=document.getElementById('ec-saldo')?.value||'0';
+  c.saldo=parseFloat(saldoRaw.replace(/\./g,'').replace(',','.'))||c.saldo;
+  // Logo: novo upload, remover, ou manter
+  if(window._ecLogoImg==='__remove__') c.logoImg=null;
+  else if(window._ecLogoImg) c.logoImg=window._ecLogoImg;
+  window._ecLogoImg=undefined;
+  atualizarSelectContas();
+  closeModal('modal-edit-conta');
+  renderContasBancarias();
+  showToast('Conta '+c.banco+' atualizada!');
+  editContaId=null;
+}
+
+function atualizarSelectContas(){
+  // Modal aporte (ap-conta, eap-conta) + modal lançamento (fin-conta-bancaria) + modal edit lançamento (edit-fin-conta)
+  ['ap-conta','eap-conta','fin-conta-bancaria','edit-fin-conta'].forEach(selId=>{
+    const sel=document.getElementById(selId);
+    if(!sel)return;
+    const v=sel.value;
+    sel.innerHTML='<option value="">— Selecione —</option>'+
+      contasBancarias.filter(c=>c.ativa).map(c=>{
+        const lg=getBancoLogo(c.banco);
+        return `<option value="${c.id}">${c.loteamento} — ${c.banco} Ag.${c.agencia} / ${c.tipo.substring(0,2).toUpperCase()} ${c.conta}</option>`;
+      }).join('');
+    if(v)sel.value=v;
+  });
+}
+
+function exportarExtrato(){
+  const fl=document.getElementById('cb-filtro-lot')?.value||'';
+  const de=document.getElementById('fin-de')?.value||'';
+  const ate=document.getElementById('fin-ate')?.value||'';
+  const filtered=movimentacoes.filter(m=>{
+    if(fl&&!m.loteamento.includes(fl))return false;
+    if(de&&m.data<de)return false;
+    if(ate&&m.data>ate)return false;
+    return true;
+  }).sort((a,b)=>b.data.localeCompare(a.data));
+  if(!filtered.length){showToast('Nenhuma movimentação para exportar.','error');return;}
+  const linhas=[['Data','Tipo','Descricao','Loteamento','Conta','Valor']];
+  filtered.forEach(m=>{
+    const conta=contasBancarias.find(c=>c.id===m.contaId);
+    linhas.push([m.data,m.tipo,'"'+m.desc.replace(/"/g,'""')+'"',m.loteamento,conta?conta.banco+' '+conta.conta:'—',m.valor.toFixed(2).replace('.',',')]);
+  });
+  const csv=linhas.map(r=>r.join(';')).join('\r\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;
+  a.download='extrato'+(de?'_'+de:'')+(ate?'_ate_'+ate:'')+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast(filtered.length+' movimentações exportadas!');
+}
+
+// Adicionar pageTitles e init para contas bancárias
+applyTheme();
+
+// ── Dados das contas bancárias ────────────────────────────────
+let contasBancarias=[
+  {id:1,loteamento:'Verde Vale',    banco:'Itaú Unibanco',   agencia:'0001',conta:'12345-6',tipo:'Corrente',titular:'Horizonte VV SPE Ltda',   doc:'12.345.678/0001-10',pix:'12.345.678/0001-10',saldo:284500,ativa:true},
+  {id:2,loteamento:'Jardins do Sul', banco:'Bradesco',        agencia:'0042',conta:'98765-4',tipo:'Corrente',titular:'Horizonte JS SPE Ltda',   doc:'23.456.789/0001-20',pix:'23.456.789/0001-20',saldo:142800,ativa:true},
+  {id:3,loteamento:'Nova Esperança', banco:'Caixa Econômica', agencia:'0125',conta:'11223-3',tipo:'Escrow',  titular:'Horizonte NE SPE Ltda',   doc:'34.567.890/0001-30',pix:'34.567.890/0001-30',saldo:521000,ativa:true},
+];
+
+let movimentacoes=[
+  {id:1, data:'2026-05-22',tipo:'Crédito',desc:'Parcela #12 Contrato #1042',  loteamento:'Verde Vale',    contaId:1,valor:2840},
+  {id:2, data:'2026-05-20',tipo:'Crédito',desc:'Parcela #8 Contrato #1038',   loteamento:'Verde Vale',    contaId:1,valor:3150},
+  {id:3, data:'2026-05-18',tipo:'Débito', desc:'Medição #3 — Asfalto',         loteamento:'Verde Vale',    contaId:1,valor:48000},
+  {id:4, data:'2026-05-15',tipo:'Crédito',desc:'Entrada Contrato #1041',       loteamento:'Verde Vale',    contaId:1,valor:8950},
+  {id:5, data:'2026-05-14',tipo:'Débito', desc:'Comissão Paulo Santana',        loteamento:'Verde Vale',    contaId:1,valor:5370},
+  {id:6, data:'2026-05-12',tipo:'Crédito',desc:'Parcela #5 Contrato #1035',   loteamento:'Jardins do Sul',contaId:2,valor:2640},
+  {id:7, data:'2026-05-10',tipo:'Débito', desc:'Google Ads — Maio',             loteamento:'Jardins do Sul',contaId:2,valor:3200},
+  {id:8, data:'2026-05-08',tipo:'Crédito',desc:'Aporte Grupo Horizons FII',    loteamento:'Verde Vale',    contaId:1,valor:200000},
+  {id:9, data:'2026-05-05',tipo:'Débito', desc:'Pagamento fornecedor obras',    loteamento:'Nova Esperança',contaId:3,valor:72000},
+  {id:10,data:'2026-05-03',tipo:'Crédito',desc:'Entrada Contrato #2010',        loteamento:'Nova Esperança',contaId:3,valor:12500},
+];
+
+
+function renderExtrato(){
+  const fl=document.getElementById('cb-filtro-lot')?.value||'';
+  const ft=document.getElementById('cb-filtro-tipo-ext')?.value||'';
+  const de=document.getElementById('cb-ext-de')?.value||'';
+  const ate=document.getElementById('cb-ext-ate')?.value||'';
+  let filtroGlobal=[];
+  if(typeof globalLots!=='undefined'&&!globalLots.has('todos')){
+    filtroGlobal=[...globalLots].map(s=>
+      s==='verde-vale'?'Verde Vale':s==='jardins-sul'?'Jardins do Sul':s==='nova-esperanca'?'Nova Esperança':s
+    );
+  }
+  const filtered=movimentacoes.filter(m=>{
+    if(fl&&!m.loteamento.includes(fl))return false;
+    if(filtroGlobal.length&&!filtroGlobal.some(f=>m.loteamento.includes(f)))return false;
+    if(ft&&m.tipo!==ft)return false;
+    if(de&&m.data<de)return false;
+    if(ate&&m.data>ate)return false;
+    return true;
+  }).sort((a,b)=>b.data.localeCompare(a.data));
+
+  const tbody=document.getElementById('cb-ext-tbody');
+  const empty=document.getElementById('cb-ext-empty');
+  const table=document.getElementById('cb-ext-table');
+  if(!tbody)return;
+  if(!filtered.length){if(empty)empty.style.display='block';if(table)table.style.display='none';return;}
+  if(empty)empty.style.display='none';if(table)table.style.display='';
+
+  // Calcular saldo corrente (soma de todas movimentações até hoje)
+  let saldoAtual=contasBancarias.reduce((s,c)=>s+c.saldo,0);
+  tbody.innerHTML=filtered.map(m=>{
+    const conta=contasBancarias.find(c=>c.id===m.contaId);
+    const isCred=m.tipo==='Crédito';
+    const cor=isCred?'var(--success)':'var(--danger)';
+    const row=`<tr>
+      <td style="font-size:11px;color:var(--text-secondary);white-space:nowrap">${new Date(m.data+'T12:00').toLocaleDateString('pt-BR')}</td>
+      <td><span class="badge ${isCred?'badge-teal':'badge-red'}" style="font-size:10px">${m.tipo}</span></td>
+      <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.desc}</td>
+      <td style="font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.loteamento}</td>
+      <td style="font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${conta?conta.banco+' '+conta.conta:'—'}</td>
+      <td style="text-align:right;font-weight:600;color:${cor};white-space:nowrap">${isCred?'+':'−'} ${fmt(m.valor)}</td>
+      <td style="text-align:right;font-size:11px;color:var(--text-secondary);white-space:nowrap">${fmt(saldoAtual)}</td>
+    </tr>`;
+    saldoAtual-=(isCred?m.valor:-m.valor);
+    return row;
+  }).join('');
+}
+
+
+
+
+// Adicionar pageTitles e init para contas bancárias
+// ================================================================
+// INTEGRAÇÃO SUPABASE — funções assíncronas de dados
+// ================================================================
+
+// ── LOTEAMENTOS ──────────────────────────────────────────────
+async function carregarLoteamentos() {
+  showLoading('Carregando loteamentos...');
+  const rows = await dbSelect('loteamentos', {order:'nome', asc:true});
+  hideLoading();
+  const tbody = document.getElementById('tbody-loteamentos');
+  if(!tbody) return;
+  const badgeCls = {'Ativo':'badge-green','Em obras':'badge-blue','Planejado':'badge-amber','Encerrado':'badge-gray'};
+  tbody.innerHTML = rows.map(r => {
+    const nomeSafe = (r.nome||'').replace(/'/g,"\'");
+    return `<tr class="clickable" onclick="showPage('lotes',null)">
+      <td style="font-weight:600;color:var(--accent)">${r.nome}</td>
+      <td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">${r.fase||'—'}</span></td>
+      <td>${r.cidade||''} / ${r.estado||''}</td>
+      <td>${r.qtd_lotes||0} lotes</td>
+      <td>—</td>
+      <td>${r.data_lancamento||'—'}</td>
+      <td><span class="badge ${badgeCls[r.status]||'badge-gray'}">${r.status||'Ativo'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm" style="font-size:10px" onclick="event.stopPropagation();editarFaseLoteamento(this,'${nomeSafe}')">✏️</button>
+        <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger)" onclick="event.stopPropagation();excluirLoteamentoDB('${r.id}','${nomeSafe}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function salvarLoteamentoDB() {
+  const nome = document.getElementById('nl-nome')?.value?.trim();
+  if(!nome){showToast('Informe o nome.','error');return;}
+  showLoading('Salvando loteamento...');
+  const row = {
+    nome,
+    fase:       document.getElementById('nl-fase')?.value?.trim()||null,
+    status:     document.getElementById('nl-status')?.value||'Ativo',
+    cidade:     document.getElementById('nl-cidade')?.value||null,
+    estado:     document.getElementById('nl-estado')?.value||null,
+    cep:        document.getElementById('nl-cep')?.value||null,
+    endereco:   document.getElementById('nl-end')?.value||null,
+    qtd_lotes:  parseInt(document.getElementById('nl-lotes')?.value)||0,
+    matricula:  document.getElementById('nl-matricula')?.value||null,
+    observacoes:document.getElementById('nl-obs')?.value||null,
+    banco:      document.getElementById('nl-banco')?.value||null,
+    agencia:    document.getElementById('nl-agencia')?.value||null,
+    conta:      document.getElementById('nl-conta')?.value||null,
+    tipo_conta: document.getElementById('nl-tipo-conta')?.value||null,
+    pix:        document.getElementById('nl-pix')?.value||null,
+  };
+  const saved = await dbInsert('loteamentos', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-loteamento');
+  ['nl-nome','nl-fase','nl-cep','nl-end','nl-matricula','nl-banco','nl-agencia','nl-conta','nl-pix'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  syncFiltroLoteamento(nome, row.fase, 'add');
+  carregarLoteamentos();
+  showToast('Loteamento "'+nome+'" cadastrado!');
+}
+
+async function excluirLoteamentoDB(id, nome) {
+  if(!confirm('Excluir o loteamento "'+nome+'"?\n\nTodos os lotes, contratos, leads e lançamentos relacionados serão excluídos.\n\nEssa ação não pode ser desfeita.')) return;
+  showLoading('Excluindo loteamento...');
+  await dbDelete('loteamentos', id);
+  hideLoading();
+  syncFiltroLoteamento(nome, null, 'remove');
+  carregarLoteamentos();
+  showToast('Loteamento "'+nome+'" excluído.','error');
+}
+
+// ── CLIENTES ─────────────────────────────────────────────────
+async function carregarClientes() {
+  showLoading('Carregando clientes...');
+  const rows = await dbSelect('clientes', {order:'nome', asc:true});
+  hideLoading();
+  const tbody = document.querySelector('#page-clientes table tbody');
+  if(!tbody) return;
+  tbody.innerHTML = rows.map(r => `<tr class="clickable">
+    <td style="font-weight:500">${r.nome}</td>
+    <td style="color:var(--text-secondary)">${r.cpf||'—'}</td>
+    <td style="color:var(--text-secondary)">${r.celular||'—'}</td>
+    <td>—</td>
+    <td style="color:var(--text-secondary)">—</td>
+    <td><span class="badge badge-green">Adimplente</span></td>
+  </tr>`).join('');
+  // Atualizar selects de cliente em outros modais
+  atualizarSelectClientes(rows);
+}
+
+function atualizarSelectClientes(rows) {
+  const sel = document.getElementById('nct-cliente');
+  if(!sel) return;
+  const v = sel.value;
+  sel.innerHTML = '<option value="">Selecione o cliente</option>' +
+    rows.map(r => `<option value="${r.id}">${r.nome}</option>`).join('');
+  if(v) sel.value = v;
+}
+
+async function salvarClienteDB() {
+  const nome = document.getElementById('nc-nome')?.value?.trim();
+  const cpf  = document.getElementById('nc-cpf')?.value?.trim();
+  if(!nome || !cpf){showToast('Informe nome e CPF.','error');return;}
+  showLoading('Salvando cliente...');
+  const row = {
+    nome, cpf,
+    rg:           document.getElementById('nc-rg')?.value||null,
+    data_nasc:    document.getElementById('nc-nasc')?.value||null,
+    estado_civil: document.getElementById('nc-estcivil')?.value||null,
+    profissao:    document.getElementById('nc-prof')?.value||null,
+    celular:      document.getElementById('nc-cel')?.value||null,
+    telefone:     document.getElementById('nc-tel')?.value||null,
+    email:        document.getElementById('nc-email')?.value||null,
+    cep:          document.getElementById('nc-cep')?.value||null,
+    cidade:       document.getElementById('nc-cidade')?.value||null,
+    estado:       document.getElementById('nc-est')?.value||null,
+    logradouro:   document.getElementById('nc-rua')?.value||null,
+    numero_end:   document.getElementById('nc-num')?.value||null,
+  };
+  const saved = await dbInsert('clientes', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-cliente');
+  ['nc-nome','nc-cpf','nc-cel'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  carregarClientes();
+  showToast('Cliente "'+nome+'" cadastrado!');
+}
+
+// ── LOTES ────────────────────────────────────────────────────
+async function carregarLotes(loteamentoId) {
+  showLoading('Carregando lotes...');
+  const filter = loteamentoId ? [['loteamento_id','eq',loteamentoId]] : [];
+  const rows = await dbSelect('lotes', {order:'quadra', asc:true, filter});
+  hideLoading();
+  const tbody = document.getElementById('tbody-lotes-lista');
+  if(!tbody) return;
+  const badgeCls = {'Disponível':'badge-green','Vendido':'badge-blue','Reservado':'badge-amber','Inadimplente':'badge-red','Distratado':'badge-gray','Quitado':''};
+  tbody.innerHTML = rows.map(r => {
+    const bStyle = r.status==='Quitado' ? ' style="background:#EDE9FE;color:#5B21B6"' : '';
+    return `<tr data-status="${r.status}" data-quadra="${r.quadra}">
+      <td>${r.quadra}-${(r.numero||'').padStart(2,'0')}</td>
+      <td>${r.quadra}</td>
+      <td>${r.area_m2||'—'} m²</td>
+      <td>R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</td>
+      <td><span class="badge ${badgeCls[r.status]||'badge-gray'}"${bStyle}>${r.status}</span></td>
+      <td>—</td>
+    </tr>`;
+  }).join('');
+  atualizarKpisLotesDB(rows);
+}
+
+function atualizarKpisLotesDB(rows) {
+  const count = s => rows.filter(r=>r.status===s).length;
+  const sv = (id,v) => {const el=document.getElementById(id);if(el)el.textContent=v;};
+  sv('kpi-disp',count('Disponível')); sv('kpi-vend',count('Vendido'));
+  sv('kpi-res',count('Reservado'));   sv('kpi-quit',count('Quitado'));
+  sv('kpi-inad',count('Inadimplente')); sv('kpi-total',rows.length);
+}
+
+async function salvarLoteDB() {
+  const quadra = document.getElementById('nlo-quadra')?.value?.trim().toUpperCase();
+  const num    = document.getElementById('nlo-num')?.value?.trim();
+  if(!quadra||!num){showToast('Informe quadra e número.','error');return;}
+  // Buscar id do loteamento pelo nome
+  const lotNome = document.getElementById('nlo-lot')?.value;
+  const loteamentos = await dbSelect('loteamentos',{filter:[['nome','eq',lotNome]]});
+  const loteId = loteamentos[0]?.id||null;
+  showLoading('Salvando lote...');
+  const row = {
+    loteamento_id: loteId,
+    quadra, numero: num,
+    area_m2:        parseFloat((document.getElementById('nlo-area')?.value||'0').replace(',','.'))||null,
+    testada_m:      parseFloat((document.getElementById('nlo-test')?.value||'0').replace(',','.'))||null,
+    profundidade_m: parseFloat((document.getElementById('nlo-prof')?.value||'0').replace(',','.'))||null,
+    valor_tabela:   parseFloat((document.getElementById('nlo-valor')?.value||'0').replace(/\./g,'').replace(',','.'))||0,
+    status:         document.getElementById('nlo-status')?.value||'Disponível',
+    observacoes:    document.getElementById('nlo-obs')?.value||null,
+  };
+  const saved = await dbInsert('lotes', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-lote');
+  carregarLotes(loteId);
+  showToast('Lote '+quadra+'-'+num+' cadastrado!');
+}
+
+// ── CONTRATOS ────────────────────────────────────────────────
+async function carregarContratos() {
+  showLoading('Carregando contratos...');
+  const rows = await dbSelect('contratos', {order:'numero', asc:false});
+  hideLoading();
+  const tbody = document.querySelector('#page-contratos table tbody');
+  if(!tbody) return;
+  const statusBadge = {'Ativo':'badge-green','Em atraso':'badge-red','Quitado':'badge-teal','Renegociado':'badge-amber','Distratado':'badge-gray'};
+  tbody.innerHTML = rows.map(r => `<tr class="clickable">
+    <td style="color:var(--accent);font-weight:600">#${r.numero}</td>
+    <td>${r.cliente_nome||'—'}</td>
+    <td>${r.lote_ref||'—'}</td>
+    <td>R$ ${(r.valor_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+    <td>${r.num_parcelas}x</td>
+    <td>${r.proximo_vencimento ? new Date(r.proximo_vencimento+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
+    <td><span class="badge ${statusBadge[r.status]||'badge-gray'}">${r.status}</span></td>
+  </tr>`).join('');
+}
+
+async function salvarContratoDB() {
+  const clienteId = document.getElementById('nct-cliente')?.value;
+  const loteRef   = document.getElementById('nct-lote')?.value;
+  const valor     = parseFloat((document.getElementById('nct-valor')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  if(!clienteId){showToast('Selecione o cliente.','error');return;}
+  if(!valor){showToast('Informe o valor.','error');return;}
+  const num = document.getElementById('nct-num')?.value || String(Math.floor(Math.random()*900+1100));
+  showLoading('Salvando contrato...');
+  // Buscar nome do cliente
+  const clientes = await dbSelect('clientes',{filter:[['id','eq',clienteId]],select:'nome'});
+  const clienteNome = clientes[0]?.nome||'';
+  const row = {
+    numero: num, cliente_id: clienteId, cliente_nome: clienteNome,
+    lote_ref: loteRef,
+    loteamento_id: null,
+    valor_total: valor,
+    valor_entrada: parseFloat((document.getElementById('nct-entrada')?.value||'0').replace(/\./g,'').replace(',','.'))||0,
+    num_parcelas: parseInt(document.getElementById('nct-parc')?.value)||48,
+    taxa_juros_am: parseFloat((document.getElementById('nct-taxa')?.value||'0').replace(',','.'))/100||0,
+    sistema_amort: document.getElementById('nct-sis')?.value||'Price',
+    data_assinatura: document.getElementById('nct-assina')?.value||null,
+    data_primeiro_venc: document.getElementById('nct-venc1')?.value||null,
+    status: 'Ativo',
+  };
+  const saved = await dbInsert('contratos', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-contrato');
+  carregarContratos();
+  showToast('Contrato #'+num+' cadastrado!');
+}
+
+// ── FINANCEIRO — LANÇAMENTOS ─────────────────────────────────
+async function carregarLancamentosDB() {
+  const de  = document.getElementById('fin-de')?.value||'';
+  const ate = document.getElementById('fin-ate')?.value||'';
+  let q = sb.from('lancamentos').select('*').order('data',{ascending:false});
+  if(de)  q = q.gte('data', de);
+  if(ate) q = q.lte('data', ate);
+  const {data,error} = await q;
+  if(error){console.error(error);return [];}
+  return data||[];
+}
+
+async function renderLancamentosDB() {
+  showLoading('Carregando lançamentos...');
+  const rows = await carregarLancamentosDB();
+  hideLoading();
+  const tbody = document.getElementById('fin-tbody');
+  const empty = document.getElementById('fin-empty');
+  const table = document.getElementById('fin-table');
+  if(!tbody) return;
+  const ft = document.getElementById('fin-filtro-tipo')?.value||'';
+  const fc = document.getElementById('fin-filtro-cat')?.value||'';
+  const filtered = rows.filter(l => (!ft||l.tipo===ft) && (!fc||l.categoria===fc));
+  if(!filtered.length){if(empty)empty.style.display='block';if(table)table.style.display='none';return;}
+  if(empty)empty.style.display='none'; if(table)table.style.display='';
+  tbody.innerHTML = filtered.map(l => {
+    const isRec = l.tipo==='RECEITA';
+    const d = new Date(l.data+'T12:00').toLocaleDateString('pt-BR');
+    const bc = isRec?'badge-teal':'badge-red';
+    const cor = isRec?'var(--success)':'var(--danger)';
+    const sinal = isRec?'+':'−';
+    let contaExib = '—';
+    if(l.conta_nome) contaExib = `<span style="font-size:11px;color:var(--text-secondary)">${l.conta_nome.split(' ')[0]}</span>`;
+    return `<tr>
+      <td style="color:var(--text-secondary);font-size:11px">${d}</td>
+      <td><span class="badge ${bc}">${isRec?'Receita':'Despesa'}</span></td>
+      <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.descricao}">${l.descricao}</td>
+      <td style="color:var(--text-secondary)">${catLabel[l.categoria]||l.categoria||'—'}</td>
+      <td style="font-size:11px;color:var(--text-secondary)">${l.loteamento_nome||'—'}</td>
+      <td>${contaExib}</td>
+      <td style="text-align:right;font-weight:600;color:${cor};white-space:nowrap">${sinal} ${fmt(l.valor||0)}</td>
+      <td style="text-align:center;white-space:nowrap">
+        <button class="btn btn-sm" style="font-size:11px;padding:3px 8px" onclick="excluirLancamentoDB('${l.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function addLancamentoDB() {
+  const desc  = document.getElementById('fin-desc')?.value?.trim();
+  const valor = parseFloat((document.getElementById('fin-valor')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const data  = document.getElementById('fin-data')?.value;
+  if(!desc){showToast('Preencha a descrição.','error');return;}
+  if(!valor){showToast('Informe o valor.','error');return;}
+  if(!data) {showToast('Informe a data.','error');return;}
+  const contaId = parseInt(document.getElementById('fin-conta-bancaria')?.value||'0')||null;
+  const cb = contaId ? contasBancarias.find(c=>c.id===contaId) : null;
+  showLoading('Salvando...');
+  const row = {
+    tipo:            finTipoAtual,
+    categoria:       document.getElementById('fin-cat')?.value||null,
+    descricao:       desc,
+    valor,           data,
+    loteamento_nome: document.getElementById('fin-loteamento')?.value||null,
+    conta_nome:      cb ? cb.banco+' '+cb.conta : null,
+  };
+  const saved = await dbInsert('lancamentos', row);
+  hideLoading();
+  if(!saved) return;
+  ['fin-desc','fin-valor','fin-data'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  renderLancamentosDB();
+  atualizarKpisFinanceiroDB();
+  showToast(finTipoAtual==='RECEITA'?'Receita registrada!':'Despesa registrada!');
+}
+
+async function excluirLancamentoDB(id) {
+  await dbDelete('lancamentos', id);
+  renderLancamentosDB();
+  atualizarKpisFinanceiroDB();
+  showToast('Lançamento removido.','error');
+}
+
+async function atualizarKpisFinanceiroDB() {
+  const hoje = new Date(); const mes=hoje.getMonth(), ano=hoje.getFullYear();
+  const {data} = await sb.from('lancamentos').select('tipo,valor,data');
+  if(!data) return;
+  const deMes = l => { const d=new Date(l.data+'T12:00'); return d.getMonth()===mes&&d.getFullYear()===ano; };
+  const rec  = data.filter(l=>l.tipo==='RECEITA'&&deMes(l)).reduce((s,l)=>s+(l.valor||0),0);
+  const desp = data.filter(l=>l.tipo==='DESPESA'&&deMes(l)).reduce((s,l)=>s+(l.valor||0),0);
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  sv('fin-kpi-rec',fmt(rec)); sv('fin-kpi-desp',fmt(desp));
+  sv('fin-kpi-res',fmt(Math.abs(rec-desp))); sv('fin-kpi-lanc',data.length);
+  const m=document.getElementById('fin-kpi-margem');
+  if(m){m.textContent=(rec-desp)>=0?'resultado positivo':'resultado negativo';m.className='kpi-delta '+((rec-desp)>=0?'up':'down');}
+}
+
+// ── CONTAS BANCÁRIAS ─────────────────────────────────────────
+async function carregarContasBancariasDB() {
+  showLoading('Carregando contas...');
+  const rows = await dbSelect('contas_bancarias',{filter:[['ativa','eq',true]]});
+  hideLoading();
+  // Atualiza o array local para que os outros módulos funcionem
+  contasBancarias = rows.map(r => ({
+    id: r.id, loteamento: r.loteamento||'', banco: r.banco||'',
+    agencia: r.agencia||'—', conta: r.conta||'—', tipo: r.tipo||'Corrente',
+    titular: r.titular||'—', doc: r.doc||'—', pix: r.pix||'—',
+    saldo: r.saldo||0, logoImg: r.logo_url||null, ativa: true,
+  }));
+  renderContasBancarias();
+  atualizarSelectContas();
+}
+
+async function salvarContaDB() {
+  const lot   = document.getElementById('nc3-loteamento')?.value;
+  const banco = document.getElementById('nc3-banco')?.value?.trim();
+  if(!lot)  {showToast('Selecione o loteamento.','error');return;}
+  if(!banco){showToast('Informe o nome do banco.','error');return;}
+  showLoading('Salvando conta...');
+  const row = {
+    loteamento: lot, banco,
+    agencia:  document.getElementById('nc3-agencia')?.value?.trim()||null,
+    conta:    document.getElementById('nc3-conta')?.value?.trim()||null,
+    tipo:     document.getElementById('nc3-tipo')?.value||'Corrente',
+    titular:  document.getElementById('nc3-titular')?.value?.trim()||null,
+    doc:      document.getElementById('nc3-doc')?.value?.trim()||null,
+    pix:      document.getElementById('nc3-pix')?.value?.trim()||null,
+    saldo:    parseFloat((document.getElementById('nc3-saldo')?.value||'0').replace(/\./g,'').replace(',','.'))||0,
+    logo_url: window._nc3LogoImg||null,
+    ativa:    true,
+  };
+  window._nc3LogoImg=null;
+  const saved = await dbInsert('contas_bancarias', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-conta');
+  ['nc3-banco','nc3-titular','nc3-doc','nc3-agencia','nc3-conta','nc3-pix','nc3-saldo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  carregarContasBancariasDB();
+  showToast('Conta '+banco+' cadastrada!');
+}
+
+// ── LEADS (CRM) ───────────────────────────────────────────────
+async function carregarLeadsDB() {
+  showLoading('Carregando leads...');
+  const rows = await dbSelect('leads',{order:'created_at',asc:false});
+  hideLoading();
+  leads = rows.map(r => ({
+    id: r.id, nome: r.nome, tel: r.telefone||'', email: r.email||'',
+    origem: r.origem||'', lote: r.loteamento||'', status: r.status||'Novo',
+    corretor: r.corretor||'',
+    dataVisita: r.data_visita||'', horaVisita: r.hora_visita||'',
+    etapas: {
+      visitou:     r.etapa_visitou||false,
+      proposta:    r.etapa_proposta||false,
+      contrato:    r.etapa_contrato||false,
+      entrada:     r.etapa_entrada||false,
+      parcela1:    r.etapa_parcela1||false,
+      financiado:  r.etapa_financiado||false,
+    },
+    obs: r.observacoes||'',
+  }));
+  renderLeads();
+}
+
+async function salvarLeadDB() {
+  const nome = document.getElementById('nl2-nome')?.value?.trim();
+  const tel  = document.getElementById('nl2-tel')?.value?.trim();
+  if(!nome||!tel){showToast('Informe nome e telefone.','error');return;}
+  showLoading('Salvando lead...');
+  const row = {
+    nome, telefone: tel,
+    email:       document.getElementById('nl2-email')?.value||null,
+    origem:      document.getElementById('nl2-origem')?.value||null,
+    loteamento:  document.getElementById('nl2-lot')?.value||null,
+    status:      document.getElementById('nl2-status')?.value||'Novo',
+    corretor:    document.getElementById('nl2-corretor')?.value||null,
+    data_visita: document.getElementById('nl2-data-visita')?.value||null,
+    hora_visita: document.getElementById('nl2-hora-visita')?.value||null,
+    observacoes: document.getElementById('nl2-obs')?.value||null,
+  };
+  const saved = await dbInsert('leads', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-lead');
+  ['nl2-nome','nl2-tel','nl2-email','nl2-obs','nl2-data-visita'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  carregarLeadsDB();
+  showToast('Lead "'+nome+'" adicionado!');
+}
+
+async function atualizarLeadDB(id, updates) {
+  await dbUpdate('leads', id, updates);
+}
+
+// ── CORRETORES ───────────────────────────────────────────────
+async function carregarCorretoresDB() {
+  showLoading('Carregando corretores...');
+  const rows = await dbSelect('corretores',{order:'nome',asc:true});
+  hideLoading();
+  corretores = rows.map(r => ({
+    id: r.id, nome: r.nome, creci: r.creci||'—',
+    cel: r.celular||'—', email: r.email||'—',
+    tipo: r.tipo||'Interno', comissao: r.comissao_pct||3,
+    status: r.status||'Ativo', loteamentos: [],
+    visitas: 0, vendas: 0, comissaoTotal: 0,
+  }));
+  renderCorretores();
+}
+
+async function salvarCorretorDB() {
+  const nome = document.getElementById('nc2-nome')?.value?.trim();
+  if(!nome){showToast('Informe o nome do corretor.','error');return;}
+  showLoading('Salvando corretor...');
+  const row = {
+    nome, creci: document.getElementById('nc2-creci')?.value||null,
+    cpf:  document.getElementById('nc2-cpf')?.value||null,
+    celular: document.getElementById('nc2-cel')?.value||null,
+    email:   document.getElementById('nc2-email')?.value||null,
+    tipo:    document.getElementById('nc2-tipo')?.value||'Interno',
+    comissao_pct: parseFloat((document.getElementById('nc2-comissao')?.value||'3').replace(',','.'))||3,
+    status:  document.getElementById('nc2-status')?.value||'Ativo',
+  };
+  const saved = await dbInsert('corretores', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-corretor');
+  carregarCorretoresDB();
+  showToast('Corretor "'+nome+'" cadastrado!');
+}
+
+// ── INVESTIDORES ─────────────────────────────────────────────
+async function carregarInvestidoresDB() {
+  showLoading('Carregando investidores...');
+  const [invRows, aportRows, dividRows] = await Promise.all([
+    dbSelect('investidores',{order:'nome',asc:true}),
+    dbSelect('aportes',{order:'data',asc:false}),
+    dbSelect('dividendos',{order:'data_pagamento',asc:false}),
+  ]);
+  hideLoading();
+  investidores = invRows.map(r=>({
+    id:r.id, nome:r.nome, doc:r.doc||'—', perfil:r.perfil||'Moderado',
+    tipo:r.tipo||'PF', status:r.status||'Ativo',
+    email:r.email||'—', tel:r.telefone||'—',
+    banco:r.banco||'—', pix:r.pix||'—',
+  }));
+  aportes = aportRows.map(r=>({
+    id:r.id, investidorId:r.investidor_id,
+    investidorNome: invRows.find(i=>i.id===r.investidor_id)?.nome||'',
+    data:r.data, loteamento:r.loteamento||'',
+    tipo:r.tipo||'Equity', valor:r.valor||0,
+    taxa:r.taxa_aa||0, prazo:r.prazo_meses||0,
+    vencimento:r.vencimento||'', status:r.status||'Ativo',
+  }));
+  dividendos = dividRows.map(r=>({
+    id:r.id, investidorId:r.investidor_id,
+    investidorNome: invRows.find(i=>i.id===r.investidor_id)?.nome||'',
+    data:r.data_pagamento, loteamento:r.loteamento||'',
+    tipo:r.tipo||'Rendimento',
+    bruto:r.bruto||0, ir:r.ir||0, liquido:r.liquido||0,
+    forma:r.forma||'PIX', comprov:r.comprovante||'',
+  }));
+  renderInvestidores();
+}
+
+async function salvarInvestidorDB() {
+  const nome = document.getElementById('ni-nome')?.value?.trim();
+  if(!nome){showToast('Informe o nome.','error');return;}
+  showLoading('Salvando investidor...');
+  const row = {
+    nome, doc: document.getElementById('ni-doc')?.value||null,
+    perfil: document.getElementById('ni-perfil')?.value||'Moderado',
+    tipo:   document.getElementById('ni-tipo')?.value||'PF',
+    status: document.getElementById('ni-status')?.value||'Ativo',
+    email:  document.getElementById('ni-email')?.value||null,
+    telefone: document.getElementById('ni-tel')?.value||null,
+    banco:  document.getElementById('ni-banco')?.value||null,
+    pix:    document.getElementById('ni-pix')?.value||null,
+  };
+  const saved = await dbInsert('investidores', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-investidor');
+  carregarInvestidoresDB();
+  showToast('Investidor "'+nome+'" cadastrado!');
+}
+
+async function salvarAporteDB() {
+  const invId = document.getElementById('ap-investidor')?.value;
+  const valor = parseFloat((document.getElementById('ap-valor')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const data  = document.getElementById('ap-data')?.value;
+  if(!invId){showToast('Selecione o investidor.','error');return;}
+  if(!valor){showToast('Informe o valor.','error');return;}
+  if(!data) {showToast('Informe a data.','error');return;}
+  showLoading('Salvando aporte...');
+  const row = {
+    investidor_id: invId,
+    loteamento:    document.getElementById('ap-loteamento')?.value||null,
+    tipo:          document.getElementById('ap-tipo')?.value||'Equity',
+    valor, data,
+    taxa_aa:     parseFloat((document.getElementById('ap-taxa')?.value||'0').replace(',','.'))||0,
+    prazo_meses: parseInt(document.getElementById('ap-prazo')?.value)||0,
+    vencimento:  document.getElementById('ap-vencimento')?.value||null,
+    status: 'Ativo',
+  };
+  const saved = await dbInsert('aportes', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-aporte');
+  carregarInvestidoresDB();
+  showToast('Aporte de '+fmt(valor)+' registrado!');
+}
+
+async function salvarDividendoDB() {
+  const invId = document.getElementById('dv-investidor')?.value;
+  const bruto = parseFloat((document.getElementById('dv-bruto')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const data  = document.getElementById('dv-data')?.value;
+  if(!invId){showToast('Selecione o investidor.','error');return;}
+  if(!bruto){showToast('Informe o valor.','error');return;}
+  if(!data) {showToast('Informe a data.','error');return;}
+  const ir = bruto*0.15;
+  showLoading('Registrando pagamento...');
+  const row = {
+    investidor_id: invId,
+    loteamento:    document.getElementById('dv-loteamento')?.value||null,
+    tipo:          document.getElementById('dv-tipo')?.value||'Rendimento',
+    bruto, ir, liquido: bruto-ir,
+    data_pagamento: data,
+    forma:         document.getElementById('dv-forma')?.value||'PIX',
+    comprovante:   document.getElementById('dv-comprov')?.value||null,
+  };
+  const saved = await dbInsert('dividendos', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-dividendo');
+  carregarInvestidoresDB();
+  showToast('Dividendo registrado!');
+}
+
+// ── OBRAS ────────────────────────────────────────────────────
+async function carregarObrasDB() {
+  showLoading('Carregando obras...');
+  const rows = await dbSelect('obras',{order:'nome',asc:true});
+  hideLoading();
+  const tbody = document.getElementById('tbody-obras');
+  if(!tbody) return;
+  const statusBadge = {'Planejada':'badge-gray','Iniciando':'badge-amber','Em andamento':'badge-blue','Paralisada':'badge-red','Concluída':'badge-teal'};
+  const fmtK = v => v>=1000000?'R$ '+(v/1000000).toFixed(1)+'M':v>=1000?'R$ '+(v/1000).toFixed(0)+'K':'R$ '+v.toLocaleString('pt-BR');
+  tbody.innerHTML = rows.map(r => {
+    const pct = r.percentual_fisico||0;
+    const cor = pct===100?'var(--success)':pct>=50?'var(--warning)':'var(--danger)';
+    return `<tr data-lot="${r.loteamento_nome||''}" data-status="${r.status||''}">
+      <td style="font-weight:500">${r.nome}</td>
+      <td style="color:var(--text-secondary);font-size:11px">${r.loteamento_nome||'—'}</td>
+      <td><span class="fase-badge">${r.fase||'—'}</span></td>
+      <td style="color:var(--text-secondary)">${r.tipo||'—'}</td>
+      <td>${r.fornecedor||'—'}</td>
+      <td>${fmtK(r.valor_previsto||0)}</td>
+      <td>${r.valor_realizado?fmtK(r.valor_realizado):'—'}</td>
+      <td style="color:${cor};font-weight:600">${pct}%</td>
+      <td><span class="badge ${statusBadge[r.status]||'badge-gray'}">${r.status||'—'}</span></td>
+      <td><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditarObraDB('${r.id}')">✏️</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function salvarObraDB() {
+  const lot  = document.getElementById('no-loteamento')?.value;
+  const nome = document.getElementById('no-nome')?.value?.trim();
+  if(!lot) {showToast('Selecione o loteamento.','error');return;}
+  if(!nome){showToast('Informe o nome da obra.','error');return;}
+  showLoading('Salvando obra...');
+  const row = {
+    loteamento_nome: lot,
+    fase:       document.getElementById('no-fase')?.value?.trim()||null,
+    nome,
+    tipo:       document.getElementById('no-tipo')?.value||null,
+    fornecedor: document.getElementById('no-fornecedor')?.value?.trim()||null,
+    status:     document.getElementById('no-status')?.value||'Em andamento',
+    valor_previsto:  parseFloat((document.getElementById('no-previsto')?.value||'0').replace(/\./g,'').replace(',','.'))||0,
+    valor_realizado: parseFloat((document.getElementById('no-realizado')?.value||'0').replace(/\./g,'').replace(',','.'))||0,
+    percentual_fisico: Math.min(100,Math.max(0,parseInt(document.getElementById('no-fisico')?.value)||0)),
+    data_inicio: document.getElementById('no-inicio')?.value||null,
+    data_fim:    document.getElementById('no-fim')?.value||null,
+    observacoes: document.getElementById('no-obs')?.value||null,
+  };
+  const saved = await dbInsert('obras', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-obra');
+  carregarObrasDB();
+  showToast('Obra "'+nome+'" cadastrada em '+lot+'!');
+}
+
+// ── PÁGINA INICIALIZAÇÃO ──────────────────────────────────────
+async function initPageDB(id) {
+  if(id==='loteamentos')  await carregarLoteamentos();
+  if(id==='clientes')     await carregarClientes();
+  if(id==='lotes')        await carregarLotes();
+  if(id==='contratos')    await carregarContratos();
+  if(id==='financeiro')   { initFinanceiro(); renderLancamentosDB(); atualizarKpisFinanceiroDB(); }
+  if(id==='contas-bancarias') await carregarContasBancariasDB();
+  if(id==='crm')          await carregarLeadsDB();
+  if(id==='corretores')   await carregarCorretoresDB();
+  if(id==='investidores') await carregarInvestidoresDB();
+  if(id==='obras')        await carregarObrasDB();
+}
+
+// Conectar botões de salvar aos métodos DB
+// (sobrescreve as funções síncronas do protótipo)
+window.addEventListener('DOMContentLoaded', () => {
+  // Remapear botões de salvar para versões DB
+  const remap = {
+    'salvarLoteamento':  salvarLoteamentoDB,
+    'salvarLote':        salvarLoteDB,
+    'salvarCliente':     salvarClienteDB,
+    'salvarContrato':    salvarContratoDB,
+    'addLancamento':     addLancamentoDB,
+    'renderLancamentos': renderLancamentosDB,
+    'salvarConta':       salvarContaDB,
+    'salvarLead':        salvarLeadDB,
+    'salvarCorretor':    salvarCorretorDB,
+    'salvarInvestidor':  salvarInvestidorDB,
+    'salvarAporte':      salvarAporteDB,
+    'salvarDividendo':   salvarDividendoDB,
+    'salvarObra':        salvarObraDB,
+  };
+  Object.entries(remap).forEach(([name, fn]) => { window[name] = fn; });
+
+  // Carregar página inicial
+  initPageDB('loteamentos');
+});
 
 applyTheme();
 </script>
