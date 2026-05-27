@@ -2866,10 +2866,11 @@ function renderConfiguracoes(){
       <table>
         <thead><tr>
           <th>Usuário</th>
-          <th style="width:110px">Perfil</th>
-          <th style="width:90px">Status</th>
-          <th style="width:130px">Último acesso</th>
-          <th style="width:100px">Ações</th>
+          <th style="width:120px">Perfil</th>
+          <th style="width:120px">Convite</th>
+          <th style="width:80px">Situação</th>
+          <th style="width:110px">Último acesso</th>
+          <th style="width:160px">Ações</th>
         </tr></thead>
         <tbody id="tbody-usuarios"></tbody>
       </table>
@@ -3107,12 +3108,66 @@ async function carregarUsuarios(){
   hideLoading();
   cfg.usuarios = rows.map(r=>({
     id:r.id, nome:r.nome||r.email, email:r.email,
-    perfil:r.perfil||'Leitura', status:r.ativo!==false?'Ativo':'Inativo',
+    perfil:r.perfil||'Leitura',
+    status_convite: r.status_convite||'—',
+    ativo: r.ativo===true,
     ultimo:r.ultimo_acesso?new Date(r.ultimo_acesso).toLocaleDateString('pt-BR'):'—'
   }));
   renderUsuarios();
   const cnt=document.querySelector('[data-cnt="usuarios"]');
   if(cnt) cnt.textContent=`${cfg.usuarios.length} usuário${cfg.usuarios.length!==1?'s':''} cadastrado${cfg.usuarios.length!==1?'s':''}`;
+}
+
+function renderUsuarios(){
+  const tbody=document.getElementById('tbody-usuarios');
+  if(!tbody)return;
+  const badgeCls={Admin:'badge-red','Gerente Comercial':'badge-blue',Financeiro:'badge-teal','Gestor de Obras':'badge-amber',Corretor:'badge-amber',Investidor:'badge-gray',Leitura:'badge-gray'};
+  const conviteBadge={
+    'Convite enviado':'<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#FFF3E0;color:#E65100;font-weight:600">⏳ Aguardando</span>',
+    'Aceito':         '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--success-bg);color:var(--success);font-weight:600">✓ Aceito</span>',
+    'Erro ao enviar': '<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--danger-bg);color:var(--danger);font-weight:600">✕ Erro</span>',
+    '—':              '<span style="font-size:11px;color:var(--text-tertiary)">—</span>',
+  };
+  tbody.innerHTML=cfg.usuarios.map(u=>`
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:9px">
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0">${(u.nome||'?').split(' ').slice(0,2).map(n=>n[0]||'').join('')}</div>
+          <div>
+            <div style="font-size:12px;font-weight:500;color:var(--text-primary)">${u.nome}</div>
+            <div style="font-size:11px;color:var(--text-secondary)">${u.email}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge ${badgeCls[u.perfil]||'badge-gray'}">${u.perfil}</span></td>
+      <td>${conviteBadge[u.status_convite]||conviteBadge['—']}</td>
+      <td style="color:var(--text-secondary);font-size:11px">${u.ativo?'<span style="color:var(--success);font-weight:600">Ativo</span>':'<span style="color:var(--text-tertiary)">Inativo</span>'}</td>
+      <td style="color:var(--text-secondary);font-size:11px">${u.ultimo}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm" onclick="editarPerfil('${u.id}')">Editar</button>
+          ${u.status_convite==='Convite enviado'?`<button class="btn btn-sm" style="font-size:10px" onclick="reenviarConvite('${u.id}','${u.email}')">↺ Reenviar</button>`:''}
+          <button class="btn btn-sm" style="color:var(--danger)" onclick="removerUsuario('${u.id}')">Remover</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── Reenviar convite ──────────────────────────────────────────
+async function reenviarConvite(id, email){
+  if(!confirm(`Reenviar convite para ${email}?`)) return;
+  showLoading('Reenviando...');
+  const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3c3JwbWdrdm9mZXphcG1vdWNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTc3MDMzMywiZXhwIjoyMDk1MzQ2MzMzfQ.87R2cpz7Kms3SOAU1EM3nH_8w1Kmof2S95AwnsACd40.placeholder';
+  const sbAdmin = supabase.createClient(SUPA_URL, SERVICE_KEY);
+  const {error} = await sbAdmin.auth.admin.inviteUserByEmail(email,{
+    options:{emailRedirectTo:window.location.origin}
+  });
+  await dbUpdate('usuarios', id, {status_convite: error?'Erro ao enviar':'Convite enviado'});
+  hideLoading();
+  if(error){ showToast('Erro: '+error.message,'error'); }
+  else { showToast(`✉️ Convite reenviado para ${email}!`); }
+  carregarUsuarios();
 }
 
 // ── Enviar convite real via Supabase Auth ─────────────────────
@@ -3122,36 +3177,38 @@ async function adicionarUsuario(){
   const perfil= document.getElementById('nu-perfil')?.value||'Leitura';
   if(!nome){showToast('Informe o nome do usuário.','error');return;}
   if(!email||!email.includes('@')){showToast('Informe um e-mail válido.','error');return;}
+
   showLoading('Enviando convite...');
 
-  // Tentar inviteUserByEmail (requer service_role) ou fallback para magic link
-  let userId = null;
-  const {data:inv, error:invErr} = await sb.auth.admin.inviteUserByEmail(email,{
-    data:{full_name:nome},
-    options:{emailRedirectTo:window.location.origin}
-  });
-  if(invErr){
-    // Fallback: magic link (funciona com anon key)
-    const {error:otpErr} = await sb.auth.signInWithOtp({
-      email,
-      options:{emailRedirectTo:window.location.origin, data:{full_name:nome}, shouldCreateUser:true}
-    });
-    if(otpErr){hideLoading();showToast('Erro ao enviar convite: '+otpErr.message,'error');return;}
-  } else {
-    userId = inv?.user?.id||null;
-  }
+  // inviteUserByEmail requer service_role key — criamos um cliente dedicado
+  const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3c3JwbWdrdm9mZXphcG1vdWNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTc3MDMzMywiZXhwIjoyMDk1MzQ2MzMzfQ.87R2cpz7Kms3SOAU1EM3nH_8w1Kmof2S95AwnsACd40.placeholder';
+  const sbAdmin = supabase.createClient(SUPA_URL, SERVICE_KEY);
 
-  // Registrar na tabela usuarios com perfil escolhido
-  const row = userId
-    ? {id:userId, email, nome, perfil, ativo:true}
-    : {email, nome, perfil, ativo:true};
-  await dbUpsert('usuarios', row, userId?'id':'email');
+  const {data:inv, error:invErr} = await sbAdmin.auth.admin.inviteUserByEmail(email, {
+    data: { full_name: nome },
+    options: { emailRedirectTo: window.location.origin }
+  });
+
+  // Registrar na tabela imediatamente com status "Convite enviado"
+  const userId = inv?.user?.id || null;
+  const row = {
+    ...(userId ? {id: userId} : {}),
+    email, nome, perfil,
+    status_convite: invErr ? 'Erro ao enviar' : 'Convite enviado',
+    ativo: false  // false até aceitar o convite
+  };
+  await dbUpsert('usuarios', row, userId ? 'id' : 'email');
 
   hideLoading();
-  document.getElementById('form-novo-usuario').style.display='none';
-  ['nu-nome','nu-email'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+
+  if(invErr){
+    showToast('Erro ao enviar convite: '+invErr.message+'\n\nVerifique a service_role key nas configurações.','error');
+  } else {
+    document.getElementById('form-novo-usuario').style.display='none';
+    ['nu-nome','nu-email'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    showToast(`✉️ Convite enviado para ${email}! O usuário receberá o e-mail para criar a senha.`);
+  }
   carregarUsuarios();
-  showToast(`✉️ Convite enviado para ${email}! O usuário receberá um e-mail para definir a senha.`);
 }
 
 // ── Alterar perfil ────────────────────────────────────────────
