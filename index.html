@@ -464,7 +464,7 @@ tbody tr.clickable{cursor:pointer}
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:4px">
           <button class="btn" onclick="openModal('modal-import-lotes')">⬆ Importar Excel/CSV</button>
-          <button class="btn btn-primary" onclick="openModal('modal-new-lote')">+ Novo lote</button>
+          <button class="btn btn-primary" onclick="abrirModalNovoLote()">+ Novo lote</button>
         </div>
         <div class="tabs">
           <div class="tab active" onclick="switchTab(this,'mapa')">Mapa visual</div>
@@ -2130,7 +2130,7 @@ tbody tr.clickable{cursor:pointer}
             <button class="modal-close" onclick="closeModal('modal-new-lote')">✕</button>
           </div>
           <div class="form-section">Localização</div>
-          <div class="form-row col3"><div class="field"><label>Loteamento</label><select id="nlo-lot"><option>Res. Verde Vale</option><option>Cond. Jardins do Sul</option><option>Res. Nova Esperança</option></select></div><div class="field"><label>Quadra</label><input id="nlo-quadra" placeholder="Ex: A"></div><div class="field"><label>Número do lote</label><input id="nlo-num" placeholder="Ex: 01"></div></div>
+          <div class="form-row col3"><div class="field"><label>Loteamento</label><select id="nlo-lot"><option value="">— Selecione —</option></select></div><div class="field"><label>Quadra</label><input id="nlo-quadra" placeholder="Ex: A"></div><div class="field"><label>Número do lote</label><input id="nlo-num" placeholder="Ex: 01"></div></div>
           <div class="form-section">Medidas e valores</div>
           <div class="form-row col3"><div class="field"><label>Área (m²)</label><input id="nlo-area" type="text" placeholder="0,00" oninput="maskMoney(this)"></div><div class="field"><label>Testada (m)</label><input id="nlo-test" type="text" placeholder="0,00"></div><div class="field"><label>Profundidade (m)</label><input id="nlo-prof" type="text" placeholder="0,00"></div></div>
           <div class="form-row col2"><div class="field"><label>Valor de tabela (R$)</label><input id="nlo-valor" type="text" placeholder="0,00" oninput="maskMoney(this)"></div><div class="field"><label>Status</label><select id="nlo-status"><option>Disponível</option><option>Reservado</option><option>Vendido</option><option>Quitado</option><option>Inadimplente</option><option>Distratado</option><option>Bloqueado</option></select></div></div>
@@ -3122,6 +3122,16 @@ function resetLogo(){
   applyTheme();
 }
 // ── Popular selects do modal de lead com dados reais ─────────
+async function abrirModalNovoLote(){
+  openModal('modal-new-lote');
+  const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+  const sel = document.getElementById('nlo-lot');
+  if(sel){
+    sel.innerHTML = '<option value="">— Selecione o loteamento —</option>' +
+      lots.map(r=>`<option value="${r.nome}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+  }
+}
+
 async function popularSelectsLead(){
   // Loteamentos reais do Supabase
   const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
