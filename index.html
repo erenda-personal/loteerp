@@ -1200,7 +1200,7 @@ tbody tr.clickable{cursor:pointer}
 
         <!-- Botão nova conta -->
         <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-          <button class="btn btn-primary" onclick="openModal('modal-new-conta')">+ Nova conta</button>
+          <button class="btn btn-primary" onclick="abrirModalNovaConta()">+ Nova conta</button>
         </div>
 
         <!-- Lista de contas -->
@@ -1722,9 +1722,6 @@ tbody tr.clickable{cursor:pointer}
             <div class="field"><label>Loteamento *</label>
               <select id="nc3-loteamento">
                 <option value="">Selecione o loteamento</option>
-                <option value="Verde Vale">Res. Verde Vale</option>
-                <option value="Jardins do Sul">Cond. Jardins do Sul</option>
-                <option value="Nova Esperança">Res. Nova Esperança</option>
               </select>
             </div>
             <div class="field"><label>Tipo de conta *</label>
@@ -3118,6 +3115,20 @@ function resetLogo(){
   applyTheme();
 }
 // ── Popular selects do modal de lead com dados reais ─────────
+async function abrirModalNovaConta(){
+  openModal('modal-new-conta');
+  const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+  const sel = document.getElementById('nc3-loteamento');
+  if(sel){
+    sel.innerHTML = '<option value="">Selecione o loteamento</option>' +
+      lots.map(r=>`<option value="${r.nome}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+  }
+  // Resetar preview de logo
+  const prev=document.getElementById('nc3-logo-preview');
+  if(prev){prev.innerHTML='Logo';prev.style.background='var(--bg-secondary)';}
+  window._nc3LogoImg=null;
+}
+
 async function abrirModalNovoAporte(){
   openModal('modal-new-aporte');
   // Loteamentos reais
