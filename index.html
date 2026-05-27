@@ -2842,7 +2842,7 @@ function renderConfiguracoes(){
   <!-- ABA USUÁRIOS -->
   <div id="cfg-usuarios" style="display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-size:12px;color:var(--text-secondary)">${cfg.usuarios.length} usuários cadastrados</div>
+      <div style="font-size:12px;color:var(--text-secondary)" data-cnt="usuarios">0 usuários cadastrados</div>
       <button class="btn btn-sm btn-primary" onclick="showNovoUsuario()">+ Convidar usuário</button>
     </div>
     <!-- Formulário novo usuário (oculto) -->
@@ -3004,6 +3004,7 @@ function switchCfgTab(el,tab){
     const el2=document.getElementById('cfg-'+id);
     if(el2)el2.style.display=id===tab?'block':'none';
   });
+  if(tab==='usuarios' && typeof carregarUsuarios==='function') carregarUsuarios();
 }
 
 function setAccent(color){
@@ -3099,36 +3100,83 @@ function showNovoUsuario(){
   if(f)f.style.display=f.style.display==='none'?'block':'none';
 }
 
-function adicionarUsuario(){
-  const nome=document.getElementById('nu-nome')?.value?.trim();
-  const email=document.getElementById('nu-email')?.value?.trim();
-  const perfil=document.getElementById('nu-perfil')?.value;
-  if(!nome||!email){showToast('Preencha nome e e-mail.','error');return;}
-  cfg.usuarios.push({id:Date.now(),nome,email,perfil,status:'Ativo',ultimo:'Agora'});
-  saveCfg();
-  document.getElementById('form-novo-usuario').style.display='none';
+// ── Carregar usuários do Supabase ─────────────────────────────
+async function carregarUsuarios(){
+  showLoading('Carregando usuários...');
+  const rows = await dbSelect('usuarios',{order:'nome',asc:true});
+  hideLoading();
+  cfg.usuarios = rows.map(r=>({
+    id:r.id, nome:r.nome||r.email, email:r.email,
+    perfil:r.perfil||'Leitura', status:r.ativo!==false?'Ativo':'Inativo',
+    ultimo:r.ultimo_acesso?new Date(r.ultimo_acesso).toLocaleDateString('pt-BR'):'—'
+  }));
   renderUsuarios();
-  showToast(`Convite enviado para ${email}!`);
+  const cnt=document.querySelector('[data-cnt="usuarios"]');
+  if(cnt) cnt.textContent=`${cfg.usuarios.length} usuário${cfg.usuarios.length!==1?'s':''} cadastrado${cfg.usuarios.length!==1?'s':''}`;
 }
 
-function editarPerfil(id){
+// ── Enviar convite real via Supabase Auth ─────────────────────
+async function adicionarUsuario(){
+  const nome  = document.getElementById('nu-nome')?.value?.trim();
+  const email = document.getElementById('nu-email')?.value?.trim();
+  const perfil= document.getElementById('nu-perfil')?.value||'Leitura';
+  if(!nome){showToast('Informe o nome do usuário.','error');return;}
+  if(!email||!email.includes('@')){showToast('Informe um e-mail válido.','error');return;}
+  showLoading('Enviando convite...');
+
+  // Tentar inviteUserByEmail (requer service_role) ou fallback para magic link
+  let userId = null;
+  const {data:inv, error:invErr} = await sb.auth.admin.inviteUserByEmail(email,{
+    data:{full_name:nome},
+    options:{emailRedirectTo:window.location.origin}
+  });
+  if(invErr){
+    // Fallback: magic link (funciona com anon key)
+    const {error:otpErr} = await sb.auth.signInWithOtp({
+      email,
+      options:{emailRedirectTo:window.location.origin, data:{full_name:nome}, shouldCreateUser:true}
+    });
+    if(otpErr){hideLoading();showToast('Erro ao enviar convite: '+otpErr.message,'error');return;}
+  } else {
+    userId = inv?.user?.id||null;
+  }
+
+  // Registrar na tabela usuarios com perfil escolhido
+  const row = userId
+    ? {id:userId, email, nome, perfil, ativo:true}
+    : {email, nome, perfil, ativo:true};
+  await dbUpsert('usuarios', row, userId?'id':'email');
+
+  hideLoading();
+  document.getElementById('form-novo-usuario').style.display='none';
+  ['nu-nome','nu-email'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  carregarUsuarios();
+  showToast(`✉️ Convite enviado para ${email}! O usuário receberá um e-mail para definir a senha.`);
+}
+
+// ── Alterar perfil ────────────────────────────────────────────
+async function editarPerfil(id){
   const u=cfg.usuarios.find(x=>x.id===id);
   if(!u)return;
   const novoPerfil=prompt(`Perfil atual de ${u.nome}: ${u.perfil}\n\nEscolha: ${PERFIS.join(', ')}`,u.perfil);
-  if(novoPerfil&&PERFIS.includes(novoPerfil)){
-    u.perfil=novoPerfil;
-    saveCfg();
-    renderUsuarios();
-    showToast(`Perfil de ${u.nome} atualizado para ${novoPerfil}.`);
-  }
+  if(!novoPerfil||!PERFIS.includes(novoPerfil))return;
+  showLoading('Atualizando perfil...');
+  await dbUpdate('usuarios',id,{perfil:novoPerfil});
+  hideLoading();
+  u.perfil=novoPerfil;
+  renderUsuarios();
+  showToast(`Perfil de ${u.nome} atualizado para ${novoPerfil}.`);
 }
 
-function removerUsuario(id){
+// ── Remover usuário ───────────────────────────────────────────
+async function removerUsuario(id){
   const u=cfg.usuarios.find(x=>x.id===id);
   if(!u)return;
-  if(!confirm(`Remover ${u.nome} do sistema?`))return;
+  if(!confirm(`Remover ${u.nome} do sistema?\n\nO usuário perderá o acesso imediatamente.`))return;
+  showLoading('Removendo usuário...');
+  await dbUpdate('usuarios',id,{ativo:false});
+  hideLoading();
   cfg.usuarios=cfg.usuarios.filter(x=>x.id!==id);
-  saveCfg();
   renderUsuarios();
   showToast(`${u.nome} removido.`,'error');
 }
