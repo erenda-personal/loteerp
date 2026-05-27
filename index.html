@@ -3158,7 +3158,7 @@ function renderUsuarios(){
 async function reenviarConvite(id, email){
   if(!confirm(`Reenviar convite para ${email}?`)) return;
   showLoading('Reenviando...');
-  const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3c3JwbWdrdm9mZXphcG1vdWNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTc3MDMzMywiZXhwIjoyMDk1MzQ2MzMzfQ.87R2cpz7Kms3SOAU1EM3nH_8w1Kmof2S95AwnsACd40.placeholder';
+  const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3c3JwbWdrdm9mZXphcG1vdWNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTc3MDMzMywiZXhwIjoyMDk1MzQ2MzMzfQ.87R2cpz7Kms3SOAU1EM3nH_8w1Kmof2S95AwnsACd40';
   const sbAdmin = supabase.createClient(SUPA_URL, SERVICE_KEY);
   const {error} = await sbAdmin.auth.admin.inviteUserByEmail(email,{
     options:{emailRedirectTo:window.location.origin}
@@ -3181,7 +3181,7 @@ async function adicionarUsuario(){
   showLoading('Enviando convite...');
 
   // inviteUserByEmail requer service_role key — criamos um cliente dedicado
-  const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3c3JwbWdrdm9mZXphcG1vdWNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTc3MDMzMywiZXhwIjoyMDk1MzQ2MzMzfQ.87R2cpz7Kms3SOAU1EM3nH_8w1Kmof2S95AwnsACd40.placeholder';
+  const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3c3JwbWdrdm9mZXphcG1vdWNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTc3MDMzMywiZXhwIjoyMDk1MzQ2MzMzfQ.87R2cpz7Kms3SOAU1EM3nH_8w1Kmof2S95AwnsACd40';
   const sbAdmin = supabase.createClient(SUPA_URL, SERVICE_KEY);
 
   const {data:inv, error:invErr} = await sbAdmin.auth.admin.inviteUserByEmail(email, {
