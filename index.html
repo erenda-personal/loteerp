@@ -1109,7 +1109,7 @@ tbody tr.clickable{cursor:pointer}
               <option>Jardins do Sul · Fase 2</option>
               <option>Nova Esperança · Fase 3</option>
             </select>
-            <button class="btn btn-primary" onclick="openModal('modal-new-aporte')">+ Registrar aporte</button>
+            <button class="btn btn-primary" onclick="abrirModalNovoAporte()">+ Registrar aporte</button>
           </div>
           <div class="card">
             <table style="table-layout:fixed">
@@ -1449,7 +1449,7 @@ tbody tr.clickable{cursor:pointer}
 
       <!-- Modal: Registrar Aporte -->
       <div class="modal-overlay" id="modal-new-aporte" onclick="if(event.target===this)closeModal('modal-new-aporte')">
-        <div class="modal-box" style="width:500px">
+        <div class="modal-box" style="width:620px">
           <div class="modal-header">
             <span class="modal-title">Registrar aporte</span>
             <button class="modal-close" onclick="closeModal('modal-new-aporte')">✕</button>
@@ -1462,11 +1462,7 @@ tbody tr.clickable{cursor:pointer}
           </div>
           <div class="form-row col2">
             <div class="field"><label>Loteamento / Fase *</label>
-              <select id="ap-loteamento">
-                <option value="Verde Vale · Fase 1">Verde Vale · Fase 1</option>
-                <option value="Jardins do Sul · Fase 2">Jardins do Sul · Fase 2</option>
-                <option value="Nova Esperança · Fase 3">Nova Esperança · Fase 3</option>
-              </select>
+              <select id="ap-loteamento"><option value="">— Selecione —</option></select>
             </div>
             <div class="field"><label>Tipo de instrumento</label>
               <select id="ap-tipo">
@@ -1496,16 +1492,16 @@ tbody tr.clickable{cursor:pointer}
               <div><div style="font-size:10px;color:var(--text-secondary)">MOIC estimado</div><div style="font-weight:600;font-size:13px;color:var(--accent)" id="ap-prev-moic">—</div></div>
             </div>
           </div>
-          <div class="form-row col2">
-            <div class="field"><label>Conta bancária do aporte</label>
-              <select id="ap-conta">
-                <option value="">Selecione a conta</option>
-                <option value="Res. Verde Vale — Itaú 0001 / 12345-6">Verde Vale — Itaú Ag.0001 / CC 12345-6</option>
-                <option value="Cond. Jardins do Sul — Bradesco 0042 / 98765-4">Jardins do Sul — Bradesco Ag.0042 / CC 98765-4</option>
-                <option value="Res. Nova Esperança — Caixa 0125 / 11223-3">Nova Esperança — Caixa Ag.0125 / CC 11223-3</option>
-              </select>
+          <div class="form-section">Dados bancários do aporte</div>
+          <div class="form-row">
+            <div class="field"><label>Conta bancária receptora</label>
+              <select id="ap-conta"><option value="">— Selecione a conta —</option></select>
             </div>
-            <div class="field"><label>Nº do documento (TED/PIX)</label><input id="ap-docbancario" placeholder="Protocolo ou autenticação"></div>
+          </div>
+          <div class="form-row">
+            <div class="field"><label>Nº do documento (TED / PIX / Comprovante)</label>
+              <input id="ap-docbancario" placeholder="Protocolo, autenticação ou chave da transação">
+            </div>
           </div>
           <div class="form-row"><div class="field"><label>Observações</label><input id="ap-obs" placeholder="Condições especiais, cláusulas..."></div></div>
           <div class="modal-footer">
@@ -3122,6 +3118,24 @@ function resetLogo(){
   applyTheme();
 }
 // ── Popular selects do modal de lead com dados reais ─────────
+async function abrirModalNovoAporte(){
+  openModal('modal-new-aporte');
+  // Loteamentos reais
+  const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+  const selLot = document.getElementById('ap-loteamento');
+  if(selLot){
+    selLot.innerHTML = '<option value="">— Selecione —</option>' +
+      lots.map(r=>`<option value="${r.nome}${r.fase?' · '+r.fase:''}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+  }
+  // Contas bancárias reais
+  const contas = await dbSelect('contas_bancarias',{filter:[['ativa','eq',true]],order:'banco',asc:true});
+  const selConta = document.getElementById('ap-conta');
+  if(selConta){
+    selConta.innerHTML = '<option value="">— Selecione a conta —</option>' +
+      contas.map(c=>`<option value="${c.id}">${c.loteamento} — ${c.banco} Ag.${c.agencia||'—'} / ${c.tipo||'CC'} ${c.conta||'—'}</option>`).join('');
+  }
+}
+
 async function abrirModalNovoLote(){
   openModal('modal-new-lote');
   const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
