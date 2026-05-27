@@ -932,7 +932,7 @@ tbody tr.clickable{cursor:pointer}
               <div class="tab" id="crm-tab-kanban" onclick="setCrmVisao('kanban')">Kanban</div>
               <div class="tab" id="crm-tab-calendario" onclick="setCrmVisao('calendario')">📅 Calendário</div>
             </div>
-            <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-lead')">+ Novo lead</button>
+            <button class="btn btn-primary btn-sm" onclick="abrirModalNovoLead()">+ Novo lead</button>
           </div>
         </div>
 
@@ -2019,18 +2019,26 @@ tbody tr.clickable{cursor:pointer}
 
       <!-- Modal: Novo Lead -->
       <div class="modal-overlay" id="modal-new-lead" onclick="if(event.target===this)closeModal('modal-new-lead')">
-        <div class="modal-box" style="width:500px">
+        <div class="modal-box" style="width:580px">
           <div class="modal-header">
             <span class="modal-title">Novo lead</span>
             <button class="modal-close" onclick="closeModal('modal-new-lead')">✕</button>
           </div>
           <div class="form-section">Dados do lead</div>
           <div class="form-row col2"><div class="field"><label>Nome completo *</label><input id="nl2-nome" placeholder="Nome do interessado"></div><div class="field"><label>Telefone / WhatsApp *</label><input id="nl2-tel" placeholder="(11) 9 9999-0000"></div></div>
-          <div class="form-row col3"><div class="field"><label>E-mail</label><input id="nl2-email" type="email" placeholder="email@exemplo.com"></div><div class="field"><label>Origem</label><select id="nl2-origem"><option>Meta Ads</option><option>Google Ads</option><option>Indicação</option><option>Stand</option><option>WhatsApp</option><option>Site</option><option>Outros</option></select></div><div class="field"><label>Loteamento de interesse</label><select id="nl2-lot"><option>Verde Vale</option><option>Jardins do Sul</option><option>Nova Esperança</option></select></div></div>
+          <div class="form-row col2"><div class="field"><label>E-mail</label><input id="nl2-email" type="email" placeholder="email@exemplo.com"></div><div class="field"><label>Origem</label><select id="nl2-origem"><option>Meta Ads</option><option>Google Ads</option><option>Indicação</option><option>Stand</option><option>WhatsApp</option><option>Site</option><option>Outros</option></select></div></div>
+          <div class="form-row">
+            <div class="field">
+              <label>Loteamento de interesse</label>
+              <select id="nl2-lot">
+                <option value="">— Selecione o loteamento —</option>
+              </select>
+            </div>
+          </div>
           <div class="form-section">Status e etapas</div>
           <div class="form-row col2">
             <div class="field"><label>Status inicial</label><select id="nl2-status"><option>Novo</option><option>Contato feito</option><option>Visita realizada</option><option>Proposta enviada</option><option>Contrato assinado</option><option>Entrada paga</option><option>Perdido</option></select></div>
-            <div class="field"><label>Corretor responsável</label><select id="nl2-corretor"><option>Paulo Corretor</option><option>Ana Vendas</option><option>Marcos Silva</option></select></div>
+            <div class="field"><label>Corretor responsável</label><select id="nl2-corretor"><option value="">— Nenhum —</option></select></div>
           </div>
           <div class="form-row"><div class="field"><label>Observações</label><input id="nl2-obs" placeholder="Interesse específico, preferência de lote..."></div></div>
           <div class="form-section">Agendamento de visita</div>
@@ -3113,6 +3121,29 @@ function resetLogo(){
   }
   applyTheme();
 }
+// ── Popular selects do modal de lead com dados reais ─────────
+async function popularSelectsLead(){
+  // Loteamentos reais do Supabase
+  const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+  const selLot = document.getElementById('nl2-lot');
+  if(selLot){
+    selLot.innerHTML = '<option value="">— Selecione o loteamento —</option>' +
+      lots.map(r=>`<option value="${r.nome}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+  }
+  // Corretores reais
+  const corts = await dbSelect('corretores',{filter:[['status','eq','Ativo']],order:'nome',asc:true});
+  const selCor = document.getElementById('nl2-corretor');
+  if(selCor){
+    selCor.innerHTML = '<option value="">— Nenhum —</option>' +
+      corts.map(r=>`<option value="${r.nome}">${r.nome}</option>`).join('');
+  }
+}
+
+function abrirModalNovoLead(){
+  openModal('modal-new-lead');
+  popularSelectsLead();
+}
+
 function showNovoUsuario(){
   const f=document.getElementById('form-novo-usuario');
   if(f)f.style.display=f.style.display==='none'?'block':'none';
