@@ -378,10 +378,10 @@ tbody tr.clickable{cursor:pointer}
       <!-- ===== DASHBOARD ===== -->
       <div class="page active" id="page-dashboard">
         <div class="kpi-grid">
-          <div class="kpi"><div class="kpi-label">VGV total</div><div class="kpi-value" id="dash-vgv-total">R$ 42,8M</div><div class="kpi-delta up" id="dash-vgv-total-delta">↑ 8,3% vs ano anterior</div></div>
+          <div class="kpi"><div class="kpi-label">VGV total</div><div class="kpi-value" id="dash-vgv-total">—</div><div class="kpi-delta up" id="dash-vgv-total-delta">—</div></div>
           <div class="kpi"><div class="kpi-label">VGV vendido</div><div class="kpi-value">R$ 31,2M</div><div class="kpi-delta up">73% do portfólio</div></div>
           <div class="kpi"><div class="kpi-label">Recebimentos maio</div><div class="kpi-value">R$ 487K</div><div class="kpi-delta up">↑ 12% vs abril</div></div>
-          <div class="kpi"><div class="kpi-label">Inadimplência</div><div class="kpi-value" id="dash-inad">4,2%</div><div class="kpi-delta down" id="dash-inad-delta">↓ 0,8pp vs março</div></div>
+          <div class="kpi"><div class="kpi-label">Inadimplência</div><div class="kpi-value" id="dash-inad">—</div><div class="kpi-delta down" id="dash-inad-delta">—</div></div>
         </div>
         <div class="grid2">
           <div class="card">
@@ -414,15 +414,15 @@ tbody tr.clickable{cursor:pointer}
                 <circle cx="55" cy="55" r="42" fill="none" stroke="#EF9F27" stroke-width="20" stroke-dasharray="26 154" stroke-dashoffset="-197" stroke-linecap="butt"/>
                 <circle cx="55" cy="55" r="42" fill="none" stroke="#E24B4A" stroke-width="20" stroke-dasharray="23 154" stroke-dashoffset="-223" stroke-linecap="butt"/>
                 <circle cx="55" cy="55" r="42" fill="none" stroke="#B4B2A9" stroke-width="20" stroke-dasharray="8 154" stroke-dashoffset="-246" stroke-linecap="butt"/>
-                <text x="55" y="50" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a18" id="dash-donut-total">240</text>
+                <text x="55" y="50" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a18" id="dash-donut-total">0</text>
                 <text x="55" y="64" text-anchor="middle" font-size="10" fill="#888780">lotes</text>
               </svg>
               <div class="legend-list" id="dash-lotes-legend">
-                <div class="legend-item"><div class="legend-dot" style="background:#97C459"></div>Disponível<span class="legend-val" id="dl-disp">107</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#378ADD"></div>Vendido<span class="legend-val" id="dl-vend">85</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div>Reservado<span class="legend-val" id="dl-res">25</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div>Inadimplente<span class="legend-val" id="dl-inad">18</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#B4B2A9"></div>Distratado<span class="legend-val" id="dl-dist">5</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#97C459"></div>Disponível<span class="legend-val" id="dl-disp">0</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#378ADD"></div>Vendido<span class="legend-val" id="dl-vend">0</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div>Reservado<span class="legend-val" id="dl-res">0</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div>Inadimplente<span class="legend-val" id="dl-inad">0</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#B4B2A9"></div>Distratado<span class="legend-val" id="dl-dist">0</span></div>
               </div>
             </div>
           </div>
@@ -459,11 +459,7 @@ tbody tr.clickable{cursor:pointer}
         <div class="card">
           <table>
             <thead><tr><th style="width:180px">Nome</th><th style="width:80px">Fase</th><th>Cidade / UF</th><th>Lotes</th><th>VGV</th><th>Lançamento</th><th style="width:90px">Status</th><th style="width:120px">Ações</th></tr></thead>
-            <tbody id="tbody-loteamentos">
-              <tr class="clickable" onclick="showPage('lotes',null)"><td style="font-weight:600;color:var(--accent)">Res. Verde Vale</td><td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">Fase 1</span></td><td>Sorocaba / SP</td><td>240 lotes</td><td>R$ 20,4M</td><td>Mar/2024</td><td><span class="badge badge-green">Ativo</span></td><td style="white-space:nowrap"><button class="btn btn-sm" style="font-size:10px" onclick="event.stopPropagation();editarFaseLoteamento(this,'Res. Verde Vale')">✏️</button> <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger)" onclick="event.stopPropagation();excluirLoteamento(this,'Res. Verde Vale')">✕</button></td></tr>
-              <tr class="clickable"><td style="font-weight:600;color:var(--accent)">Cond. Jardins do Sul</td><td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">Fase 2</span></td><td>Campinas / SP</td><td>180 lotes</td><td>R$ 16,2M</td><td>Jun/2025</td><td><span class="badge badge-blue">Em obras</span></td><td style="white-space:nowrap"><button class="btn btn-sm" style="font-size:10px" onclick="event.stopPropagation();editarFaseLoteamento(this,'Cond. Jardins do Sul')">✏️</button> <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger)" onclick="event.stopPropagation();excluirLoteamento(this,'Cond. Jardins do Sul')">✕</button></td></tr>
-              <tr class="clickable"><td style="font-weight:600;color:var(--accent)">Res. Nova Esperança</td><td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">Fase 3</span></td><td>Jundiaí / SP</td><td>320 lotes</td><td>R$ 28,0M</td><td>Jan/2026</td><td><span class="badge badge-amber">Planejado</span></td><td style="white-space:nowrap"><button class="btn btn-sm" style="font-size:10px" onclick="event.stopPropagation();editarFaseLoteamento(this,'Res. Nova Esperança')">✏️</button> <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger)" onclick="event.stopPropagation();excluirLoteamento(this,'Res. Nova Esperança')">✕</button></td></tr>
-            </tbody>
+            <tbody id="tbody-loteamentos"></tbody>
           </table>
         </div>
         <div style="font-size:11px;color:var(--text-secondary)">Clique em um loteamento para ver o mapa de lotes.</div>
@@ -483,12 +479,12 @@ tbody tr.clickable{cursor:pointer}
         </div>
         <!-- KPIs em linha única compacta -->
         <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" id="lotes-kpis">
-          <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#EAF3DE;border:1.5px solid #97C459"></div><div><div class="lote-kpi-label">Disponíveis</div><div class="lote-kpi-val" style="color:var(--success)" id="kpi-disp">107</div></div></div>
-          <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#FAEEDA;border:1.5px solid #EF9F27"></div><div><div class="lote-kpi-label">Reservados</div><div class="lote-kpi-val" style="color:var(--warning)" id="kpi-res">25</div></div></div>
-          <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#E6F1FB;border:1.5px solid #378ADD"></div><div><div class="lote-kpi-label">Vendidos</div><div class="lote-kpi-val" style="color:var(--accent)" id="kpi-vend">85</div></div></div>
-          <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#EDE9FE;border:1.5px solid #C4B5FD"></div><div><div class="lote-kpi-label">Quitados</div><div class="lote-kpi-val" style="color:#5B21B6" id="kpi-quit">14</div></div></div>
-          <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#FCEBEB;border:1.5px solid #E24B4A"></div><div><div class="lote-kpi-label">Inadimplentes</div><div class="lote-kpi-val" style="color:var(--danger)" id="kpi-inad">18</div></div></div>
-          <div class="lote-kpi-box" style="background:var(--bg-secondary)"><div class="lote-kpi-dot" style="background:#f1f0ec;border:1.5px solid #B4B2A9"></div><div><div class="lote-kpi-label">Total</div><div class="lote-kpi-val" id="kpi-total">249</div></div></div>
+          <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#EAF3DE;border:1.5px solid #97C459"></div><div><div class="lote-kpi-label">Disponíveis</div><div class="lote-kpi-val" style="color:var(--success)" id="kpi-disp">0</div></div></div>
+          <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#FAEEDA;border:1.5px solid #EF9F27"></div><div><div class="lote-kpi-label">Reservados</div><div class="lote-kpi-val" style="color:var(--warning)" id="kpi-res">0</div></div></div>
+          <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#E6F1FB;border:1.5px solid #378ADD"></div><div><div class="lote-kpi-label">Vendidos</div><div class="lote-kpi-val" style="color:var(--accent)" id="kpi-vend">0</div></div></div>
+          <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#EDE9FE;border:1.5px solid #C4B5FD"></div><div><div class="lote-kpi-label">Quitados</div><div class="lote-kpi-val" style="color:#5B21B6" id="kpi-quit">0</div></div></div>
+          <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#FCEBEB;border:1.5px solid #E24B4A"></div><div><div class="lote-kpi-label">Inadimplentes</div><div class="lote-kpi-val" style="color:var(--danger)" id="kpi-inad">0</div></div></div>
+          <div class="lote-kpi-box" style="background:var(--bg-secondary)"><div class="lote-kpi-dot" style="background:#f1f0ec;border:1.5px solid #B4B2A9"></div><div><div class="lote-kpi-label">Total</div><div class="lote-kpi-val" id="kpi-total">0</div></div></div>
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:4px">
           <button class="btn" onclick="openModal('modal-import-lotes')">⬆ Importar Excel/CSV</button>
@@ -550,19 +546,7 @@ tbody tr.clickable{cursor:pointer}
           <div class="card">
             <table>
               <thead><tr><th style="width:60px">Lote</th><th style="width:80px">Quadra</th><th>Área</th><th>Valor tabela</th><th>Status</th><th>Cliente</th></tr></thead>
-              <tbody id="tbody-lotes-lista">
-                <tr data-status="Disponível" data-quadra="A"><td>A-01</td><td>A</td><td>300 m²</td><td>R$ 85.000</td><td><span class="badge badge-green">Disponível</span></td><td>—</td></tr>
-                <tr data-status="Vendido" data-quadra="A"><td>A-02</td><td>A</td><td>320 m²</td><td>R$ 92.000</td><td><span class="badge badge-blue">Vendido</span></td><td>Maria Souza</td></tr>
-                <tr data-status="Reservado" data-quadra="A"><td>A-03</td><td>A</td><td>300 m²</td><td>R$ 85.000</td><td><span class="badge badge-amber">Reservado</span></td><td>Carlos Lima</td></tr>
-                <tr data-status="Inadimplente" data-quadra="A"><td>A-04</td><td>A</td><td>350 m²</td><td>R$ 98.000</td><td><span class="badge badge-red">Inadimplente</span></td><td>Pedro Alves</td></tr>
-                <tr data-status="Quitado" data-quadra="A"><td>A-05</td><td>A</td><td>310 m²</td><td>R$ 88.000</td><td><span class="badge" style="background:#EDE9FE;color:#5B21B6">Quitado</span></td><td>Lucia Fernandes</td></tr>
-                <tr data-status="Disponível" data-quadra="B"><td>B-01</td><td>B</td><td>280 m²</td><td>R$ 78.000</td><td><span class="badge badge-green">Disponível</span></td><td>—</td></tr>
-                <tr data-status="Vendido" data-quadra="B"><td>B-02</td><td>B</td><td>300 m²</td><td>R$ 85.000</td><td><span class="badge badge-blue">Vendido</span></td><td>Ana Oliveira</td></tr>
-                <tr data-status="Distratado" data-quadra="B"><td>B-03</td><td>B</td><td>310 m²</td><td>R$ 88.000</td><td><span class="badge badge-gray">Distratado</span></td><td>—</td></tr>
-                <tr data-status="Quitado" data-quadra="B"><td>B-04</td><td>B</td><td>295 m²</td><td>R$ 83.000</td><td><span class="badge" style="background:#EDE9FE;color:#5B21B6">Quitado</span></td><td>Marcos Duarte</td></tr>
-                <tr data-status="Disponível" data-quadra="C"><td>C-01</td><td>C</td><td>295 m²</td><td>R$ 82.000</td><td><span class="badge badge-green">Disponível</span></td><td>—</td></tr>
-                <tr data-status="Vendido" data-quadra="C"><td>C-02</td><td>C</td><td>310 m²</td><td>R$ 86.000</td><td><span class="badge badge-blue">Vendido</span></td><td>Roberto Nunes</td></tr>
-              </tbody>
+              <tbody id="tbody-lotes-lista"></tbody>
             </table>
           </div>
         </div>
@@ -871,21 +855,42 @@ tbody tr.clickable{cursor:pointer}
       <!-- ===== INADIMPLÊNCIA ===== -->
       <div class="page" id="page-inadimplencia">
         <div class="kpi-grid">
-          <div class="kpi"><div class="kpi-label">Contratos em atraso</div><div class="kpi-value" style="color:var(--danger)">12</div><div class="kpi-delta down">4,2% da carteira</div></div>
-          <div class="kpi"><div class="kpi-label">Valor total em aberto</div><div class="kpi-value">R$ 48K</div><div class="kpi-delta down">parcelas vencidas</div></div>
-          <div class="kpi"><div class="kpi-label">Atraso médio</div><div class="kpi-value">38 dias</div><div class="kpi-delta warn">risco médio</div></div>
-          <div class="kpi"><div class="kpi-label">Em renegociação</div><div class="kpi-value">3</div><div class="kpi-delta up">em andamento</div></div>
+          <div class="kpi"><div class="kpi-label">Contratos em atraso</div><div class="kpi-value" style="color:var(--danger)" id="inad-kpi-total">0</div><div class="kpi-delta down" id="inad-kpi-pct">—</div></div>
+          <div class="kpi"><div class="kpi-label">Valor total em aberto</div><div class="kpi-value" id="inad-kpi-valor">R$ 0</div><div class="kpi-delta down">parcelas vencidas</div></div>
+          <div class="kpi"><div class="kpi-label">Atraso médio</div><div class="kpi-value" id="inad-kpi-dias">0 dias</div><div class="kpi-delta warn" id="inad-kpi-risco">—</div></div>
+          <div class="kpi"><div class="kpi-label">Em renegociação</div><div class="kpi-value" id="inad-kpi-reneg">0</div><div class="kpi-delta up">em andamento</div></div>
         </div>
         <div class="card">
-          <div class="card-header"><span class="section-title">Contratos inadimplentes</span></div>
-          <table>
-            <thead><tr><th style="width:70px">Contrato</th><th>Cliente</th><th>Lote</th><th>Parcelas vencidas</th><th>Valor em aberto</th><th style="width:90px">Dias atraso</th><th style="width:100px">Ação</th></tr></thead>
-            <tbody id="inad-tbody">
-              <tr id="inad-1039"><td style="color:var(--accent);font-weight:600">#1039</td><td>Pedro Alves</td><td>A-04</td><td>2 parcelas</td><td>R$ 6.040</td><td><span style="color:var(--danger);font-weight:600">45 dias</span></td><td><button class="btn btn-sm">Renegociar</button></td></tr>
-              <tr id="inad-0987"><td style="color:var(--accent);font-weight:600">#0987</td><td>João Batista</td><td>C-11</td><td>1 parcela</td><td>R$ 1.910</td><td><span style="color:var(--warning);font-weight:600">5 dias</span></td><td><button class="btn btn-sm">Contatar</button></td></tr>
-              <tr id="inad-0965"><td style="color:var(--accent);font-weight:600">#0965</td><td>Roberto Nunes</td><td>D-02</td><td>3 parcelas</td><td>R$ 8.400</td><td><span style="color:var(--danger);font-weight:600">62 dias</span></td><td><button class="btn btn-sm" style="color:var(--danger)">Distrato</button></td></tr>
-              <tr id="inad-0944"><td style="color:var(--accent);font-weight:600">#0944</td><td>Sandra Lima</td><td>B-19</td><td>1 parcela</td><td>R$ 2.840</td><td><span style="color:var(--warning);font-weight:600">12 dias</span></td><td><button class="btn btn-sm">Contatar</button></td></tr>
-            </tbody>
+          <div class="card-header">
+            <span class="section-title">Contratos inadimplentes</span>
+            <div style="display:flex;gap:8px;align-items:center">
+              <select class="filter-select" id="inad-filtro-lot" onchange="renderInadimplencia()">
+                <option value="">Todos os loteamentos</option>
+                <option value="Verde Vale">Verde Vale</option>
+                <option value="Jardins do Sul">Jardins do Sul</option>
+                <option value="Nova Esperança">Nova Esperança</option>
+              </select>
+              <select class="filter-select" id="inad-filtro-risco" onchange="renderInadimplencia()">
+                <option value="">Todos os riscos</option>
+                <option value="baixo">Baixo (1–15 dias)</option>
+                <option value="medio">Médio (16–60 dias)</option>
+                <option value="alto">Alto (60+ dias)</option>
+              </select>
+            </div>
+          </div>
+          <div id="inad-empty" style="padding:28px;text-align:center;color:var(--text-secondary);font-size:13px;display:none">Nenhum contrato inadimplente encontrado.</div>
+          <table id="inad-table">
+            <thead><tr>
+              <th style="width:70px">Contrato</th>
+              <th>Cliente</th>
+              <th style="width:100px">Loteamento</th>
+              <th style="width:80px">Lote</th>
+              <th style="width:100px">Parcelas venc.</th>
+              <th style="width:110px">Valor em aberto</th>
+              <th style="width:90px">Dias atraso</th>
+              <th style="width:100px">Ação</th>
+            </tr></thead>
+            <tbody id="inad-tbody"></tbody>
           </table>
         </div>
       </div>
@@ -893,9 +898,9 @@ tbody tr.clickable{cursor:pointer}
       <!-- ===== OBRAS ===== -->
       <div class="page" id="page-obras">
         <div class="stat-row">
-          <div class="stat-mini"><div class="stat-mini-label">Em andamento</div><div class="stat-mini-val" style="color:var(--accent)" id="obras-kpi-andamento">4</div></div>
-          <div class="stat-mini"><div class="stat-mini-label">Realizado total</div><div class="stat-mini-val" style="font-size:14px;margin-top:2px" id="obras-kpi-realizado">R$ 1,8M</div></div>
-          <div class="stat-mini"><div class="stat-mini-label">Previsto total</div><div class="stat-mini-val" style="font-size:14px;margin-top:2px" id="obras-kpi-previsto">R$ 3,2M</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Em andamento</div><div class="stat-mini-val" style="color:var(--accent)" id="obras-kpi-andamento">0</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Realizado total</div><div class="stat-mini-val" style="font-size:14px;margin-top:2px" id="obras-kpi-realizado">—</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Previsto total</div><div class="stat-mini-val" style="font-size:14px;margin-top:2px" id="obras-kpi-previsto">—</div></div>
         </div>
 
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
@@ -932,13 +937,7 @@ tbody tr.clickable{cursor:pointer}
               <th style="width:100px">Status</th>
               <th style="width:50px"></th>
             </tr></thead>
-            <tbody id="tbody-obras">
-              <tr data-lot="Verde Vale" data-status="Concluída" data-idx="0"><td style="font-weight:500">Terraplanagem geral</td><td style="color:var(--text-secondary);font-size:11px">Verde Vale</td><td><span class="fase-badge">Fase 1</span></td><td style="color:var(--text-secondary)">Terraplanagem</td><td>Terraplen S.A.</td><td>R$ 480K</td><td>R$ 492K</td><td style="color:var(--success);font-weight:600">100%</td><td><span class="badge badge-teal">Concluída</span></td><td><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditarObra(this)">✏️</button></td></tr>
-              <tr data-lot="Verde Vale" data-status="Em andamento" data-idx="1"><td style="font-weight:500">Asfalto interno</td><td style="color:var(--text-secondary);font-size:11px">Verde Vale</td><td><span class="fase-badge">Fase 1</span></td><td style="color:var(--text-secondary)">Pavimentação</td><td>Asfalto Bom Ltda</td><td>R$ 920K</td><td>R$ 718K</td><td style="color:var(--accent);font-weight:600">78%</td><td><span class="badge badge-blue">Em andamento</span></td><td><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditarObra(this)">✏️</button></td></tr>
-              <tr data-lot="Verde Vale" data-status="Em andamento" data-idx="2"><td style="font-weight:500">Rede elétrica</td><td style="color:var(--text-secondary);font-size:11px">Verde Vale</td><td><span class="fase-badge">Fase 1</span></td><td style="color:var(--text-secondary)">Energia</td><td>Eletra Engenharia</td><td>R$ 640K</td><td>R$ 352K</td><td style="color:var(--warning);font-weight:600">55%</td><td><span class="badge badge-blue">Em andamento</span></td><td><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditarObra(this)">✏️</button></td></tr>
-              <tr data-lot="Jardins do Sul" data-status="Em andamento" data-idx="3"><td style="font-weight:500">Água e esgoto</td><td style="color:var(--text-secondary);font-size:11px">Jardins do Sul</td><td><span class="fase-badge">Fase 2</span></td><td style="color:var(--text-secondary)">Saneamento</td><td>Hidro Obras ME</td><td>R$ 780K</td><td>R$ 312K</td><td style="color:var(--warning);font-weight:600">40%</td><td><span class="badge badge-blue">Em andamento</span></td><td><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditarObra(this)">✏️</button></td></tr>
-              <tr data-lot="Jardins do Sul" data-status="Iniciando" data-idx="4"><td style="font-weight:500">Paisagismo</td><td style="color:var(--text-secondary);font-size:11px">Jardins do Sul</td><td><span class="fase-badge">Fase 2</span></td><td style="color:var(--text-secondary)">Paisagismo</td><td>Verde Arte Ltda</td><td>R$ 380K</td><td>R$ 38K</td><td style="color:var(--danger);font-weight:600">10%</td><td><span class="badge badge-amber">Iniciando</span></td><td><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditarObra(this)">✏️</button></td></tr>
-            </tbody>
+            <tbody id="tbody-obras"></tbody>
           </table>
         </div>
       </div>
@@ -947,10 +946,10 @@ tbody tr.clickable{cursor:pointer}
       <div class="page" id="page-crm">
         <!-- KPIs dinâmicos -->
         <div class="stat-row" style="grid-template-columns:repeat(5,minmax(0,1fr))">
-          <div class="stat-mini"><div class="stat-mini-label">Total leads</div><div class="stat-mini-val" id="crm-kpi-total">5</div></div>
-          <div class="stat-mini"><div class="stat-mini-label">Visitaram lote</div><div class="stat-mini-val" style="color:var(--accent)" id="crm-kpi-visita">2</div></div>
-          <div class="stat-mini"><div class="stat-mini-label">Contrato assinado</div><div class="stat-mini-val" style="color:var(--success)" id="crm-kpi-contrato">1</div></div>
-          <div class="stat-mini"><div class="stat-mini-label">Entrada paga</div><div class="stat-mini-val" style="color:var(--success)" id="crm-kpi-entrada">1</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Total leads</div><div class="stat-mini-val" id="crm-kpi-total">0</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Visitaram lote</div><div class="stat-mini-val" style="color:var(--accent)" id="crm-kpi-visita">0</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Contrato assinado</div><div class="stat-mini-val" style="color:var(--success)" id="crm-kpi-contrato">0</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Entrada paga</div><div class="stat-mini-val" style="color:var(--success)" id="crm-kpi-entrada">0</div></div>
           <div class="stat-mini"><div class="stat-mini-label">Perdidos</div><div class="stat-mini-val" style="color:var(--danger)" id="crm-kpi-perdido">0</div></div>
         </div>
 
@@ -1239,7 +1238,7 @@ tbody tr.clickable{cursor:pointer}
 
         <!-- KPIs -->
         <div class="stat-row" style="grid-template-columns:repeat(4,minmax(0,1fr))">
-          <div class="stat-mini"><div class="stat-mini-label">Contas ativas</div><div class="stat-mini-val" id="cb-kpi-total" style="color:var(--success)">3</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Contas ativas</div><div class="stat-mini-val" id="cb-kpi-total" style="color:var(--success)">0</div></div>
           <div class="stat-mini"><div class="stat-mini-label">Saldo consolidado</div><div class="stat-mini-val" id="cb-kpi-saldo" style="font-size:14px;margin-top:2px">R$ 0,00</div></div>
           <div class="stat-mini"><div class="stat-mini-label">Entradas (mês)</div><div class="stat-mini-val" id="cb-kpi-entradas" style="color:var(--success);font-size:14px;margin-top:2px">R$ 0,00</div></div>
           <div class="stat-mini"><div class="stat-mini-label">Saídas (mês)</div><div class="stat-mini-val" id="cb-kpi-saidas" style="color:var(--danger);font-size:14px;margin-top:2px">R$ 0,00</div></div>
@@ -2370,7 +2369,7 @@ function showPage(id,navEl){
   document.getElementById('topbar-title').textContent=pageTitles[id]||id;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(navEl)navEl.classList.add('active');
-  if(id==='contrato-detalhe')buildParcelas();
+  if(id==='inadimplencia') renderInadimplencia();
   if(id==='simulador')calcSim();
   if(id==='configuracoes')renderConfiguracoes();
   // Carrega dados do Supabase
@@ -3241,16 +3240,7 @@ const STATUS_CRM_BADGE={
   'Novo':'badge-gray','Contato feito':'badge-blue','Visita realizada':'badge-blue',
   'Proposta enviada':'badge-amber','Contrato assinado':'badge-teal','Entrada paga':'badge-teal','Perdido':'badge-red'
 };
-let leads=[
-  {id:1,nome:'Fernanda Castro',tel:'(11)98765-0001',origem:'Meta Ads',lote:'Verde Vale',status:'Proposta enviada',corretor:'Paulo Corretor',etapas:{visitou:true,proposta:true},obs:'Interesse no lote B-05',dataVisita:'2026-05-27',horaVisita:'10:00'},
-  {id:2,nome:'Ricardo Neto',tel:'(11)98765-0002',origem:'Indicação',lote:'Verde Vale',status:'Visita realizada',corretor:'Ana Vendas',etapas:{visitou:true},obs:'',dataVisita:'2026-05-20',horaVisita:'14:30'},
-  {id:3,nome:'Patrícia Melo',tel:'(11)98765-0003',origem:'Google Ads',lote:'Jardins do Sul',status:'Novo',corretor:'Marcos Silva',etapas:{},obs:'',dataVisita:'2026-05-28',horaVisita:'09:00'},
-  {id:4,nome:'Marcos Duarte',tel:'(11)98765-0004',origem:'Stand',lote:'Verde Vale',status:'Contrato assinado',corretor:'Paulo Corretor',etapas:{visitou:true,proposta:true,contrato:true,entrada:true},obs:'',dataVisita:'2026-05-15',horaVisita:'11:00'},
-  {id:5,nome:'Lucia Ferreira',tel:'(11)98765-0005',origem:'Meta Ads',lote:'Nova Esperança',status:'Novo',corretor:'Marcos Silva',etapas:{},obs:'',dataVisita:'2026-06-03',horaVisita:'15:00'},
-  {id:6,nome:'Bruno Almeida',tel:'(11)98765-0006',origem:'Google Ads',lote:'Verde Vale',status:'Visita realizada',corretor:'Paulo Corretor',etapas:{visitou:true},obs:'',dataVisita:'2026-05-26',horaVisita:'10:30'},
-  {id:7,nome:'Carla Souza',tel:'(11)98765-0007',origem:'Indicação',lote:'Jardins do Sul',status:'Proposta enviada',corretor:'Ana Vendas',etapas:{visitou:true,proposta:true},obs:'',dataVisita:'2026-06-05',horaVisita:'16:00'},
-  {id:8,nome:'Diego Pereira',tel:'(11)98765-0008',origem:'Stand',lote:'Nova Esperança',status:'Novo',corretor:'Marcos Silva',etapas:{},obs:'',dataVisita:'2026-06-10',horaVisita:'09:30'},
-];
+let leads=[];
 let editLeadId=null;
 
 function renderLeads(){
@@ -3735,14 +3725,7 @@ function atualizarKpisLotes(){
 
 // ---- FINANCEIRO ----
 let finTipoAtual='RECEITA';
-let lancamentos=[
-  {id:1,tipo:'RECEITA',cat:'Parcela',desc:'Parcela #12 — Contrato #1042',valor:2840,data:'2026-05-15'},
-  {id:2,tipo:'RECEITA',cat:'Parcela',desc:'Parcela #8 — Contrato #1038',valor:3150,data:'2026-05-20'},
-  {id:3,tipo:'DESPESA',cat:'Obra',desc:'Medição #3 — Asfalto interno',valor:48000,data:'2026-05-18'},
-  {id:4,tipo:'RECEITA',cat:'Entrada',desc:'Entrada — Contrato #1041',valor:8950,data:'2026-05-10'},
-  {id:5,tipo:'DESPESA',cat:'Comissao',desc:'Comissão — Corretor Paulo',valor:5370,data:'2026-05-10'},
-  {id:6,tipo:'DESPESA',cat:'Marketing',desc:'Google Ads — Maio',valor:3200,data:'2026-05-01'},
-];
+let lancamentos=[];
 const catLabel={'Parcela':'Parcela recebida','Entrada':'Entrada','Juros':'Juros/Multa','Taxa':'Taxa cartório','Outros-R':'Outros','Obra':'Obra','Comissao':'Comissão','Marketing':'Marketing','Juridico':'Jurídico','Administrativa':'Administrativa','Outros-D':'Outros'};
 
 function setFinTipo(tipo){
@@ -4593,6 +4576,9 @@ function toggleGlobalLot(el){
   atualizarDashboard();
   atualizarKpisLotes();
   // Atualizar contas bancárias se a página estiver visível
+  if(document.getElementById('page-inadimplencia')?.classList.contains('active')){
+    if(typeof renderInadimplencia==='function') renderInadimplencia();
+  }
   if(document.getElementById('page-contas-bancarias')?.classList.contains('active')){
     if(typeof renderContasBancarias==='function') renderContasBancarias();
   }
@@ -4751,19 +4737,8 @@ function salvarEdicaoObra(){
 // ================================================================
 // CORRETORES
 // ================================================================
-let corretores=[
-  {id:1,nome:'Paulo Santana',    creci:'123456-F',cel:'(11)98765-1001',email:'paulo@horizonte.com.br',  tipo:'Interno', comissao:3.0,status:'Ativo',  loteamentos:['Verde Vale','Jardins do Sul'],visitas:8,vendas:3,comissaoTotal:13500},
-  {id:2,nome:'Ana Paula Vendas', creci:'234567-F',cel:'(11)98765-1002',email:'ana@horizonte.com.br',    tipo:'Interno', comissao:3.0,status:'Ativo',  loteamentos:['Verde Vale'],                 visitas:4,vendas:1,comissaoTotal:3800},
-  {id:3,nome:'Marcos Silva',     creci:'345678-F',cel:'(11)98765-1003',email:'marcos@imob.com.br',      tipo:'Parceiro',comissao:4.0,status:'Ativo',  loteamentos:['Nova Esperança'],             visitas:2,vendas:0,comissaoTotal:0},
-  {id:4,nome:'Luciana Freitas',  creci:'456789-F',cel:'(11)98765-1004',email:'luciana@horizonte.com.br',tipo:'Externo', comissao:3.5,status:'Inativo',loteamentos:['Verde Vale'],                 visitas:0,vendas:0,comissaoTotal:0},
-];
-let alocacoes=[
-  {id:1,data:'2026-05-22',corretorId:1,corretorNome:'Paulo Santana',   tipo:'Venda', lote:'A-02',loteamento:'Verde Vale · Fase 1',  cliente:'Maria Aparecida Souza',valorVenda:92000,comissao:2760},
-  {id:2,data:'2026-05-20',corretorId:1,corretorNome:'Paulo Santana',   tipo:'Venda', lote:'B-17',loteamento:'Verde Vale · Fase 1',  cliente:'Carlos Eduardo Lima',  valorVenda:89500,comissao:2685},
-  {id:3,data:'2026-05-18',corretorId:2,corretorNome:'Ana Paula Vendas',tipo:'Venda', lote:'B-02',loteamento:'Verde Vale · Fase 1',  cliente:'Ana Cristina Oliveira',valorVenda:85000,comissao:2550},
-  {id:4,data:'2026-05-15',corretorId:1,corretorNome:'Paulo Santana',   tipo:'Visita',lote:'C-01',loteamento:'Verde Vale · Fase 1',  cliente:'Fernanda Castro',      valorVenda:0,    comissao:0},
-  {id:5,data:'2026-05-12',corretorId:3,corretorNome:'Marcos Silva',    tipo:'Visita',lote:'D-01',loteamento:'Nova Esperança · Fase 3',cliente:'Ricardo Neto',       valorVenda:0,    comissao:0},
-];
+let corretores=[];
+let alocacoes=[];
 let editCorretorId=null;
 
 function renderCorretores(){
@@ -4906,26 +4881,11 @@ function removerAlocacao(id){
 // ================================================================
 // INVESTIDORES
 // ================================================================
-let investidores=[
-  {id:1,nome:'Grupo Horizons FII',    doc:'12.345.678/0001-90',perfil:'Sofisticado',tipo:'Fundo',       status:'Ativo',  email:'ri@horizons.com.br',   tel:'(11)3333-1001',banco:'BTG Pactual',pix:'ri@horizons.com.br'},
-  {id:2,nome:'Roberto Mendes',        doc:'111.222.333-44',    perfil:'Arrojado',   tipo:'PF',          status:'Ativo',  email:'roberto@email.com',    tel:'(11)98765-2002',banco:'Itaú',pix:'111.222.333-44'},
-  {id:3,nome:'Construtora Delta Ltda',doc:'98.765.432/0001-10',perfil:'Moderado',   tipo:'PJ',          status:'Ativo',  email:'fin@delta.com.br',     tel:'(11)3333-3003',banco:'Bradesco',pix:'98.765.432/0001-10'},
-  {id:4,nome:'Marina Souza',          doc:'555.666.777-88',    perfil:'Moderado',   tipo:'PF',          status:'Inativo',email:'marina@email.com',     tel:'(11)98765-4004',banco:'Nubank',pix:'555.666.777-88'},
-];
+let investidores=[];
 
-let aportes=[
-  {id:1,investidorId:1,investidorNome:'Grupo Horizons FII',    data:'2024-01-15',loteamento:'Verde Vale · Fase 1',  tipo:'Equity',    valor:2000000,taxa:18.0,prazo:36,vencimento:'2027-01-15',status:'Ativo'},
-  {id:2,investidorId:2,investidorNome:'Roberto Mendes',        data:'2024-03-01',loteamento:'Verde Vale · Fase 1',  tipo:'Mútuo',     valor:500000, taxa:16.5,prazo:24,vencimento:'2026-03-01',status:'Ativo'},
-  {id:3,investidorId:3,investidorNome:'Construtora Delta Ltda',data:'2025-06-10',loteamento:'Jardins do Sul · Fase 2',tipo:'Direto',  valor:1200000,taxa:17.0,prazo:30,vencimento:'2027-12-10',status:'Ativo'},
-  {id:4,investidorId:4,investidorNome:'Marina Souza',          data:'2023-09-20',loteamento:'Verde Vale · Fase 1',  tipo:'Debênture', valor:300000, taxa:15.0,prazo:12,vencimento:'2024-09-20',status:'Encerrado'},
-];
+let aportes=[];
 
-let dividendos=[
-  {id:1,investidorId:1,investidorNome:'Grupo Horizons FII',    data:'2024-07-15',loteamento:'Verde Vale · Fase 1',  tipo:'Rendimento', bruto:180000,ir:27000, liquido:153000,forma:'TED',    comprov:'TED-20240715-001'},
-  {id:2,investidorId:2,investidorNome:'Roberto Mendes',        data:'2024-07-15',loteamento:'Verde Vale · Fase 1',  tipo:'Rendimento', bruto:41250, ir:6187,  liquido:35063, forma:'PIX',    comprov:'PIX-20240715-002'},
-  {id:3,investidorId:3,investidorNome:'Construtora Delta Ltda',data:'2025-12-10',loteamento:'Jardins do Sul · Fase 2',tipo:'Lucro',    bruto:204000,ir:30600, liquido:173400,forma:'TED',    comprov:'TED-20251210-003'},
-  {id:4,investidorId:4,investidorNome:'Marina Souza',          data:'2024-09-20',loteamento:'Verde Vale · Fase 1',  tipo:'Resgate',   bruto:345000,ir:6750,  liquido:338250,forma:'PIX',    comprov:'PIX-20240920-004'},
-];
+let dividendos=[];
 
 let editInvestidorId=null;
 
@@ -5475,8 +5435,89 @@ function salvarEdicaoDividendo(){
 }
 
 // ================================================================
-// CONTAS BANCÁRIAS
+// INADIMPLÊNCIA
 // ================================================================
+let inadimplentes=[];
+
+function renderInadimplencia(){
+  const fl   = document.getElementById('inad-filtro-lot')?.value||'';
+  const fr   = document.getElementById('inad-filtro-risco')?.value||'';
+
+  // Filtro global de loteamento
+  let filtroGlobal=[];
+  if(typeof globalLots!=='undefined'&&!globalLots.has('todos')){
+    filtroGlobal=[...globalLots].map(s=>
+      s==='verde-vale'?'Verde Vale':s==='jardins-sul'?'Jardins do Sul':s==='nova-esperanca'?'Nova Esperança':s
+    );
+  }
+
+  const filtered=inadimplentes.filter(r=>{
+    if(fl&&!r.loteamento.includes(fl)) return false;
+    if(filtroGlobal.length&&!filtroGlobal.some(f=>r.loteamento.includes(f))) return false;
+    if(fr==='baixo'  &&(r.dias<1||r.dias>15))  return false;
+    if(fr==='medio'  &&(r.dias<16||r.dias>60)) return false;
+    if(fr==='alto'   && r.dias<=60)             return false;
+    return true;
+  });
+
+  // KPIs
+  const total  = filtered.length;
+  const valor  = filtered.reduce((s,r)=>s+r.valor,0);
+  const dias   = total ? Math.round(filtered.reduce((s,r)=>s+r.dias,0)/total) : 0;
+  const reneg  = filtered.filter(r=>r.status==='renegociando').length;
+  const pct    = inadimplentes.length>0?(total/inadimplentes.length*100).toFixed(1)+'% da carteira':'-';
+  const risco  = dias>60?'risco alto':dias>15?'risco médio':'risco baixo';
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  sv('inad-kpi-total',total); sv('inad-kpi-pct',pct);
+  sv('inad-kpi-valor',fmt(valor)); sv('inad-kpi-dias',dias+' dias');
+  sv('inad-kpi-risco',risco); sv('inad-kpi-reneg',reneg);
+
+  // Badge do nav
+  const navBadge=document.querySelector('.nav-item[onclick*="inadimplencia"] .nav-badge');
+  if(navBadge) navBadge.textContent=inadimplentes.length;
+
+  // Tabela
+  const tbody=document.getElementById('inad-tbody');
+  const empty=document.getElementById('inad-empty');
+  const table=document.getElementById('inad-table');
+  if(!tbody) return;
+
+  if(!filtered.length){
+    if(empty) empty.style.display='block';
+    if(table) table.style.display='none';
+    return;
+  }
+  if(empty) empty.style.display='none';
+  if(table) table.style.display='';
+
+  const sorted=[...filtered].sort((a,b)=>b.dias-a.dias);
+  tbody.innerHTML=sorted.map(r=>{
+    const diasCor = r.dias>60?'var(--danger)':r.dias>15?'var(--warning)':'var(--text-secondary)';
+    const acaoBtns = r.status==='distrato'
+      ? `<button class="btn btn-sm" style="color:var(--danger);font-size:10px" onclick="removerInad('${r.id}')">Distrato</button>`
+      : r.status==='renegociando'
+      ? `<button class="btn btn-sm" style="color:var(--accent);font-size:10px;border-color:var(--accent)" onclick="removerInad('${r.id}')">Renegociando</button>`
+      : r.dias>15
+      ? `<button class="btn btn-sm" style="font-size:10px" onclick="removerInad('${r.id}')">Renegociar</button>`
+      : `<button class="btn btn-sm" style="font-size:10px" onclick="removerInad('${r.id}')">Contatar</button>`;
+    return `<tr id="inad-${r.id}">
+      <td style="color:var(--accent);font-weight:600">#${r.id}</td>
+      <td style="font-weight:500">${r.cliente}</td>
+      <td style="font-size:11px;color:var(--text-secondary)">${r.loteamento}</td>
+      <td style="color:var(--text-secondary)">${r.lote}</td>
+      <td>${r.parcelas} parcela${r.parcelas>1?'s':''}</td>
+      <td style="font-weight:600">${fmt(r.valor)}</td>
+      <td><span style="color:${diasCor};font-weight:600">${r.dias} dias</span></td>
+      <td>${acaoBtns}</td>
+    </tr>`;
+  }).join('');
+}
+
+function removerInad(id){
+  inadimplentes=inadimplentes.filter(r=>r.id!==id);
+  renderInadimplencia();
+}
+
 const BANCO_LOGOS={
   'itaú':{cor:'#EC7000',letra:'I'},'itau':{cor:'#EC7000',letra:'I'},
   'bradesco':{cor:'#CC092F',letra:'B'},
@@ -5763,24 +5804,9 @@ function exportarExtrato(){
 applyTheme();
 
 // ── Dados das contas bancárias ────────────────────────────────
-let contasBancarias=[
-  {id:1,loteamento:'Verde Vale',    banco:'Itaú Unibanco',   agencia:'0001',conta:'12345-6',tipo:'Corrente',titular:'Horizonte VV SPE Ltda',   doc:'12.345.678/0001-10',pix:'12.345.678/0001-10',saldo:284500,ativa:true},
-  {id:2,loteamento:'Jardins do Sul', banco:'Bradesco',        agencia:'0042',conta:'98765-4',tipo:'Corrente',titular:'Horizonte JS SPE Ltda',   doc:'23.456.789/0001-20',pix:'23.456.789/0001-20',saldo:142800,ativa:true},
-  {id:3,loteamento:'Nova Esperança', banco:'Caixa Econômica', agencia:'0125',conta:'11223-3',tipo:'Escrow',  titular:'Horizonte NE SPE Ltda',   doc:'34.567.890/0001-30',pix:'34.567.890/0001-30',saldo:521000,ativa:true},
-];
+let contasBancarias=[];
 
-let movimentacoes=[
-  {id:1, data:'2026-05-22',tipo:'Crédito',desc:'Parcela #12 Contrato #1042',  loteamento:'Verde Vale',    contaId:1,valor:2840},
-  {id:2, data:'2026-05-20',tipo:'Crédito',desc:'Parcela #8 Contrato #1038',   loteamento:'Verde Vale',    contaId:1,valor:3150},
-  {id:3, data:'2026-05-18',tipo:'Débito', desc:'Medição #3 — Asfalto',         loteamento:'Verde Vale',    contaId:1,valor:48000},
-  {id:4, data:'2026-05-15',tipo:'Crédito',desc:'Entrada Contrato #1041',       loteamento:'Verde Vale',    contaId:1,valor:8950},
-  {id:5, data:'2026-05-14',tipo:'Débito', desc:'Comissão Paulo Santana',        loteamento:'Verde Vale',    contaId:1,valor:5370},
-  {id:6, data:'2026-05-12',tipo:'Crédito',desc:'Parcela #5 Contrato #1035',   loteamento:'Jardins do Sul',contaId:2,valor:2640},
-  {id:7, data:'2026-05-10',tipo:'Débito', desc:'Google Ads — Maio',             loteamento:'Jardins do Sul',contaId:2,valor:3200},
-  {id:8, data:'2026-05-08',tipo:'Crédito',desc:'Aporte Grupo Horizons FII',    loteamento:'Verde Vale',    contaId:1,valor:200000},
-  {id:9, data:'2026-05-05',tipo:'Débito', desc:'Pagamento fornecedor obras',    loteamento:'Nova Esperança',contaId:3,valor:72000},
-  {id:10,data:'2026-05-03',tipo:'Crédito',desc:'Entrada Contrato #2010',        loteamento:'Nova Esperança',contaId:3,valor:12500},
-];
+let movimentacoes=[];
 
 
 function renderExtrato(){
