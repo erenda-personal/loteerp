@@ -3862,16 +3862,120 @@ function salvarContrato(){
 }
 
 // ---- IMPORT LOTES ----
+// Guarda as linhas lidas do CSV para importar
+let _importRows = [];
+
 function handleImportFile(input){
-  const file=input.files[0];if(!file)return;
-  const prev=document.getElementById('import-preview');
-  const msg=document.getElementById('import-msg');
-  const table=document.getElementById('import-table');
-  if(prev)prev.style.display='block';
-  if(msg)msg.textContent='✓ Arquivo "'+file.name+'" lido — prévia (primeiras 3 linhas):';
-  if(table)table.innerHTML=`<thead style="background:var(--bg-secondary)"><tr><th style="padding:5px 8px;text-align:left;font-size:11px">Quadra</th><th style="padding:5px 8px;text-align:left;font-size:11px">Nº</th><th style="padding:5px 8px;text-align:left;font-size:11px">Área</th><th style="padding:5px 8px;text-align:left;font-size:11px">Valor</th><th style="padding:5px 8px;text-align:left;font-size:11px">Status</th></tr></thead><tbody><tr><td style="padding:4px 8px;font-size:11px">A</td><td style="padding:4px 8px;font-size:11px">01</td><td style="padding:4px 8px;font-size:11px">300</td><td style="padding:4px 8px;font-size:11px">85000</td><td style="padding:4px 8px;font-size:11px">Disponível</td></tr><tr><td style="padding:4px 8px;font-size:11px">A</td><td style="padding:4px 8px;font-size:11px">02</td><td style="padding:4px 8px;font-size:11px">310</td><td style="padding:4px 8px;font-size:11px">89000</td><td style="padding:4px 8px;font-size:11px">Disponível</td></tr></tbody>`;
+  const file = input.files[0];
+  if(!file) return;
+  _importRows = [];
+  const prev  = document.getElementById('import-preview');
+  const msg   = document.getElementById('import-msg');
+  const table = document.getElementById('import-table');
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const text = e.target.result;
+    // Detectar separador (; ou ,)
+    const sep = text.indexOf(';') > -1 ? ';' : ',';
+    const lines = text.split(/\r?\n/).filter(l=>l.trim());
+    if(lines.length < 2){ if(msg) msg.textContent='⚠ Arquivo vazio ou sem dados.'; return; }
+
+    // Mapear cabeçalho (case-insensitive)
+    const headers = lines[0].split(sep).map(h=>h.trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,''));
+
+    const idx = {
+      quadra:       headers.indexOf('quadra'),
+      numero:       headers.findIndex(h=>h==='numero'||h==='num'||h==='lote'),
+      area:         headers.findIndex(h=>h==='area'||h==='area_m2'),
+      valor:        headers.findIndex(h=>h.includes('valor')),
+      status:       headers.indexOf('status'),
+      testada:      headers.findIndex(h=>h.includes('testada')),
+      profundidade: headers.findIndex(h=>h.includes('prof')),
+    };
+
+    _importRows = [];
+    for(let i=1; i<lines.length; i++){
+      const cols = lines[i].split(sep).map(c=>c.trim().replace(/^"|"$/g,''));
+      if(cols.every(c=>!c)) continue; // pular linhas vazias
+      _importRows.push({
+        quadra:       idx.quadra>=0      ? cols[idx.quadra]||'A' : 'A',
+        numero:       idx.numero>=0      ? cols[idx.numero]||String(i) : String(i),
+        area_m2:      idx.area>=0        ? parseFloat(cols[idx.area])||null : null,
+        valor_tabela: idx.valor>=0       ? parseFloat(cols[idx.valor].replace(/\./g,'').replace(',','.'))||0 : 0,
+        status:       idx.status>=0      ? cols[idx.status]||'Disponível' : 'Disponível',
+        testada_m:    idx.testada>=0     ? parseFloat(cols[idx.testada])||null : null,
+        profundidade_m: idx.profundidade>=0 ? parseFloat(cols[idx.profundidade])||null : null,
+      });
+    }
+
+    if(prev) prev.style.display='block';
+    if(msg)  msg.textContent=`✓ "${file.name}" — ${_importRows.length} lotes identificados. Prévia (primeiras 3):`;
+
+    // Renderizar prévia
+    const preview = _importRows.slice(0,3);
+    if(table) table.innerHTML=`
+      <thead style="background:var(--bg-secondary)"><tr>
+        <th style="padding:5px 8px;font-size:11px">Quadra</th>
+        <th style="padding:5px 8px;font-size:11px">Nº</th>
+        <th style="padding:5px 8px;font-size:11px">Área (m²)</th>
+        <th style="padding:5px 8px;font-size:11px">Valor (R$)</th>
+        <th style="padding:5px 8px;font-size:11px">Status</th>
+      </tr></thead>
+      <tbody>${preview.map(r=>`<tr>
+        <td style="padding:4px 8px;font-size:11px">${r.quadra}</td>
+        <td style="padding:4px 8px;font-size:11px">${r.numero}</td>
+        <td style="padding:4px 8px;font-size:11px">${r.area_m2||'—'}</td>
+        <td style="padding:4px 8px;font-size:11px">R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</td>
+        <td style="padding:4px 8px;font-size:11px">${r.status}</td>
+      </tr>`).join('')}</tbody>`;
+  };
+  reader.readAsText(file, 'UTF-8');
 }
-function confirmarImport(){closeModal('modal-import-lotes');showToast('Lotes importados com sucesso!');}
+
+async function confirmarImport(){
+  const loteamentoId = document.getElementById('import-loteamento')?.value;
+  if(!loteamentoId){ showToast('Selecione o loteamento destino.','error'); return; }
+  if(!_importRows.length){ showToast('Nenhum dado para importar. Selecione um arquivo CSV primeiro.','error'); return; }
+
+  showLoading(`Importando ${_importRows.length} lotes...`);
+
+  // Buscar loteamento_id e nome
+  const lots = await dbSelect('loteamentos',{filter:[['id','eq',loteamentoId]]});
+  const lotNome = lots[0]?.nome||'';
+
+  // Inserir em lotes de 50 para não sobrecarregar
+  const rows = _importRows.map(r=>({
+    loteamento_id: loteamentoId,
+    quadra:        r.quadra,
+    numero:        r.numero,
+    area_m2:       r.area_m2,
+    valor_tabela:  r.valor_tabela,
+    status:        r.status||'Disponível',
+    testada_m:     r.testada_m,
+    profundidade_m:r.profundidade_m,
+  }));
+
+  let erros = 0;
+  for(let i=0; i<rows.length; i+=50){
+    const batch = rows.slice(i, i+50);
+    const {error} = await sb.from('lotes').insert(batch);
+    if(error){ console.error('Batch erro:', error.message); erros++; }
+  }
+
+  hideLoading();
+  closeModal('modal-import-lotes');
+  _importRows = [];
+
+  if(erros){
+    showToast(`Importação parcial: ${erros} lote(s) com erro. Verifique dados duplicados.`,'error');
+  } else {
+    showToast(`✓ ${rows.length} lotes importados para "${lotNome}" com sucesso!`);
+  }
+  // Recarregar lista de lotes
+  if(typeof carregarLotes==='function') carregarLotes(loteamentoId);
+}
 
 // ---- PERFIL ----
 function togglePerfil(){
