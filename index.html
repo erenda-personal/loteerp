@@ -273,7 +273,7 @@ tbody tr.clickable{cursor:pointer}
       <div class="nav-item" onclick="showPage('crm',this)">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="8" r="3" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 11c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 13c0-1.105.895-2 2-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         CRM / Leads
-        <span class="nav-badge">7</span>
+        
       </div>
       <div class="nav-item" onclick="showPage('corretores',this)">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M10 2a3 3 0 11-4 0M2 14s-.5-5 6-5 6 5 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12 7l1.5 1.5L16 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -287,8 +287,7 @@ tbody tr.clickable{cursor:pointer}
       <div class="nav-item" onclick="showPage('inadimplencia',this)">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2v6M8 10v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/></svg>
         Inadimplência
-        <span class="nav-badge">12</span>
-      </div>
+        </div>
       <div class="nav-item" onclick="showPage('contas-bancarias',this)">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4.5" width="13" height="9" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M1.5 7.5h13" stroke="currentColor" stroke-width="1.3"/><circle cx="4.5" cy="10.5" r="1" fill="currentColor"/></svg>
         Contas bancárias
@@ -320,15 +319,7 @@ tbody tr.clickable{cursor:pointer}
           <label class="glot-item active" data-lot="todos" onclick="toggleGlobalLot(this)">
             <span class="glot-check">✓</span> Todos
           </label>
-          <label class="glot-item" data-lot="verde-vale" onclick="toggleGlobalLot(this)">
-            <span class="glot-check"></span> Res. Verde Vale
-          </label>
-          <label class="glot-item" data-lot="jardins-sul" onclick="toggleGlobalLot(this)">
-            <span class="glot-check"></span> Cond. Jardins do Sul
-          </label>
-          <label class="glot-item" data-lot="nova-esperanca" onclick="toggleGlobalLot(this)">
-            <span class="glot-check"></span> Res. Nova Esperança
-          </label>
+          <!-- populado dinamicamente por carregarFiltroLoteamentos() -->
         </div>
       </div>
     </nav>
@@ -379,21 +370,16 @@ tbody tr.clickable{cursor:pointer}
       <div class="page active" id="page-dashboard">
         <div class="kpi-grid">
           <div class="kpi"><div class="kpi-label">VGV total</div><div class="kpi-value" id="dash-vgv-total">—</div><div class="kpi-delta up" id="dash-vgv-total-delta">—</div></div>
-          <div class="kpi"><div class="kpi-label">VGV vendido</div><div class="kpi-value">R$ 31,2M</div><div class="kpi-delta up">73% do portfólio</div></div>
-          <div class="kpi"><div class="kpi-label">Recebimentos maio</div><div class="kpi-value">R$ 487K</div><div class="kpi-delta up">↑ 12% vs abril</div></div>
+          <div class="kpi"><div class="kpi-label">VGV vendido</div><div class="kpi-value">—</div><div class="kpi-delta up">—</div></div>
+          <div class="kpi"><div class="kpi-label">Recebimentos maio</div><div class="kpi-value">—</div><div class="kpi-delta up">—</div></div>
           <div class="kpi"><div class="kpi-label">Inadimplência</div><div class="kpi-value" id="dash-inad">—</div><div class="kpi-delta down" id="dash-inad-delta">—</div></div>
         </div>
         <div class="grid2">
           <div class="card">
             <div class="card-header"><span class="section-title">Recebimentos — últimos 6 meses</span></div>
-            <div class="chart-area">
-              <div class="mini-bars">
-                <div class="bar-wrap"><div class="bar-col"><div class="bar" style="height:55%;background:#B5D4F4" title="R$ 380K"></div><div class="bar" style="height:20%;background:#F09595" title="R$ 138K"></div></div><div class="bar-label">Dez</div></div>
-                <div class="bar-wrap"><div class="bar-col"><div class="bar" style="height:62%;background:#B5D4F4"></div><div class="bar" style="height:17%;background:#F09595"></div></div><div class="bar-label">Jan</div></div>
-                <div class="bar-wrap"><div class="bar-col"><div class="bar" style="height:68%;background:#B5D4F4"></div><div class="bar" style="height:22%;background:#F09595"></div></div><div class="bar-label">Fev</div></div>
-                <div class="bar-wrap"><div class="bar-col"><div class="bar" style="height:60%;background:#B5D4F4"></div><div class="bar" style="height:19%;background:#F09595"></div></div><div class="bar-label">Mar</div></div>
-                <div class="bar-wrap"><div class="bar-col"><div class="bar" style="height:73%;background:#B5D4F4"></div><div class="bar" style="height:14%;background:#F09595"></div></div><div class="bar-label">Abr</div></div>
-                <div class="bar-wrap"><div class="bar-col"><div class="bar" style="height:85%;background:#378ADD"></div><div class="bar" style="height:11%;background:#E24B4A"></div></div><div class="bar-label">Mai</div></div>
+            <div class="chart-area" id="dash-receb-bars">
+              <div class="mini-bars" id="dash-receb-mini">
+                <div style="width:100%;text-align:center;color:var(--text-secondary);font-size:12px;padding:24px 0">Nenhum dado financeiro registrado.</div>
               </div>
             </div>
             <div class="chart-legend">
@@ -409,11 +395,11 @@ tbody tr.clickable{cursor:pointer}
               <!-- preenchido dinamicamente por atualizarDashboard() -->
               <svg width="110" height="110" viewBox="0 0 110 110" id="dash-donut-svg">
                 <circle cx="55" cy="55" r="42" fill="none" stroke="#EAF3DE" stroke-width="20"/>
-                <circle cx="55" cy="55" r="42" fill="none" stroke="#97C459" stroke-width="20" stroke-dasharray="110 154" stroke-dashoffset="0" stroke-linecap="butt"/>
-                <circle cx="55" cy="55" r="42" fill="none" stroke="#378ADD" stroke-width="20" stroke-dasharray="87 154" stroke-dashoffset="-110" stroke-linecap="butt"/>
-                <circle cx="55" cy="55" r="42" fill="none" stroke="#EF9F27" stroke-width="20" stroke-dasharray="26 154" stroke-dashoffset="-197" stroke-linecap="butt"/>
-                <circle cx="55" cy="55" r="42" fill="none" stroke="#E24B4A" stroke-width="20" stroke-dasharray="23 154" stroke-dashoffset="-223" stroke-linecap="butt"/>
-                <circle cx="55" cy="55" r="42" fill="none" stroke="#B4B2A9" stroke-width="20" stroke-dasharray="8 154" stroke-dashoffset="-246" stroke-linecap="butt"/>
+                
+                
+                
+                
+                
                 <text x="55" y="50" text-anchor="middle" font-size="16" font-weight="700" fill="#1a1a18" id="dash-donut-total">0</text>
                 <text x="55" y="64" text-anchor="middle" font-size="10" fill="#888780">lotes</text>
               </svg>
@@ -431,21 +417,13 @@ tbody tr.clickable{cursor:pointer}
           <div class="card">
             <div class="card-header"><span class="section-title">Evolução de obras</span><span id="dash-obras-label" style="font-size:11px;color:var(--text-secondary)">Todos os loteamentos</span></div>
             <div class="progress-list" id="dash-obras-list">
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Terraplanagem — Quadras A–D</span><span class="progress-pct" style="color:var(--success)">100%</span></div><div class="progress-track"><div class="progress-fill" style="width:100%;background:#639922"></div></div></div>
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Asfalto interno</span><span class="progress-pct">78%</span></div><div class="progress-track"><div class="progress-fill" style="width:78%;background:#378ADD"></div></div></div>
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Rede elétrica</span><span class="progress-pct">55%</span></div><div class="progress-track"><div class="progress-fill" style="width:55%;background:#EF9F27"></div></div></div>
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Água e esgoto</span><span class="progress-pct">40%</span></div><div class="progress-track"><div class="progress-fill" style="width:40%;background:#EF9F27"></div></div></div>
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Paisagismo</span><span class="progress-pct" style="color:var(--danger)">10%</span></div><div class="progress-track"><div class="progress-fill" style="width:10%;background:#E24B4A"></div></div></div>
+              <div style="padding:16px 0;text-align:center;color:var(--text-secondary);font-size:12px">Nenhuma obra cadastrada.</div>
             </div>
           </div>
           <div class="card">
             <div class="card-header"><span class="section-title">Últimas atividades</span></div>
-            <div style="padding:14px 16px">
-              <div class="timeline-item"><div class="timeline-dot" style="background:#639922"></div><div class="timeline-content"><div class="timeline-title">Pagamento recebido — Contrato #1042</div><div class="timeline-sub">Maria Souza · R$ 1.840 · há 2h</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot" style="background:#378ADD"></div><div class="timeline-content"><div class="timeline-title">Novo contrato assinado — Lote B-17</div><div class="timeline-sub">Carlos Lima · R$ 89.500 · há 4h</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot" style="background:#EF9F27"></div><div class="timeline-content"><div class="timeline-title">Lead qualificado — Fernanda Castro</div><div class="timeline-sub">Corretor: Paulo · há 6h</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot" style="background:#E24B4A"></div><div class="timeline-content"><div class="timeline-title">Parcela vencida — Contrato #0987</div><div class="timeline-sub">João Batista · R$ 2.100 · 5 dias atraso</div></div></div>
-              <div class="timeline-item"><div class="timeline-dot" style="background:#639922"></div><div class="timeline-content"><div class="timeline-title">Medição aprovada — Asfalto fase 2</div><div class="timeline-sub">Construtora ABC · R$ 48.000 · ontem</div></div></div>
+            <div style="padding:14px 16px" id="dash-atividades">
+              <div style="padding:16px 0;text-align:center;color:var(--text-secondary);font-size:12px">Nenhuma atividade registrada.</div>
             </div>
           </div>
         </div>
@@ -472,9 +450,7 @@ tbody tr.clickable{cursor:pointer}
           <span style="font-size:12px;color:var(--text-secondary);font-weight:500">Loteamento:</span>
           <div id="lot-filter-wrap" style="display:flex;gap:6px;flex-wrap:wrap">
             <div class="lot-chip active" data-lot="todos" onclick="toggleLotChip(this)">Todos</div>
-            <div class="lot-chip" data-lot="verde-vale" onclick="toggleLotChip(this)">Res. Verde Vale</div>
-            <div class="lot-chip" data-lot="jardins-sul" onclick="toggleLotChip(this)">Cond. Jardins do Sul</div>
-            <div class="lot-chip" data-lot="nova-esperanca" onclick="toggleLotChip(this)">Res. Nova Esperança</div>
+            <!-- chips populados dinamicamente -->
           </div>
         </div>
         <!-- KPIs em linha única compacta -->
@@ -500,9 +476,9 @@ tbody tr.clickable{cursor:pointer}
         <div id="tab-lotes-mapa">
           <div class="card">
             <div class="card-header">
-              <span class="section-title">Res. Verde Vale — Mapa de lotes</span>
-              <select class="filter-select" style="font-size:11px">
-                <option>Todas as quadras</option><option>Quadra A</option><option>Quadra B</option><option>Quadra C</option>
+              <span class="section-title" id="mapa-lote-titulo">Mapa de lotes</span>
+              <select class="filter-select" style="font-size:11px" id="mapa-filtro-quadra" onchange="filtrarMapaQuadra()">
+                <option value="">Todas as quadras</option>
               </select>
             </div>
             <div class="lote-map">
@@ -607,14 +583,7 @@ tbody tr.clickable{cursor:pointer}
         <div class="card">
           <table>
             <thead><tr><th>Nome</th><th style="width:130px">CPF</th><th style="width:130px">Telefone</th><th style="width:100px">Contratos</th><th style="width:70px">Score</th><th style="width:100px">Status</th></tr></thead>
-            <tbody>
-              <tr class="clickable" onclick="showPage('cliente-detalhe',null)"><td style="font-weight:500">Maria Aparecida Souza</td><td style="color:var(--text-secondary)">012.345.678-90</td><td style="color:var(--text-secondary)">(11) 9 8765-4321</td><td>2 contratos</td><td style="color:var(--success);font-weight:600">820</td><td><span class="badge badge-green">Adimplente</span></td></tr>
-              <tr class="clickable"><td style="font-weight:500">Carlos Eduardo Lima</td><td style="color:var(--text-secondary)">987.654.321-00</td><td style="color:var(--text-secondary)">(11) 9 9988-7766</td><td>1 contrato</td><td style="color:var(--success);font-weight:600">750</td><td><span class="badge badge-green">Adimplente</span></td></tr>
-              <tr class="clickable"><td style="font-weight:500">Pedro Henrique Alves</td><td style="color:var(--text-secondary)">111.222.333-44</td><td style="color:var(--text-secondary)">(11) 9 7777-1234</td><td>1 contrato</td><td style="color:var(--danger);font-weight:600">420</td><td><span class="badge badge-red">Inadimplente</span></td></tr>
-              <tr class="clickable"><td style="font-weight:500">Ana Cristina Oliveira</td><td style="color:var(--text-secondary)">555.666.777-88</td><td style="color:var(--text-secondary)">(11) 9 6543-2109</td><td>1 contrato</td><td style="color:var(--success);font-weight:600">690</td><td><span class="badge badge-green">Adimplente</span></td></tr>
-              <tr class="clickable"><td style="font-weight:500">João Carlos Batista</td><td style="color:var(--text-secondary)">222.333.444-55</td><td style="color:var(--text-secondary)">(11) 9 5432-1098</td><td>1 contrato</td><td style="color:var(--warning);font-weight:600">510</td><td><span class="badge badge-amber">Em atraso</span></td></tr>
-              <tr class="clickable"><td style="font-weight:500">Fernanda Castro Mendes</td><td style="color:var(--text-secondary)">333.444.555-66</td><td style="color:var(--text-secondary)">(11) 9 4321-0987</td><td>—</td><td style="color:var(--text-secondary)">—</td><td><span class="badge badge-blue">Lead</span></td></tr>
-            </tbody>
+            <tbody id="tbody-clientes"></tbody>
           </table>
         </div>
       </div>
@@ -658,10 +627,7 @@ tbody tr.clickable{cursor:pointer}
           <div class="card-header"><span class="section-title">Contratos ativos</span></div>
           <table>
             <thead><tr><th style="width:70px">Nº</th><th>Lote</th><th>Valor total</th><th>Parcelas</th><th>Próx. venc.</th><th>Status</th></tr></thead>
-            <tbody>
-              <tr class="clickable" onclick="showPage('contrato-detalhe',null)"><td style="color:var(--accent);font-weight:600">#1042</td><td>A-02 · Verde Vale</td><td>R$ 92.000</td><td>48x · Price</td><td>15/06/2026</td><td><span class="badge badge-green">Ativo</span></td></tr>
-              <tr class="clickable"><td style="color:var(--accent);font-weight:600">#0891</td><td>B-14 · Verde Vale</td><td>R$ 85.000</td><td>36x · SAC</td><td>20/06/2026</td><td><span class="badge badge-green">Ativo</span></td></tr>
-            </tbody>
+            <tbody></tbody>
           </table>
         </div>
       </div>
@@ -669,9 +635,9 @@ tbody tr.clickable{cursor:pointer}
       <!-- ===== CONTRATOS ===== -->
       <div class="page" id="page-contratos">
         <div class="stat-row">
-          <div class="stat-mini"><div class="stat-mini-label">Contratos ativos</div><div class="stat-mini-val">85</div></div>
-          <div class="stat-mini"><div class="stat-mini-label">Saldo devedor total</div><div class="stat-mini-val" style="font-size:14px;margin-top:3px">R$ 28,4M</div></div>
-          <div class="stat-mini"><div class="stat-mini-label">Receber este mês</div><div class="stat-mini-val" style="font-size:14px;margin-top:3px">R$ 487K</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Contratos ativos</div><div class="stat-mini-val" id="ct-kpi-ativos">0</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Saldo devedor total</div><div class="stat-mini-val" id="ct-kpi-saldo">—</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Receber este mês</div><div class="stat-mini-val" style="font-size:14px;margin-top:3px">—</div></div>
         </div>
         <div class="filter-row">
           <select class="filter-select"><option>Todos os status</option><option>Ativo</option><option>Em atraso</option><option>Renegociado</option><option>Quitado</option><option>Distratado</option></select>
@@ -681,13 +647,7 @@ tbody tr.clickable{cursor:pointer}
         <div class="card">
           <table>
             <thead><tr><th style="width:70px">Nº</th><th>Cliente</th><th>Lote</th><th>Valor total</th><th>Parcelas</th><th>Próx. venc.</th><th style="width:100px">Status</th></tr></thead>
-            <tbody>
-              <tr class="clickable" onclick="showPage('contrato-detalhe',null)"><td style="color:var(--accent);font-weight:600">#1042</td><td>Maria Souza</td><td>A-02</td><td>R$ 92.000</td><td>48x R$ 2.840</td><td>15/06/26</td><td><span class="badge badge-green">Ativo</span></td></tr>
-              <tr class="clickable"><td style="color:var(--accent);font-weight:600">#1041</td><td>Carlos Lima</td><td>B-08</td><td>R$ 89.500</td><td>60x R$ 2.190</td><td>10/06/26</td><td><span class="badge badge-green">Ativo</span></td></tr>
-              <tr class="clickable"><td style="color:var(--accent);font-weight:600">#1039</td><td>Pedro Alves</td><td>A-04</td><td>R$ 98.000</td><td>48x R$ 3.020</td><td>Vencida</td><td><span class="badge badge-red">Em atraso</span></td></tr>
-              <tr class="clickable"><td style="color:var(--accent);font-weight:600">#1038</td><td>Ana Oliveira</td><td>B-02</td><td>R$ 85.000</td><td>36x R$ 3.150</td><td>20/06/26</td><td><span class="badge badge-green">Ativo</span></td></tr>
-              <tr class="clickable"><td style="color:var(--accent);font-weight:600">#1020</td><td>João Batista</td><td>C-11</td><td>R$ 78.000</td><td>60x R$ 1.910</td><td>05/06/26</td><td><span class="badge badge-amber">Renegociado</span></td></tr>
-              <tr class="clickable"><td style="color:var(--accent);font-weight:600">#0987</td><td>Roberto Nunes</td><td>D-02</td><td>R$ 68.000</td><td>48x R$ 2.100</td><td>Vencida</td><td><span class="badge badge-red">Em atraso</span></td></tr>
+            <tbody id="tbody-contratos">
             </tbody>
           </table>
         </div>
@@ -768,28 +728,22 @@ tbody tr.clickable{cursor:pointer}
       <!-- ===== FINANCEIRO ===== -->
       <div class="page" id="page-financeiro">
         <div class="kpi-grid">
-          <div class="kpi"><div class="kpi-label">Receitas maio</div><div class="kpi-value" id="fin-kpi-rec">R$ 542K</div><div class="kpi-delta up">↑ 14% vs abril</div></div>
-          <div class="kpi"><div class="kpi-label">Despesas maio</div><div class="kpi-value" id="fin-kpi-desp">R$ 318K</div><div class="kpi-delta warn">obras = 68%</div></div>
-          <div class="kpi"><div class="kpi-label">Resultado maio</div><div class="kpi-value" id="fin-kpi-res">R$ 224K</div><div class="kpi-delta up" id="fin-kpi-margem">margem 41%</div></div>
+          <div class="kpi"><div class="kpi-label">Receitas maio</div><div class="kpi-value" id="fin-kpi-rec">—</div><div class="kpi-delta up">—</div></div>
+          <div class="kpi"><div class="kpi-label">Despesas maio</div><div class="kpi-value" id="fin-kpi-desp">—</div><div class="kpi-delta warn">—</div></div>
+          <div class="kpi"><div class="kpi-label">Resultado maio</div><div class="kpi-value" id="fin-kpi-res">—</div><div class="kpi-delta up" id="fin-kpi-margem">—</div></div>
           <div class="kpi"><div class="kpi-label">Lançamentos</div><div class="kpi-value" id="fin-kpi-lanc">0</div><div class="kpi-delta up">registrados</div></div>
         </div>
         <div class="grid2">
           <div class="card">
-            <div class="card-header"><span class="section-title">Receitas por categoria — maio</span></div>
-            <div class="progress-list">
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Parcelas recebidas</span><span class="progress-pct">R$ 487K</span></div><div class="progress-track"><div class="progress-fill" style="width:90%;background:#378ADD"></div></div></div>
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Entradas (novas vendas)</span><span class="progress-pct">R$ 36K</span></div><div class="progress-track"><div class="progress-fill" style="width:22%;background:#378ADD"></div></div></div>
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Juros e multas</span><span class="progress-pct">R$ 12K</span></div><div class="progress-track"><div class="progress-fill" style="width:8%;background:#EF9F27"></div></div></div>
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Taxas cartório</span><span class="progress-pct">R$ 7K</span></div><div class="progress-track"><div class="progress-fill" style="width:5%;background:#B4B2A9"></div></div></div>
+            <div class="card-header"><span class="section-title">Receitas por categoria — mês atual</span></div>
+            <div class="progress-list" id="fin-pie-rec">
+              <div style="padding:16px 0;text-align:center;color:var(--text-secondary);font-size:12px">Nenhuma receita registrada.</div>
             </div>
           </div>
           <div class="card">
-            <div class="card-header"><span class="section-title">Despesas por categoria — maio</span></div>
-            <div class="progress-list">
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Obras / infraestrutura</span><span class="progress-pct">R$ 216K</span></div><div class="progress-track"><div class="progress-fill" style="width:68%;background:#E24B4A"></div></div></div>
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Comissões corretores</span><span class="progress-pct">R$ 54K</span></div><div class="progress-track"><div class="progress-fill" style="width:32%;background:#EF9F27"></div></div></div>
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Marketing / vendas</span><span class="progress-pct">R$ 28K</span></div><div class="progress-track"><div class="progress-fill" style="width:18%;background:#EF9F27"></div></div></div>
-              <div class="progress-item"><div class="progress-header"><span class="progress-name">Jurídico / cartório</span><span class="progress-pct">R$ 20K</span></div><div class="progress-track"><div class="progress-fill" style="width:12%;background:#B4B2A9"></div></div></div>
+            <div class="card-header"><span class="section-title">Despesas por categoria — mês atual</span></div>
+            <div class="progress-list" id="fin-pie-desp">
+              <div style="padding:16px 0;text-align:center;color:var(--text-secondary);font-size:12px">Nenhuma despesa registrada.</div>
             </div>
           </div>
         </div>
@@ -856,7 +810,7 @@ tbody tr.clickable{cursor:pointer}
       <div class="page" id="page-inadimplencia">
         <div class="kpi-grid">
           <div class="kpi"><div class="kpi-label">Contratos em atraso</div><div class="kpi-value" style="color:var(--danger)" id="inad-kpi-total">0</div><div class="kpi-delta down" id="inad-kpi-pct">—</div></div>
-          <div class="kpi"><div class="kpi-label">Valor total em aberto</div><div class="kpi-value" id="inad-kpi-valor">R$ 0</div><div class="kpi-delta down">parcelas vencidas</div></div>
+          <div class="kpi"><div class="kpi-label">Valor total em aberto</div><div class="kpi-value" id="inad-kpi-valor">—</div><div class="kpi-delta down">parcelas vencidas</div></div>
           <div class="kpi"><div class="kpi-label">Atraso médio</div><div class="kpi-value" id="inad-kpi-dias">0 dias</div><div class="kpi-delta warn" id="inad-kpi-risco">—</div></div>
           <div class="kpi"><div class="kpi-label">Em renegociação</div><div class="kpi-value" id="inad-kpi-reneg">0</div><div class="kpi-delta up">em andamento</div></div>
         </div>
@@ -1104,11 +1058,11 @@ tbody tr.clickable{cursor:pointer}
 
         <!-- KPIs -->
         <div class="kpi-grid" style="grid-template-columns:repeat(5,minmax(0,1fr))">
-          <div class="kpi"><div class="kpi-label">Capital captado</div><div class="kpi-value" id="inv-kpi-capital">R$ 0</div><div class="kpi-delta up" id="inv-kpi-inv-count">0 investidores</div></div>
-          <div class="kpi"><div class="kpi-label">Dividendos pagos</div><div class="kpi-value" id="inv-kpi-divid">R$ 0</div><div class="kpi-delta up">total distribuído</div></div>
-          <div class="kpi"><div class="kpi-label">Rentabilidade média</div><div class="kpi-value" id="inv-kpi-rent">0,00%</div><div class="kpi-delta up" id="inv-kpi-rent-label">a.a. ponderada</div></div>
-          <div class="kpi"><div class="kpi-label">TIR do portfólio</div><div class="kpi-value" id="inv-kpi-tir">0,00%</div><div class="kpi-delta up">taxa interna retorno</div></div>
-          <div class="kpi"><div class="kpi-label">Saldo a distribuir</div><div class="kpi-value" id="inv-kpi-saldo">R$ 0</div><div class="kpi-delta warn" id="inv-kpi-saldo-label">pendente</div></div>
+          <div class="kpi"><div class="kpi-label">Capital captado</div><div class="kpi-value" id="inv-kpi-capital">—</div><div class="kpi-delta up" id="inv-kpi-inv-count">0 investidores</div></div>
+          <div class="kpi"><div class="kpi-label">Dividendos pagos</div><div class="kpi-value" id="inv-kpi-divid">—</div><div class="kpi-delta up">total distribuído</div></div>
+          <div class="kpi"><div class="kpi-label">Rentabilidade média</div><div class="kpi-value" id="inv-kpi-rent">—</div><div class="kpi-delta up" id="inv-kpi-rent-label">a.a. ponderada</div></div>
+          <div class="kpi"><div class="kpi-label">TIR do portfólio</div><div class="kpi-value" id="inv-kpi-tir">—</div><div class="kpi-delta up">taxa interna retorno</div></div>
+          <div class="kpi"><div class="kpi-label">Saldo a distribuir</div><div class="kpi-value" id="inv-kpi-saldo">—</div><div class="kpi-delta warn" id="inv-kpi-saldo-label">pendente</div></div>
         </div>
 
         <!-- Abas -->
@@ -2396,18 +2350,9 @@ function filtrarLotes(){
 }
 
 function buildLoteGrid(containerId,count,seed){
-  const cls=['lote-disp','lote-vend','lote-res','lote-inad','lote-dist','lote-quit'];
-  const w=[40,32,11,7,2,8];
-  const names=['Disponível','Vendido','Reservado','Inadimplente','Distratado','Quitado'];
+  // Gráfico fictício desativado — mapa agora usa dados reais de lotes
   const el=document.getElementById(containerId);
-  if(!el)return;
-  let h='';
-  for(let i=1;i<=count;i++){
-    let r=((i*seed*7+i*3+17)%100),cum=0,si=0;
-    for(let k=0;k<w.length;k++){cum+=w[k];if(r<cum){si=k;break;}}
-    h+=`<div class="lote-cell ${cls[si]}" title="Lote ${i}: ${names[si]}">${i}</div>`;
-  }
-  el.innerHTML=h;
+  if(el) el.innerHTML='';
 }
 
 // Preview do mapa de corretor: mostra apenas disponíveis e reservados, o resto bloqueado
@@ -2428,11 +2373,7 @@ function buildGridPreviewCorretor(containerId,count,seed){
   el.innerHTML=h;
 }
 
-const loteamentos=[
-  {id:'verde-vale',   nome:'Res. Verde Vale',      cidade:'Sorocaba/SP', lotes:240, disp:107, res:25},
-  {id:'jardins-sul',  nome:'Cond. Jardins do Sul',  cidade:'Campinas/SP', lotes:180, disp:82,  res:14},
-  {id:'nova-esperanca',nome:'Res. Nova Esperança',  cidade:'Jundiaí/SP',  lotes:320, disp:198, res:31},
-];
+const loteamentos=[];
 
 function gerarLinkCorretor(id){
   // Na versão real, este seria um link real do sistema
@@ -3606,7 +3547,7 @@ function salvarCliente(){
 }
 
 // ---- LOTES DO CONTRATO (select dinâmico) ----
-const lotesDisponiveis={'verde-vale':['A-01 (300m²)','A-05 (290m²)','B-01 (280m²)','C-01 (295m²)'],'jardins-sul':['A-02 (310m²)','B-03 (295m²)','C-07 (320m²)'],'nova-esperanca':['D-01 (300m²)','D-02 (315m²)','E-01 (280m²)']};
+const lotesDisponiveis={};
 function atualizarLotesContrato(){
   const lot=document.getElementById('nct-lot')?.value;
   const sel=document.getElementById('nct-lote');
@@ -3743,7 +3684,7 @@ function setFinTipo(tipo){
 
 function removerLancamento(id){
   lancamentos=lancamentos.filter(l=>l.id!==id);
-  renderLancamentos();atualizarKpisFinanceiro();atualizarGrafico();
+  renderLancamentos();atualizarKpisFinanceiro();atualizarGrafico();atualizarPieCharts();
 }
 
 let editandoLancamentoId=null;
@@ -3824,8 +3765,8 @@ function atualizarKpisFinanceiro(){
   const hoje=new Date();
   const mes=hoje.getMonth(),ano=hoje.getFullYear();
   const deMes=l=>{const d=new Date(l.data+'T12:00:00');return d.getMonth()===mes&&d.getFullYear()===ano;};
-  const rec=lancamentos.filter(l=>l.tipo==='RECEITA'&&deMes(l)).reduce((s,l)=>s+l.valor,0)||542000;
-  const desp=lancamentos.filter(l=>l.tipo==='DESPESA'&&deMes(l)).reduce((s,l)=>s+l.valor,0)||318000;
+  const rec=lancamentos.filter(l=>l.tipo==='RECEITA'&&deMes(l)).reduce((s,l)=>s+l.valor,0)||0;
+  const desp=lancamentos.filter(l=>l.tipo==='DESPESA'&&deMes(l)).reduce((s,l)=>s+l.valor,0)||0;
   const res=rec-desp;
   const setEl=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   setEl('fin-kpi-rec',fmt(rec));setEl('fin-kpi-desp',fmt(desp));setEl('fin-kpi-res',fmt(Math.abs(res)));
@@ -3835,8 +3776,8 @@ function atualizarKpisFinanceiro(){
 }
 
 // ---- GRÁFICO CANVAS ----
-const finBaseRec= [380000,420000,435000,390000,462000,542000];
-const finBaseDesp=[290000,310000,280000,295000,305000,318000];
+const finBaseRec= [0,0,0,0,0,0];
+const finBaseDesp=[0,0,0,0,0,0];
 const finMeses=   ['Dez','Jan','Fev','Mar','Abr','Mai'];
 
 function atualizarGrafico(){
@@ -3850,12 +3791,12 @@ function atualizarGrafico(){
   ctx.scale(dpr,dpr);
   const hoje=new Date();const mes=hoje.getMonth(),ano=hoje.getFullYear();
   const deMes=l=>{const d=new Date(l.data+'T12:00:00');return d.getMonth()===mes&&d.getFullYear()===ano;};
-  const recMes=lancamentos.filter(l=>l.tipo==='RECEITA'&&deMes(l)).reduce((s,l)=>s+l.valor,0)||542000;
-  const despMes=lancamentos.filter(l=>l.tipo==='DESPESA'&&deMes(l)).reduce((s,l)=>s+l.valor,0)||318000;
+  const recMes=lancamentos.filter(l=>l.tipo==='RECEITA'&&deMes(l)).reduce((s,l)=>s+l.valor,0)||0;
+  const despMes=lancamentos.filter(l=>l.tipo==='DESPESA'&&deMes(l)).reduce((s,l)=>s+l.valor,0)||0;
   const rec=[...finBaseRec.slice(0,-1),recMes];
   const desp=[...finBaseDesp.slice(0,-1),despMes];
   const res=rec.map((r,i)=>r-desp[i]);
-  const pad={top:10,right:16,bottom:28,left:58};
+  const pad={top:10,right:40,bottom:28,left:58};
   const cW=W-pad.left-pad.right,cH=H-pad.top-pad.bottom;
   const maxV=Math.max(...rec,...desp)*1.12,minV=0;
   const rng=maxV-minV;
@@ -3891,8 +3832,47 @@ function atualizarGrafico(){
   desp.forEach((v,i)=>{ctx.beginPath();ctx.arc(pad.left+i*step,toY(v),3,0,Math.PI*2);ctx.fillStyle='#E24B4A';ctx.fill();});
 }
 
+function atualizarPieCharts(){
+  const hoje=new Date();const mes=hoje.getMonth(),ano=hoje.getFullYear();
+  const deMes=l=>{const d=new Date(l.data+'T12:00:00');return d.getMonth()===mes&&d.getFullYear()===ano;};
+  const corCat={'Parcela':'#378ADD','Entrada':'#378ADD','Juros':'#EF9F27','Taxa':'#B4B2A9','Outros-R':'#97C459',
+                'Obra':'#E24B4A','Comissao':'#EF9F27','Marketing':'#EF9F27','Juridico':'#B4B2A9','Administrativa':'#888780','Outros-D':'#B4B2A9'};
+  const nomeCat={'Parcela':'Parcelas recebidas','Entrada':'Entradas / vendas','Juros':'Juros e multas',
+                 'Taxa':'Taxas cartório','Outros-R':'Outros (receita)',
+                 'Obra':'Obras / infraestrutura','Comissao':'Comissões corretores','Marketing':'Marketing / vendas',
+                 'Juridico':'Jurídico / cartório','Administrativa':'Administrativo','Outros-D':'Outros (despesa)'};
+
+  function renderPie(elId, tipo){
+    const el=document.getElementById(elId);
+    if(!el)return;
+    const mes_lançs=lancamentos.filter(l=>l.tipo===tipo&&deMes(l));
+    if(!mes_lançs.length){
+      el.innerHTML=`<div style="padding:16px 0;text-align:center;color:var(--text-secondary);font-size:12px">Nenhum lançamento neste mês.</div>`;
+      return;
+    }
+    const grupos={};
+    mes_lançs.forEach(l=>{const k=l.cat||'Outros-'+(tipo==='RECEITA'?'R':'D');grupos[k]=(grupos[k]||0)+l.valor;});
+    const total=Object.values(grupos).reduce((a,b)=>a+b,0);
+    const sorted=Object.entries(grupos).sort((a,b)=>b[1]-a[1]);
+    const cor=tipo==='RECEITA'?'#378ADD':'#E24B4A';
+    el.innerHTML=sorted.map(([k,v])=>{
+      const pct=total?Math.round(v/total*100):0;
+      const c=corCat[k]||cor;
+      return `<div class="progress-item">
+        <div class="progress-header">
+          <span class="progress-name">${nomeCat[k]||k}</span>
+          <span class="progress-pct">${fmt(v)}</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%;background:${c}"></div></div>
+      </div>`;
+    }).join('');
+  }
+  renderPie('fin-pie-rec','RECEITA');
+  renderPie('fin-pie-desp','DESPESA');
+}
+
 function initFinanceiro(){
-  setFinTipo('RECEITA');renderLancamentos();atualizarKpisFinanceiro();
+  setFinTipo('RECEITA');renderLancamentos();atualizarKpisFinanceiro();atualizarPieCharts();
   if(typeof atualizarSelectContas==='function') atualizarSelectContas();
   setTimeout(atualizarGrafico,80);
 }
@@ -3901,8 +3881,44 @@ function initFinanceiro(){
 // LOTEAMENTO — FASE
 // ================================================================
 // ================================================================
-// SINCRONIZAR FILTRO DE LOTEAMENTO NA SIDEBAR
+// FILTRO DE LOTEAMENTO — gerenciamento dinâmico completo
 // ================================================================
+
+// Carrega do Supabase e popula o filtro do zero
+async function carregarFiltroLoteamentos() {
+  const rows = await dbSelect('loteamentos', {order:'nome', asc:true});
+  const container = document.getElementById('global-lot-filter');
+  if(!container) return;
+  // Remover itens dinâmicos anteriores (preservar "Todos")
+  container.querySelectorAll('[data-lot]:not([data-lot="todos"])').forEach(el=>el.remove());
+  rows.forEach(r => {
+    const slug = slugLoteamento(r.nome);
+    if(container.querySelector(`[data-lot="${slug}"]`)) return;
+    const lbl = document.createElement('label');
+    lbl.className = 'glot-item';
+    lbl.dataset.lot = slug;
+    lbl.setAttribute('onclick','toggleGlobalLot(this)');
+    lbl.innerHTML = `<span class="glot-check"></span> ${r.nome}`;
+    container.appendChild(lbl);
+  });
+  // Chips de lotes
+  const wrap = document.getElementById('lot-filter-wrap');
+  if(wrap) {
+    wrap.querySelectorAll('[data-lot]:not([data-lot="todos"])').forEach(el=>el.remove());
+    rows.forEach(r => {
+      const slug = slugLoteamento(r.nome);
+      const chip = document.createElement('div');
+      chip.className = 'lot-chip'; chip.dataset.lot = slug;
+      chip.setAttribute('onclick','toggleLotChip(this)');
+      chip.textContent = r.nome; wrap.appendChild(chip);
+    });
+  }
+  // Limpar globalLots de slugs que não existem mais
+  const validos = new Set(['todos', ...rows.map(r=>slugLoteamento(r.nome))]);
+  [...globalLots].forEach(s=>{ if(!validos.has(s)) globalLots.delete(s); });
+  if(globalLots.size===0) globalLots.add('todos');
+}
+
 function slugLoteamento(nome){
   return nome.toLowerCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
@@ -4080,7 +4096,7 @@ function addLancamento(){
   document.getElementById('fin-desc').value='';
   document.getElementById('fin-valor').value='';
   document.getElementById('fin-data').value='';
-  renderLancamentos();atualizarKpisFinanceiro();atualizarGrafico();
+  renderLancamentos();atualizarKpisFinanceiro();atualizarGrafico();atualizarPieCharts();
   showToast(finTipoAtual==='RECEITA'?'Receita registrada!':'Despesa registrada!');
 }
 
@@ -4450,36 +4466,36 @@ function onKanbanDrop(event,novoStatus){
 // ================================================================
 const dashDados={
   todos:{
-    vgvTotal:'R$ 64,6M',vgvVend:'R$ 31,2M',receb:'R$ 487K',inad:'4,2%',
+    vgvTotal:'—',vgvVend:'—',receb:'—',inad:'4,2%',
     inadDelta:'12 contratos em atraso',vgvDelta:'todos os empreendimentos',
     obrasLabel:'Todos os loteamentos',
-    lotesLabel:'Todos os loteamentos',lotesTotal:730,
-    lotes:{disp:392,vend:232,res:70,inad:27,dist:9},
-    obras:[{n:'Terraplanagem — Quadras A–D',pct:100,cor:'#639922'},{n:'Asfalto interno',pct:78,cor:'#378ADD'},{n:'Rede elétrica',pct:55,cor:'#EF9F27'},{n:'Água e esgoto',pct:40,cor:'#EF9F27'},{n:'Paisagismo',pct:10,cor:'#E24B4A'}],
+    lotesLabel:'Todos os loteamentos',lotesTotal:0,
+    lotes:{disp:0,vend:0,res:0,inad:0,dist:0},
+    obras:[],
   },
   'verde-vale':{
     vgvTotal:'R$ 20,4M',vgvVend:'R$ 14,8M',receb:'R$ 208K',inad:'3,8%',
     inadDelta:'7 contratos em atraso',vgvDelta:'Fase 1 · Sorocaba/SP',
     obrasLabel:'Res. Verde Vale · Fase 1',
-    lotesLabel:'Res. Verde Vale · Fase 1',lotesTotal:240,
-    lotes:{disp:107,vend:85,res:25,inad:18,dist:5},
-    obras:[{n:'Terraplanagem — Quadras A–D',pct:100,cor:'#639922'},{n:'Asfalto interno',pct:78,cor:'#378ADD'},{n:'Rede elétrica',pct:55,cor:'#EF9F27'}],
+    lotesLabel:'Res. Verde Vale · Fase 1',lotesTotal:0,
+    lotes:{disp:0,vend:0,res:0,inad:0,dist:0},
+    obras:[],
   },
   'jardins-sul':{
     vgvTotal:'R$ 16,2M',vgvVend:'R$ 11,3M',receb:'R$ 162K',inad:'4,5%',
     inadDelta:'3 contratos em atraso',vgvDelta:'Fase 2 · Campinas/SP',
     obrasLabel:'Cond. Jardins do Sul · Fase 2',
-    lotesLabel:'Cond. Jardins do Sul · Fase 2',lotesTotal:180,
-    lotes:{disp:82,vend:62,res:22,inad:8,dist:6},
-    obras:[{n:'Água e esgoto',pct:40,cor:'#EF9F27'},{n:'Paisagismo',pct:10,cor:'#E24B4A'}],
+    lotesLabel:'Cond. Jardins do Sul · Fase 2',lotesTotal:0,
+    lotes:{disp:0,vend:0,res:0,inad:0,dist:0},
+    obras:[],
   },
   'nova-esperanca':{
     vgvTotal:'R$ 28,0M',vgvVend:'R$ 5,1M',receb:'R$ 117K',inad:'5,1%',
     inadDelta:'2 contratos em atraso',vgvDelta:'Fase 3 · Jundiaí/SP',
     obrasLabel:'Res. Nova Esperança · Fase 3',
-    lotesLabel:'Res. Nova Esperança · Fase 3',lotesTotal:310,
-    lotes:{disp:203,vend:85,res:23,inad:1,dist:0},
-    obras:[{n:'Terraplanagem fase 3',pct:22,cor:'#EF9F27'},{n:'Rede elétrica fase 3',pct:5,cor:'#E24B4A'}],
+    lotesLabel:'Res. Nova Esperança · Fase 3',lotesTotal:0,
+    lotes:{disp:0,vend:0,res:0,inad:0,dist:0},
+    obras:[],
   },
 };
 
@@ -4543,17 +4559,21 @@ function atualizarDashboard(){
 
   // ---- Barras de obras ----
   const obrasList=document.getElementById('dash-obras-list');
-  if(obrasList&&d.obras){
-    obrasList.innerHTML=d.obras.map(o=>{
-      const pctStyle=o.pct===100?'color:var(--success);font-weight:600':o.pct<30?'color:var(--danger)':'';
-      return `<div class="progress-item">
-        <div class="progress-header">
-          <span class="progress-name">${o.n}</span>
-          <span class="progress-pct" style="${pctStyle}">${o.pct}%</span>
-        </div>
-        <div class="progress-track"><div class="progress-fill" style="width:${o.pct}%;background:${o.cor}"></div></div>
-      </div>`;
-    }).join('');
+  if(obrasList){
+    if(!d.obras||d.obras.length===0){
+      obrasList.innerHTML='<div style="padding:16px 0;text-align:center;color:var(--text-secondary);font-size:12px">Nenhuma obra cadastrada.</div>';
+    } else {
+      obrasList.innerHTML=d.obras.map(o=>{
+        const pctStyle=o.pct===100?'color:var(--success);font-weight:600':o.pct<30?'color:var(--danger)':'';
+        return `<div class="progress-item">
+          <div class="progress-header">
+            <span class="progress-name">${o.n}</span>
+            <span class="progress-pct" style="${pctStyle}">${o.pct}%</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:${o.pct}%;background:${o.cor}"></div></div>
+        </div>`;
+      }).join('');
+    }
   }
 }
 
@@ -5917,6 +5937,7 @@ async function salvarLoteamentoDB() {
   closeModal('modal-new-loteamento');
   ['nl-nome','nl-fase','nl-cep','nl-end','nl-matricula','nl-banco','nl-agencia','nl-conta','nl-pix'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   syncFiltroLoteamento(nome, row.fase, 'add');
+  carregarFiltroLoteamentos();
   carregarLoteamentos();
   showToast('Loteamento "'+nome+'" cadastrado!');
 }
@@ -5927,6 +5948,7 @@ async function excluirLoteamentoDB(id, nome) {
   await dbDelete('loteamentos', id);
   hideLoading();
   syncFiltroLoteamento(nome, null, 'remove');
+  carregarFiltroLoteamentos();
   carregarLoteamentos();
   showToast('Loteamento "'+nome+'" excluído.','error');
 }
@@ -6523,6 +6545,8 @@ window.addEventListener('DOMContentLoaded', () => {
   };
   Object.entries(remap).forEach(([name, fn]) => { window[name] = fn; });
 
+  // Carregar filtro de loteamentos do banco na inicialização
+  if(typeof carregarFiltroLoteamentos==='function') carregarFiltroLoteamentos();
   // Carregar página inicial
   initPageDB('loteamentos');
 });
