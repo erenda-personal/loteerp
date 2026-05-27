@@ -2907,6 +2907,22 @@ function renderConfiguracoes(){
 
   <!-- ABA SISTEMA -->
   <div id="cfg-sistema" style="display:none">
+    <!-- Integração Supabase -->
+    <div class="card" style="padding:18px;margin-bottom:16px;border:1.5px solid var(--accent-light)">
+      <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px">🔑 Integração Supabase</div>
+      <div class="field" style="margin-bottom:10px">
+        <label>Service Role Key <span style="font-size:10px;color:var(--text-secondary);font-weight:400">(necessária para envio de convites)</span></label>
+        <div style="display:flex;gap:8px">
+          <input id="cfg-service-key" type="password" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." style="flex:1;font-family:monospace;font-size:11px" oninput="this.dataset.changed='1'">
+          <button class="btn btn-sm" onclick="toggleServiceKeyVisibility()">👁</button>
+        </div>
+        <div style="font-size:10px;color:var(--text-secondary);margin-top:5px">Supabase → Settings → API → service_role → Reveal → Copiar</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-sm btn-primary" onclick="salvarServiceKey()">Salvar chave</button>
+        <span id="cfg-service-key-status" style="font-size:11px;color:var(--text-secondary)"></span>
+      </div>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
       <div class="card" style="padding:18px">
         <div style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px">Configurações financeiras padrão</div>
@@ -3006,6 +3022,7 @@ function switchCfgTab(el,tab){
     if(el2)el2.style.display=id===tab?'block':'none';
   });
   if(tab==='usuarios' && typeof carregarUsuarios==='function') carregarUsuarios();
+  if(tab==='sistema' && typeof initSistemaTab==='function') initSistemaTab();
 }
 
 function setAccent(color){
@@ -3158,8 +3175,8 @@ function renderUsuarios(){
 async function reenviarConvite(id, email){
   if(!confirm(`Reenviar convite para ${email}?`)) return;
   showLoading('Reenviando...');
-  const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3c3JwbWdrdm9mZXphcG1vdWNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTc3MDMzMywiZXhwIjoyMDk1MzQ2MzMzfQ.87R2cpz7Kms3SOAU1EM3nH_8w1Kmof2S95AwnsACd40';
-  const sbAdmin = supabase.createClient(SUPA_URL, SERVICE_KEY);
+  const sbAdmin = getAdminClient();
+  if(!sbAdmin){hideLoading();return;}
   const {error} = await sbAdmin.auth.admin.inviteUserByEmail(email,{
     options:{emailRedirectTo:window.location.origin}
   });
@@ -3171,6 +3188,30 @@ async function reenviarConvite(id, email){
 }
 
 // ── Enviar convite real via Supabase Auth ─────────────────────
+// ── Service Role Key ─────────────────────────────────────────
+function getServiceKey(){return localStorage.getItem('loteerp_service_key')||'';}
+function getAdminClient(){
+  const key=getServiceKey();
+  if(!key){showToast('Configure a Service Role Key em Configurações → Sistema antes de enviar convites.','error');return null;}
+  return supabase.createClient(SUPA_URL,key);
+}
+function salvarServiceKey(){
+  const val=document.getElementById('cfg-service-key')?.value?.trim();
+  if(!val||!val.startsWith('eyJ')){showToast('Chave inválida. Deve começar com "eyJ".','error');return;}
+  localStorage.setItem('loteerp_service_key',val);
+  const st=document.getElementById('cfg-service-key-status');
+  if(st){st.textContent='✓ Chave salva';st.style.color='var(--success)';}
+  showToast('Service Role Key salva! Convites funcionarão corretamente.');
+}
+function toggleServiceKeyVisibility(){
+  const el=document.getElementById('cfg-service-key');
+  if(el)el.type=el.type==='password'?'text':'password';
+}
+function initSistemaTab(){
+  const el=document.getElementById('cfg-service-key');if(!el)return;
+  const saved=getServiceKey();
+  if(saved){el.value=saved;const st=document.getElementById('cfg-service-key-status');if(st){st.textContent='✓ Chave configurada';st.style.color='var(--success)';}}
+}
 async function adicionarUsuario(){
   const nome  = document.getElementById('nu-nome')?.value?.trim();
   const email = document.getElementById('nu-email')?.value?.trim();
@@ -3180,9 +3221,8 @@ async function adicionarUsuario(){
 
   showLoading('Enviando convite...');
 
-  // inviteUserByEmail requer service_role key — criamos um cliente dedicado
-  const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3c3JwbWdrdm9mZXphcG1vdWNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTc3MDMzMywiZXhwIjoyMDk1MzQ2MzMzfQ.87R2cpz7Kms3SOAU1EM3nH_8w1Kmof2S95AwnsACd40';
-  const sbAdmin = supabase.createClient(SUPA_URL, SERVICE_KEY);
+  const sbAdmin = getAdminClient();
+  if(!sbAdmin){hideLoading();return;}
 
   const {data:inv, error:invErr} = await sbAdmin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: nome },
