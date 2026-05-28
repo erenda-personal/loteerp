@@ -3309,7 +3309,21 @@ function salvarEmpresa(){
   cfg.site    = document.getElementById('cfg-site')?.value    || cfg.site;
   applyTheme();
   saveCfg();
-  showToast('Dados da empresa salvos! Logo e nome atualizados.');
+  // Salvar no Supabase
+  const row = {
+    id:           '00000000-0000-0000-0000-000000000001',
+    nome:         cfg.nome,
+    razao_social: cfg.razao,
+    cnpj:         cfg.cnpj,
+    email:        cfg.email,
+    telefone:     cfg.telefone,
+    site:         cfg.site,
+    logo_url:     cfg.logoData||null,
+    accent_color: cfg.accentColor||'1E5FA5',
+  };
+  dbUpsert('empresa', row, 'id').then(()=>{
+    showToast('Dados da empresa salvos!');
+  }).catch(()=>showToast('Dados da empresa salvos!'));
 }
 
 function resetEmpresa(){renderConfiguracoes();}
@@ -4066,8 +4080,78 @@ async function reenviarConvite(id, email){
 }
 
 // ── Enviar convite real via Supabase Auth ─────────────────────
-// ── Service Role Key ─────────────────────────────────────────
-function getServiceKey(){return localStorage.getItem('loteerp_service_key')||'';}
+// ── Service Role Key — salva no Supabase, não no localStorage ─
+let _cachedServiceKey = '';
+
+function getServiceKey(){
+  return _cachedServiceKey || localStorage.getItem('loteerp_service_key') || '';
+}
+
+function getAdminClient(){
+  const key = getServiceKey();
+  if(!key){ showToast('Configure a Service Role Key em Configurações → Sistema antes de enviar convites.','error'); return null; }
+  return supabase.createClient(SUPA_URL, key);
+}
+
+async function salvarServiceKey(){
+  const val = document.getElementById('cfg-service-key')?.value?.trim();
+  if(!val || !val.startsWith('eyJ')){
+    showToast('Chave inválida. Deve começar com "eyJ".','error');
+    return;
+  }
+  showLoading('Salvando chave...');
+  // Salvar no Supabase (campo extra na tabela empresa)
+  await dbUpsert('empresa', {id:'00000000-0000-0000-0000-000000000001', service_key: val}, 'id');
+  hideLoading();
+  _cachedServiceKey = val;
+  // Manter no localStorage como fallback offline
+  try{ localStorage.setItem('loteerp_service_key', val); }catch(e){}
+  const st = document.getElementById('cfg-service-key-status');
+  if(st){ st.textContent = '✓ Chave salva com sucesso'; st.style.color = 'var(--success)'; }
+  showToast('Service Role Key salva! Convites funcionarão corretamente.');
+}
+
+function toggleServiceKeyVisibility(){
+  const el = document.getElementById('cfg-service-key');
+  if(el) el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+function initSistemaTab(){
+  const el = document.getElementById('cfg-service-key');
+  if(!el) return;
+  const saved = getServiceKey();
+  if(saved){
+    el.value = saved;
+    const st = document.getElementById('cfg-service-key-status');
+    if(st){ st.textContent = '✓ Chave configurada'; st.style.color = 'var(--success)'; }
+  }
+}
+
+// ── Carregar configurações do Supabase ao iniciar ─────────────
+async function carregarConfiguracoesDoBanco(){
+  const rows = await dbSelect('empresa', {filter:[['id','eq','00000000-0000-0000-0000-000000000001']]});
+  if(!rows.length) return;
+  const emp = rows[0];
+
+  // Aplicar dados da empresa
+  if(emp.nome)         cfg.nome         = emp.nome;
+  if(emp.razao_social) cfg.razao        = emp.razao_social;
+  if(emp.cnpj)         cfg.cnpj         = emp.cnpj;
+  if(emp.email)        cfg.email        = emp.email;
+  if(emp.telefone)     cfg.telefone     = emp.telefone;
+  if(emp.site)         cfg.site         = emp.site;
+  if(emp.logo_url)     cfg.logoData     = emp.logo_url;
+  if(emp.accent_color) cfg.accentColor  = emp.accent_color;
+
+  // Service key — guardar em memória (nunca expor no DOM)
+  if(emp.service_key){
+    _cachedServiceKey = emp.service_key;
+    try{ localStorage.setItem('loteerp_service_key', emp.service_key); }catch(e){}
+  }
+
+  // Aplicar tema e nome na interface
+  applyTheme();
+}
 function getAdminClient(){
   const key=getServiceKey();
   if(!key){showToast('Configure a Service Role Key em Configurações → Sistema antes de enviar convites.','error');return null;}
@@ -7705,6 +7789,8 @@ window.addEventListener('DOMContentLoaded', () => {
   };
   Object.entries(remap).forEach(([name, fn]) => { window[name] = fn; });
 
+  // Carregar configurações do banco (empresa, logo, service key)
+  if(typeof carregarConfiguracoesDoBanco==='function') carregarConfiguracoesDoBanco();
   // Carregar filtro de loteamentos do banco na inicialização
   if(typeof carregarFiltroLoteamentos==='function') carregarFiltroLoteamentos();
   // Navegar para a página da URL atual
