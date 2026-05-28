@@ -2494,18 +2494,58 @@ function hideLoading() {
 }
 const pageTitles={dashboard:'Dashboard executivo',loteamentos:'Loteamentos',lotes:'Lotes',clientes:'Clientes',contrato_detalhe:'Contrato #1042',contratos:'Contratos','cliente-detalhe':'Maria Aparecida Souza — Ficha','contrato-detalhe':'Contrato #1042 — Detalhes',financeiro:'Financeiro',inadimplencia:'Inadimplência',obras:'Obras',crm:'CRM / Leads',simulador:'Simulador Price / SAC',configuracoes:'Configurações do sistema',corretores:'Corretores',investidores:'Investidores','contas-bancarias':'Contas Bancárias'};
 
-function showPage(id,navEl){
+function showPage(id, navEl){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   const el=document.getElementById('page-'+id);
-  if(el)el.classList.add('active');
+  if(el) el.classList.add('active');
   document.getElementById('topbar-title').textContent=pageTitles[id]||id;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  if(navEl)navEl.classList.add('active');
+  if(navEl){
+    navEl.classList.add('active');
+  } else {
+    // Ativar o nav-item correto mesmo quando navEl não é passado
+    document.querySelectorAll('.nav-item').forEach(n=>{
+      if(n.getAttribute('onclick')&&n.getAttribute('onclick').includes("'"+id+"'"))
+        n.classList.add('active');
+    });
+  }
   if(id==='inadimplencia') renderInadimplencia();
-  if(id==='simulador')calcSim();
-  if(id==='configuracoes')renderConfiguracoes();
-  // Carrega dados do Supabase
+  if(id==='simulador') calcSim();
+  if(id==='configuracoes') renderConfiguracoes();
   if(typeof initPageDB==='function') initPageDB(id);
+
+  // ── History API: atualizar URL sem recarregar ──────────────
+  const path = id==='dashboard' ? '/' : '/'+id;
+  if(window.location.pathname !== path){
+    history.pushState({page: id}, pageTitles[id]||id, path);
+  }
+  document.title = (pageTitles[id]||id) + ' — LoteERP';
+}
+
+// Botão Voltar / Avançar do navegador
+window.addEventListener('popstate', function(e){
+  const id = e.state?.page || pageFromPath(window.location.pathname);
+  if(id){
+    showPage(id, null);
+    // Não push novo estado (já estamos navegando pelo histórico)
+    history.replaceState({page: id}, '', window.location.pathname);
+  }
+});
+
+// Detectar página pela URL ao carregar
+function pageFromPath(path){
+  const slug = path.replace(/^\//, '') || 'dashboard';
+  // Verificar se existe uma página com esse id
+  const valid = Object.keys(pageTitles);
+  return valid.includes(slug) ? slug : 'dashboard';
+}
+
+function initFromURL(){
+  const id = pageFromPath(window.location.pathname);
+  // Substituir estado inicial sem adicionar ao histórico
+  history.replaceState({page: id}, pageTitles[id]||id, window.location.pathname);
+  document.title = (pageTitles[id]||id) + ' — LoteERP';
+  showPage(id, null);
 }
 
 function switchTab(el,which){
@@ -7616,8 +7656,9 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Carregar filtro de loteamentos do banco na inicialização
   if(typeof carregarFiltroLoteamentos==='function') carregarFiltroLoteamentos();
-  // Carregar página inicial
-  initPageDB('loteamentos');
+  // Navegar para a página da URL atual
+  if(typeof initFromURL==='function') initFromURL();
+  else initPageDB('loteamentos');
 });
 
 applyTheme();
