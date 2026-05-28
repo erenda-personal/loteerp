@@ -3318,7 +3318,7 @@ function salvarEmpresa(){
     email:        cfg.email,
     telefone:     cfg.telefone,
     site:         cfg.site,
-    logo_url:     cfg.logoData||null,
+    logo_url:     cfg.logoImg||null,
     accent_color: cfg.accentColor||'1E5FA5',
   };
   dbUpsert('empresa', row, 'id').then(()=>{
@@ -3337,17 +3337,22 @@ function salvarAparencia(){
 function handleLogoUpload(input){
   const file=input.files[0];
   if(!file)return;
+  if(file.size > 500*1024){ showToast('Imagem muito grande. Use até 500KB.','error'); return; }
   const reader=new FileReader();
-  reader.onload=e=>{
+  reader.onload=async e=>{
     cfg.logoImg=e.target.result;
-    saveCfg();
     const preview=document.getElementById('logo-preview');
     if(preview){
       preview.style.background='transparent';
       preview.innerHTML=`<img src="${e.target.result}" style="width:72px;height:72px;object-fit:contain;border-radius:10px">`;
     }
     applyTheme();
-    showToast('Logo aplicado com sucesso!');
+    // Salvar imediatamente no Supabase
+    showLoading('Salvando logo...');
+    await dbUpsert('empresa',{id:'00000000-0000-0000-0000-000000000001', logo_url: cfg.logoImg},'id');
+    saveCfg();
+    hideLoading();
+    showToast('Logo salvo com sucesso!');
   };
   reader.readAsDataURL(file);
 }
@@ -3355,12 +3360,14 @@ function handleLogoUpload(input){
 function resetLogo(){
   cfg.logoImg=null;
   saveCfg();
+  dbUpsert('empresa',{id:'00000000-0000-0000-0000-000000000001', logo_url: null},'id');
   const preview=document.getElementById('logo-preview');
   if(preview){
     preview.style.background=cfg.accentColor;
     preview.innerHTML=`<span id="logo-preview-text" style="color:#fff;font-size:28px;font-weight:700;letter-spacing:-1px">${cfg.logoText||'LE'}</span>`;
   }
   applyTheme();
+  showToast('Logo removido.');
 }
 // ── Popular selects do modal de lead com dados reais ─────────
 async function abrirModalImportCSV(){
@@ -4100,11 +4107,15 @@ async function salvarServiceKey(){
     return;
   }
   showLoading('Salvando chave...');
-  // Salvar no Supabase (campo extra na tabela empresa)
-  await dbUpsert('empresa', {id:'00000000-0000-0000-0000-000000000001', service_key: val}, 'id');
+  // Garantir que o registro existe antes de atualizar
+  const rows = await dbSelect('empresa',{filter:[['id','eq','00000000-0000-0000-0000-000000000001']]});
+  if(rows.length){
+    await dbUpdate('empresa','00000000-0000-0000-0000-000000000001',{service_key: val});
+  } else {
+    await dbInsert('empresa',{id:'00000000-0000-0000-0000-000000000001', nome: cfg.nome||'Empresa', service_key: val});
+  }
   hideLoading();
   _cachedServiceKey = val;
-  // Manter no localStorage como fallback offline
   try{ localStorage.setItem('loteerp_service_key', val); }catch(e){}
   const st = document.getElementById('cfg-service-key-status');
   if(st){ st.textContent = '✓ Chave salva com sucesso'; st.style.color = 'var(--success)'; }
@@ -4140,7 +4151,7 @@ async function carregarConfiguracoesDoBanco(){
   if(emp.email)        cfg.email        = emp.email;
   if(emp.telefone)     cfg.telefone     = emp.telefone;
   if(emp.site)         cfg.site         = emp.site;
-  if(emp.logo_url)     cfg.logoData     = emp.logo_url;
+  if(emp.logo_url)     cfg.logoImg      = emp.logo_url;
   if(emp.accent_color) cfg.accentColor  = emp.accent_color;
 
   // Service key — guardar em memória (nunca expor no DOM)
