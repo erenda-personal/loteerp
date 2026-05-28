@@ -5712,8 +5712,29 @@ function toggleGlobalLot(el){
   const isAll=globalLots.has('todos');
   showToast('Filtro: '+(isAll?'todos os loteamentos':[...globalLots].join(', ')));
   atualizarDashboard();
-  atualizarKpisLotes();
-  // Atualizar contas bancárias se a página estiver visível
+
+  // ── Recarregar lotes do Supabase com filtro correto ────────
+  if(document.getElementById('page-lotes')?.classList.contains('active')){
+    if(isAll){
+      // Todos: buscar sem filtro
+      carregarLotes();
+    } else if(globalLots.size===1){
+      // Um loteamento: buscar pelo slug e obter o UUID
+      const slug = [...globalLots][0];
+      dbSelect('loteamentos',{order:'nome',asc:true})
+        .then(rows=>{
+          const match = rows.find(r=>slugLoteamento(r.nome)===slug);
+          if(match) carregarLotes(match.id);
+          else carregarLotes();
+        });
+    } else {
+      // Múltiplos: buscar todos e filtrar no cliente
+      carregarLotesFiltrados([...globalLots]);
+    }
+  } else {
+    atualizarKpisLotes();
+  }
+
   if(document.getElementById('page-inadimplencia')?.classList.contains('active')){
     if(typeof renderInadimplencia==='function') renderInadimplencia();
   }
@@ -7135,6 +7156,40 @@ async function salvarClienteDB() {
 }
 
 // ── LOTES ────────────────────────────────────────────────────
+// Carrega lotes de múltiplos loteamentos (filtro com vários selecionados)
+async function carregarLotesFiltrados(slugs){
+  showLoading('Carregando lotes...');
+  // Buscar todos os loteamentos para mapear slug → id
+  const todos = await dbSelect('loteamentos',{order:'nome',asc:true});
+  const ids = todos
+    .filter(r => slugs.some(s => slugLoteamento(r.nome)===s))
+    .map(r => r.id);
+  if(!ids.length){ hideLoading(); return carregarLotes(); }
+  // Buscar lotes dos IDs encontrados
+  let allRows = [];
+  for(const id of ids){
+    const rows = await dbSelect('lotes',{filter:[['loteamento_id','eq',id]],order:'quadra',asc:true});
+    allRows = allRows.concat(rows);
+  }
+  hideLoading();
+  const tbody = document.getElementById('tbody-lotes-lista');
+  const badgeCls = {'Disponível':'badge-green','Vendido':'badge-blue','Reservado':'badge-amber','Inadimplente':'badge-red','Distratado':'badge-gray','Quitado':''};
+  if(tbody){
+    tbody.innerHTML = allRows.map(r=>{
+      const bStyle = r.status==='Quitado'?' style="background:#EDE9FE;color:#5B21B6"':'';
+      return `<tr data-status="${r.status}" data-quadra="${r.quadra}">
+        <td>${r.quadra}-${(r.numero||'').padStart(2,'0')}</td>
+        <td>${r.quadra}</td>
+        <td>${r.area_m2||'—'} m²</td>
+        <td>R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</td>
+        <td><span class="badge ${badgeCls[r.status]||'badge-gray'}"${bStyle}>${r.status}</span></td>
+        <td>—</td>
+      </tr>`;
+    }).join('');
+  }
+  atualizarKpisLotesDB(allRows);
+}
+
 async function carregarLotes(loteamentoId) {
   showLoading('Carregando lotes...');
   const filter = loteamentoId ? [['loteamento_id','eq',loteamentoId]] : [];
