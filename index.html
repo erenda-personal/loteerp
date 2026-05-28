@@ -936,8 +936,15 @@ tbody tr.clickable{cursor:pointer}
         <!-- VISÃO TABELA -->
         <div id="crm-visao-tabela">
           <div class="card">
-            <table>
-              <thead><tr><th>Nome</th><th style="width:90px">Origem</th><th>Loteamento</th><th style="width:130px">Status</th><th style="width:60px"></th></tr></thead>
+            <table style="table-layout:fixed">
+              <thead><tr>
+                <th style="width:160px">Nome</th>
+                <th style="width:110px">CPF</th>
+                <th style="width:80px">Origem</th>
+                <th style="width:130px">Loteamento</th>
+                <th style="width:120px">Status</th>
+                <th style="width:80px">Ações</th>
+              </tr></thead>
               <tbody id="crm-tbody"></tbody>
             </table>
           </div>
@@ -1004,7 +1011,7 @@ tbody tr.clickable{cursor:pointer}
             <option value="Ativo">Ativos</option>
             <option value="Inativo">Inativos</option>
           </select>
-          <button class="btn btn-primary" onclick="openModal('modal-new-corretor')">+ Novo corretor</button>
+          <button class="btn btn-primary" onclick="abrirModalNovoCorretor()">+ Novo corretor</button>
         </div>
 
         <div class="grid2" style="margin-bottom:14px">
@@ -1032,7 +1039,7 @@ tbody tr.clickable{cursor:pointer}
         <div class="card">
           <div class="card-header">
             <span class="section-title">Histórico de visitas e vendas</span>
-            <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-alocacao')">+ Registrar visita / venda</button>
+            <button class="btn btn-primary btn-sm" onclick="abrirModalNovaAlocacao()">+ Registrar visita / venda</button>
           </div>
           <table>
             <thead><tr>
@@ -1281,9 +1288,9 @@ tbody tr.clickable{cursor:pointer}
           <div class="form-row">
             <div class="field"><label>Loteamentos autorizados</label>
               <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
-                <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400"><input type="checkbox" id="nc2-lot1" value="Verde Vale"> Res. Verde Vale · Fase 1</label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400"><input type="checkbox" id="nc2-lot2" value="Jardins do Sul"> Cond. Jardins do Sul · Fase 2</label>
-                <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400"><input type="checkbox" id="nc2-lot3" value="Nova Esperança"> Res. Nova Esperança · Fase 3</label>
+                <div id="nc2-loteamentos-list" style="display:flex;flex-direction:column;gap:6px">
+                  <div style="font-size:12px;color:var(--text-secondary)">Carregando loteamentos...</div>
+                </div>
               </div>
             </div>
           </div>
@@ -1356,22 +1363,14 @@ tbody tr.clickable{cursor:pointer}
             </div>
             <div class="field"><label>Cliente</label>
               <select id="aloc-cliente">
-                <option value="">Selecione o cliente</option>
-                <option>Maria Aparecida Souza</option>
-                <option>Carlos Eduardo Lima</option>
-                <option>Pedro Henrique Alves</option>
-                <option>Fernanda Castro Mendes</option>
-                <option>Ricardo Neto</option>
-                <option>Patrícia Melo</option>
+                <option value="">— Selecione o cliente —</option>
               </select>
             </div>
           </div>
           <div class="form-row col2">
             <div class="field"><label>Loteamento</label>
               <select id="aloc-loteamento">
-                <option>Verde Vale · Fase 1</option>
-                <option>Jardins do Sul · Fase 2</option>
-                <option>Nova Esperança · Fase 3</option>
+                <option value="">— Selecione —</option>
               </select>
             </div>
             <div class="field"><label>Lote</label><input id="aloc-lote" placeholder="Ex: A-05"></div>
@@ -3337,6 +3336,48 @@ async function abrirModalNovoAporte(){
   }
 }
 
+async function abrirModalNovoCorretor(){
+  openModal('modal-new-corretor');
+  const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+  const list = document.getElementById('nc2-loteamentos-list');
+  if(list){
+    if(!lots.length){
+      list.innerHTML='<div style="font-size:12px;color:var(--text-secondary)">Nenhum loteamento cadastrado.</div>';
+    } else {
+      list.innerHTML = lots.map((r,i)=>`
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;font-weight:400;cursor:pointer">
+          <input type="checkbox" id="nc2-lot-${i}" value="${r.nome}">
+          ${r.nome}${r.fase?' · '+r.fase:''}
+        </label>`).join('');
+    }
+  }
+}
+
+async function abrirModalNovaAlocacao(){
+  openModal('modal-new-alocacao');
+  // Loteamentos
+  const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+  const selLot = document.getElementById('aloc-loteamento');
+  if(selLot){
+    selLot.innerHTML = '<option value="">— Selecione —</option>' +
+      lots.map(r=>`<option value="${r.nome}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+  }
+  // Clientes reais
+  const clis = await dbSelect('clientes',{order:'nome',asc:true});
+  const selCli = document.getElementById('aloc-cliente');
+  if(selCli){
+    selCli.innerHTML = '<option value="">— Selecione o cliente —</option>' +
+      clis.map(c=>`<option value="${c.id}">${c.nome}${c.cpf?' — '+c.cpf:''}</option>`).join('');
+  }
+  // Corretores
+  const corts = await dbSelect('corretores',{filter:[['status','eq','Ativo']],order:'nome',asc:true});
+  const selCor = document.getElementById('aloc-corretor');
+  if(selCor){
+    selCor.innerHTML = '<option value="">Selecione o corretor</option>' +
+      corts.map(r=>`<option value="${r.id}">${r.nome}</option>`).join('');
+  }
+}
+
 async function abrirModalNovoLote(){
   openModal('modal-new-lote');
   const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
@@ -3571,6 +3612,7 @@ async function salvarDadosClienteLead(){
   const cls = await dbSelect('clientes',{filter:[['nome','eq',nome||'XXXXXXXXXXX']]});
   if(cls.length){
     await dbUpdate('clientes', cls[0].id, {
+      cpf:          document.getElementById('edit-lead-cpf')?.value?.trim()||null,
       celular:      document.getElementById('edit-lead-tel')?.value||null,
       email:        document.getElementById('edit-lead-email')?.value||null,
       data_nasc:    document.getElementById('edit-lead-nasc')?.value||null,
@@ -3630,6 +3672,7 @@ function abrirEditLead(id){
   // Preencher aba Dados do cliente
   const sv=(elId,v)=>{const el=document.getElementById(elId);if(el)el.value=v||'';};
   sv('edit-lead-nome-cli', lead.nome);
+  sv('edit-lead-cpf', lead.cpf||'');
   sv('edit-lead-tel', lead.tel);
   sv('edit-lead-email', lead.email);
 
@@ -3903,15 +3946,21 @@ function renderLeads(){
   if(!tbody)return;
   const fs=document.getElementById('crm-filtro-status')?.value||'';
   const fl=document.getElementById('crm-filtro-lot')?.value||'';
-  const filtered=leads.filter(l=>(!fs||l.status===fs)&&(!fl||l.lote.includes(fl)));
+  const filtered=leads.filter(l=>(!fs||l.status===fs)&&(!fl||(l.lote||'').includes(fl)));
   tbody.innerHTML=filtered.map(l=>{
     const bc=STATUS_CRM_BADGE[l.status]||'badge-gray';
-    const etapasFeitas=Object.values(l.etapas).filter(Boolean).length;
+    const etapasFeitas=Object.values(l.etapas||{}).filter(Boolean).length;
+    const cpf = l.cpf||l.doc||'—';
+    const lote = l.lote||'—';
+    // UUID precisa de aspas simples no onclick
+    const idStr = String(l.id).replace(/'/g,"\\'");
     return `<tr>
-      <td style="font-weight:500">${l.nome}<br><span style="font-size:10px;color:var(--text-secondary)">${l.tel} · ${l.lote}</span></td>
-      <td style="color:var(--text-secondary);font-size:11px">${l.origem}</td>
+      <td style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.nome}</td>
+      <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cpf}</td>
+      <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.origem||'—'}</td>
+      <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lote}</td>
       <td><span class="badge ${bc}" style="font-size:10px">${l.status}</span><br><span style="font-size:10px;color:var(--text-secondary)">${etapasFeitas} etapa${etapasFeitas!==1?'s':''}</span></td>
-      <td><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditLead(${l.id})">Editar</button></td>
+      <td style="text-align:left"><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditLead('${idStr}')">Editar</button></td>
     </tr>`;
   }).join('');
   atualizarKpisCRM();
@@ -5091,7 +5140,7 @@ function renderCalMes(container){
     leadsNoDia.forEach(l=>{
       const cor=statusCorCal(l.status);
       const hora=l.horaVisita||'';
-      html+=`<div onclick="abrirEditLead(${l.id})"
+      html+=`<div onclick="abrirEditLead('${l.id}')"
         title="${l.nome} — ${l.lote} — ${l.status}"
         style="background:${cor};color:#fff;border-radius:4px;padding:2px 5px;margin-bottom:2px;font-size:10px;cursor:pointer;line-height:1.4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:opacity .1s"
         onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
@@ -5128,7 +5177,7 @@ function renderCalMes(container){
     sorted.forEach(l=>{
       const cor=statusCorCal(l.status);
       const d=new Date(l.dataVisita+'T12:00');
-      html+=`<tr onclick="abrirEditLead(${l.id})" style="cursor:pointer">`;
+      html+=`<tr onclick="abrirEditLead('${l.id}')" style="cursor:pointer">`;
       html+=`<td style="font-size:11px;color:var(--text-secondary)">${d.toLocaleDateString('pt-BR')}<br><span style="font-weight:600">${l.horaVisita||'—'}</span></td>`;
       html+=`<td style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.nome}</td>`;
       html+=`<td style="font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.lote}</td>`;
@@ -5201,7 +5250,7 @@ function renderCalSemana(container){
       html+=`<div style="height:52px;border-bottom:0.5px solid var(--border-tertiary);padding:2px 3px;position:relative">`;
       leadsNaHora.forEach(l=>{
         const cor=statusCorCal(l.status);
-        html+=`<div onclick="abrirEditLead(${l.id})"
+        html+=`<div onclick="abrirEditLead('${l.id}')"
           title="${l.nome} — ${l.lote} — ${l.status}"
           style="background:${cor};color:#fff;border-radius:4px;padding:2px 5px;font-size:10px;cursor:pointer;line-height:1.4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-bottom:1px;transition:opacity .1s"
           onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
@@ -5227,7 +5276,7 @@ function renderKanban(){
     const cards=colLeads.map(l=>`
       <div class="kanban-card" draggable="true"
         ondragstart="dragLeadId=${l.id};event.dataTransfer.effectAllowed='move'"
-        onclick="abrirEditLead(${l.id})">
+        onclick="abrirEditLead('${l.id}')">
         <div class="kanban-card-name">${l.nome}</div>
         <div class="kanban-card-sub">${l.lote}</div>
         <div class="kanban-card-sub" style="margin-bottom:4px">${l.origem}</div>
@@ -5623,11 +5672,11 @@ function salvarCorretor(){
   const comissao=parseFloat((document.getElementById('nc2-comissao')?.value||'3').replace(',','.'))||3;
   const status=document.getElementById('nc2-status')?.value||'Ativo';
   const lots=[];
-  ['nc2-lot1','nc2-lot2','nc2-lot3'].forEach(id=>{const el=document.getElementById(id);if(el?.checked)lots.push(el.value);});
+  document.querySelectorAll('#nc2-loteamentos-list input[type=checkbox]:checked').forEach(cb=>lots.push(cb.value));
   corretores.push({id:Date.now(),nome,creci,cel,email,tipo,comissao,status,loteamentos:lots.length?lots:['—'],visitas:0,vendas:0,comissaoTotal:0});
   closeModal('modal-new-corretor');
   ['nc2-nome','nc2-creci','nc2-cpf','nc2-cel','nc2-email','nc2-comissao'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['nc2-lot1','nc2-lot2','nc2-lot3'].forEach(id=>{const el=document.getElementById(id);if(el)el.checked=false;});
+  document.querySelectorAll('#nc2-loteamentos-list input[type=checkbox]').forEach(cb=>cb.checked=false);
   renderCorretores();
   showToast('Corretor "'+nome+'" cadastrado!');
 }
@@ -7076,7 +7125,7 @@ async function carregarLeadsDB() {
   leads = rows.map(r => ({
     id: r.id, nome: r.nome, tel: r.telefone||'', email: r.email||'',
     origem: r.origem||'', lote: r.loteamento||'', status: r.status||'Novo',
-    corretor: r.corretor||'',
+    corretor: r.corretor||'', cpf: r.cpf||'',
     dataVisita: r.data_visita||'', horaVisita: r.hora_visita||'',
     etapas: {
       visitou:     r.etapa_visitou||false,
