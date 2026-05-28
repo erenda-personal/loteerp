@@ -2158,13 +2158,31 @@ tbody tr.clickable{cursor:pointer}
               <div class="field"><label>Profissão</label><input id="edit-lead-prof" placeholder="Ex: Engenheiro"></div>
               <div class="field"><label>Renda mensal (R$)</label><input id="edit-lead-renda" type="text" placeholder="0,00" oninput="maskMoney(this)"></div>
             </div>
+            <div class="form-section">Datas comerciais</div>
+            <div class="form-row col3">
+              <div class="field"><label>Proposta enviada</label><input id="edit-lead-dt-proposta" type="date"></div>
+              <div class="field"><label>Contrato assinado</label><input id="edit-lead-dt-contrato" type="date"></div>
+              <div class="field"><label>Entrada paga</label><input id="edit-lead-dt-entrada" type="date"></div>
+            </div>
+            <div class="form-section">Documentos</div>
+            <div style="border:1.5px dashed var(--border-secondary);border-radius:8px;padding:12px;margin-bottom:12px">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-sm" onclick="document.getElementById('edit-lead-doc-input').click()">📎 Anexar documento</button>
+                <input type="file" id="edit-lead-doc-input" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleLeadDocUpload(this)">
+                <span id="edit-lead-doc-nome" style="font-size:11px;color:var(--text-secondary)">Nenhum arquivo selecionado</span>
+              </div>
+              <div id="edit-lead-doc-preview" style="margin-top:8px;display:none">
+                <a id="edit-lead-doc-link" href="#" target="_blank" style="font-size:11px;color:var(--accent)">📄 Ver documento anexado</a>
+                <button onclick="removerDocLead()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:11px;margin-left:8px">✕ Remover</button>
+              </div>
+              <div style="font-size:10px;color:var(--text-tertiary);margin-top:6px">PDF, JPG ou PNG · máx. 5MB</div>
+            </div>
             <div style="margin-top:8px;text-align:right">
-              <button class="btn btn-sm btn-primary" onclick="salvarDadosClienteLead()">💾 Atualizar cliente</button>
+              <button class="btn btn-sm btn-primary" onclick="salvarDadosClienteLead()">💾 Salvar dados do cliente</button>
             </div>
           </div>
 
           <div class="modal-footer">
-            <button class="btn" onclick="closeModal('modal-edit-lead')">Fechar</button>
             <button class="btn btn-primary" id="btn-salvar-lead-edicao" onclick="salvarEdicaoLead()">Salvar acompanhamento</button>
           </div>
         </div>
@@ -3606,22 +3624,88 @@ async function salvarVendaLead(){
 async function salvarDadosClienteLead(){
   if(!_editLeadId){ showToast('Lead não encontrado.','error'); return; }
   const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+  const cpf  = document.getElementById('edit-lead-cpf')?.value?.trim()||null;
   const nome = document.getElementById('edit-lead-nome-cli')?.value?.trim()||lead?.nome||'';
   showLoading('Salvando dados do cliente...');
-  // Atualizar cliente se existir, ou criar novo
-  const cls = await dbSelect('clientes',{filter:[['nome','eq',nome||'XXXXXXXXXXX']]});
-  if(cls.length){
-    await dbUpdate('clientes', cls[0].id, {
-      cpf:          document.getElementById('edit-lead-cpf')?.value?.trim()||null,
-      celular:      document.getElementById('edit-lead-tel')?.value||null,
-      email:        document.getElementById('edit-lead-email')?.value||null,
-      data_nasc:    document.getElementById('edit-lead-nasc')?.value||null,
-      estado_civil: document.getElementById('edit-lead-estcivil')?.value||null,
-      profissao:    document.getElementById('edit-lead-prof')?.value||null,
-    });
+
+  const dadosCliente = {
+    cpf,
+    celular:      document.getElementById('edit-lead-tel')?.value?.trim()||null,
+    email:        document.getElementById('edit-lead-email')?.value?.trim()||null,
+    data_nasc:    document.getElementById('edit-lead-nasc')?.value||null,
+    estado_civil: document.getElementById('edit-lead-estcivil')?.value||null,
+    profissao:    document.getElementById('edit-lead-prof')?.value?.trim()||null,
+  };
+  if(window._leadDocBase64) dadosCliente.doc_url = window._leadDocBase64;
+
+  // Datas comerciais — salvar no lead
+  const dadosLead = {
+    dt_proposta: document.getElementById('edit-lead-dt-proposta')?.value||null,
+    dt_contrato: document.getElementById('edit-lead-dt-contrato')?.value||null,
+    dt_entrada:  document.getElementById('edit-lead-dt-entrada')?.value||null,
+  };
+
+  // Buscar cliente pelo CPF (mais confiável) ou pelo nome
+  let clienteId = lead?.clienteId || null;
+  if(!clienteId && cpf){
+    const porCpf = await dbSelect('clientes',{filter:[['cpf','eq',cpf]]});
+    if(porCpf.length) clienteId = porCpf[0].id;
   }
+  if(!clienteId && nome){
+    const porNome = await dbSelect('clientes',{filter:[['nome','eq',nome]]});
+    if(porNome.length) clienteId = porNome[0].id;
+  }
+
+  if(clienteId){
+    await dbUpdate('clientes', clienteId, dadosCliente);
+  } else {
+    // Criar cliente novo
+    const novo = await dbInsert('clientes',{nome,...dadosCliente});
+    if(novo) clienteId = novo.id;
+  }
+
+  // Salvar datas no lead
+  const leadUpdate = {...dadosLead};
+  if(window._leadDocBase64) leadUpdate.doc_url = window._leadDocBase64;
+  await dbUpdate('leads', _editLeadId, leadUpdate);
+
+  // Atualizar array local
+  if(lead){
+    lead.cpf = cpf; lead.tel = dadosCliente.celular||lead.tel;
+    lead.email = dadosCliente.email||lead.email;
+    if(clienteId) lead.clienteId = clienteId;
+  }
+
   hideLoading();
-  showToast('Dados do cliente atualizados!');
+  window._leadDocBase64 = null;
+  showToast('Dados do cliente salvos com sucesso!');
+}
+
+function handleLeadDocUpload(input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.size > 5*1024*1024){ showToast('Arquivo muito grande. Máximo 5MB.','error'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    window._leadDocBase64 = e.target.result;
+    const nome = document.getElementById('edit-lead-doc-nome');
+    if(nome) nome.textContent = file.name+' ('+Math.round(file.size/1024)+'KB)';
+    const prev = document.getElementById('edit-lead-doc-preview');
+    const link = document.getElementById('edit-lead-doc-link');
+    if(prev) prev.style.display='block';
+    if(link){ link.href=e.target.result; link.textContent='📄 '+file.name; }
+  };
+  reader.readAsDataURL(file);
+}
+
+function removerDocLead(){
+  window._leadDocBase64 = null;
+  const nome = document.getElementById('edit-lead-doc-nome');
+  if(nome) nome.textContent = 'Nenhum arquivo selecionado';
+  const prev = document.getElementById('edit-lead-doc-preview');
+  if(prev) prev.style.display='none';
+  const input = document.getElementById('edit-lead-doc-input');
+  if(input) input.value='';
 }
 
 let _editLeadId = null;
@@ -3675,6 +3759,21 @@ function abrirEditLead(id){
   sv('edit-lead-cpf', lead.cpf||'');
   sv('edit-lead-tel', lead.tel);
   sv('edit-lead-email', lead.email);
+  sv('edit-lead-dt-proposta', lead.dt_proposta||'');
+  sv('edit-lead-dt-contrato', lead.dt_contrato||'');
+  sv('edit-lead-dt-entrada',  lead.dt_entrada||'');
+  // Resetar doc
+  window._leadDocBase64=null;
+  const docNome=document.getElementById('edit-lead-doc-nome');
+  if(docNome) docNome.textContent='Nenhum arquivo selecionado';
+  const docPrev=document.getElementById('edit-lead-doc-preview');
+  if(docPrev) docPrev.style.display='none';
+  if(lead.doc_url){
+    if(docPrev) docPrev.style.display='block';
+    const docLink=document.getElementById('edit-lead-doc-link');
+    if(docLink){docLink.href=lead.doc_url;docLink.textContent='📄 Ver documento anexado';}
+    if(docNome) docNome.textContent='Documento já anexado';
+  }
 
   // Preencher aba Venda se tiver dados salvos
   if(lead.obs && lead.obs.startsWith('[VENDA]')){
@@ -7136,6 +7235,11 @@ async function carregarLeadsDB() {
       financiado:  r.etapa_financiado||false,
     },
     obs: r.observacoes||'',
+    clienteId: r.cliente_id||null,
+    dt_proposta: r.dt_proposta||'',
+    dt_contrato: r.dt_contrato||'',
+    dt_entrada:  r.dt_entrada||'',
+    doc_url:     r.doc_url||null,
   }));
   renderLeads();
 }
