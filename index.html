@@ -912,12 +912,7 @@ tbody tr.clickable{cursor:pointer}
               <option value="Entrada paga">Entrada paga</option>
               <option value="Perdido">Perdido</option>
             </select>
-            <select class="filter-select" id="crm-filtro-lot" onchange="renderLeads()">
-              <option value="">Todos os loteamentos</option>
-              <option value="Verde Vale">Verde Vale</option>
-              <option value="Jardins do Sul">Jardins do Sul</option>
-              <option value="Nova Esperança">Nova Esperança</option>
-            </select>
+<!-- filtro loteamento via menu lateral -->
           </div>
           <div style="display:flex;gap:8px;align-items:center">
             <div class="tabs" style="margin-bottom:0">
@@ -3264,6 +3259,9 @@ function setAccent(color){
   cfg.accentColor=color;
   cfg.accentLight=lighten(color);
   cfg.accentText=darken(color);
+  // Persistir no Supabase imediatamente
+  dbUpsert('empresa',{id:'00000000-0000-0000-0000-000000000001',accent_color:color},'id').catch(()=>{});
+  saveCfg();
   document.getElementById('cfg-color-pick').value=color;
   document.getElementById('cfg-color-hex').value=color;
   const pb=document.getElementById('prev-btn');
@@ -4307,7 +4305,17 @@ function renderLeads(){
   if(!tbody)return;
   const fs=document.getElementById('crm-filtro-status')?.value||'';
   const fl=document.getElementById('crm-filtro-lot')?.value||'';
-  const filtered=leads.filter(l=>(!fs||l.status===fs)&&(!fl||(l.lote||'').includes(fl)));
+  // Filtro global de loteamento (menu lateral)
+  const globalAtivo=typeof globalLots!=='undefined'&&!globalLots.has('todos');
+  const filtered=leads.filter(l=>{
+    if(fs && l.status!==fs) return false;
+    if(fl && !(l.lote||'').includes(fl)) return false;
+    if(globalAtivo){
+      const slugLote=typeof slugLoteamento==='function'?slugLoteamento(l.lote||''):'';
+      if(![...globalLots].some(s=>s===slugLote||s===slugLoteamento(l.lote||''))) return false;
+    }
+    return true;
+  });
   tbody.innerHTML=filtered.map(l=>{
     const bc=STATUS_CRM_BADGE[l.status]||'badge-gray';
     const etapasFeitas=Object.values(l.etapas||{}).filter(Boolean).length;
@@ -5475,7 +5483,7 @@ function renderCalMes(container){
 
   // Cabeçalho dos dias
   const diasSemana=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  html+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:0.5px solid var(--border-tertiary)">`;
+  html+=`<div style="display:grid;grid-template-columns:44px repeat(7,1fr);border-bottom:0.5px solid var(--border-tertiary)">`;
   diasSemana.forEach(d=>html+=`<div style="padding:8px;text-align:center;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--bg-secondary)">${d}</div>`);
   html+=`</div>`;
 
@@ -5573,6 +5581,8 @@ function renderCalSemana(container){
 
   // Cabeçalho com datas
   html+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:0.5px solid var(--border-tertiary)">`;
+  // Spacer da coluna de horas no header
+  html+=`<div style="width:44px"></div>`;
   dias.forEach((d,i)=>{
     const isHoje=d.toDateString()===hoje.toDateString();
     html+=`<div style="padding:10px 8px;text-align:center;background:${isHoje?'var(--accent-light)':'var(--bg-secondary)'}">
@@ -5636,7 +5646,7 @@ function renderKanban(){
     const colLeads=filtered.filter(l=>l.status===col.key);
     const cards=colLeads.map(l=>`
       <div class="kanban-card" draggable="true"
-        ondragstart="dragLeadId=${l.id};event.dataTransfer.effectAllowed='move'"
+        ondragstart="dragLeadId='${l.id}';event.dataTransfer.effectAllowed='move'"
         onclick="abrirEditLead('${l.id}')">
         <div class="kanban-card-name">${l.nome}</div>
         <div class="kanban-card-sub">${l.lote}</div>
@@ -5661,7 +5671,7 @@ function renderKanban(){
 function onKanbanDrop(event,novoStatus){
   event.preventDefault();
   if(dragLeadId===null)return;
-  const lead=leads.find(l=>l.id===dragLeadId);
+  const lead=leads.find(l=>String(l.id)===String(dragLeadId));
   if(lead){
     const old=lead.status;
     lead.status=novoStatus;
@@ -5830,6 +5840,9 @@ function toggleGlobalLot(el){
     atualizarKpisLotes();
   }
 
+  if(document.getElementById('page-crm')?.classList.contains('active')){
+    if(typeof renderLeads==='function') renderLeads();
+  }
   if(document.getElementById('page-inadimplencia')?.classList.contains('active')){
     if(typeof renderInadimplencia==='function') renderInadimplencia();
   }
