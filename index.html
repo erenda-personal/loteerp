@@ -266,10 +266,7 @@ tbody tr.clickable{cursor:pointer}
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         Clientes
       </div>
-      <div class="nav-item" onclick="showPage('contratos',this)">
-        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="1" width="12" height="14" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 5h6M5 8h6M5 11h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-        Contratos
-      </div>
+      
       <div class="nav-item" onclick="showPage('crm',this)">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="8" r="3" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 11c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 13c0-1.105.895-2 2-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         CRM / Leads
@@ -2018,15 +2015,30 @@ tbody tr.clickable{cursor:pointer}
             <button class="modal-close" onclick="closeModal('modal-new-lead')">✕</button>
           </div>
           <div class="form-section">Dados do lead</div>
-          <div class="form-row col2"><div class="field"><label>Nome completo *</label><input id="nl2-nome" placeholder="Nome do interessado"></div><div class="field"><label>Telefone / WhatsApp *</label><input id="nl2-tel" placeholder="(11) 9 9999-0000"></div></div>
-          <div class="form-row col2"><div class="field"><label>E-mail</label><input id="nl2-email" type="email" placeholder="email@exemplo.com"></div><div class="field"><label>Origem</label><select id="nl2-origem"><option>Meta Ads</option><option>Google Ads</option><option>Indicação</option><option>Stand</option><option>WhatsApp</option><option>Site</option><option>Outros</option></select></div></div>
-          <div class="form-row">
-            <div class="field">
-              <label>Loteamento de interesse</label>
-              <select id="nl2-lot">
-                <option value="">— Selecione o loteamento —</option>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:8px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;flex:1;padding:6px 10px;border-radius:6px;border:1.5px solid var(--border-tertiary)" id="nl2-radio-wrap-novo">
+              <input type="radio" name="nl2-cliente-tipo" value="novo" checked onchange="toggleClienteLead('novo')">
+              <span>✚ Novo cliente</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;flex:1;padding:6px 10px;border-radius:6px;border:1.5px solid var(--border-tertiary)" id="nl2-radio-wrap-exist">
+              <input type="radio" name="nl2-cliente-tipo" value="existente" onchange="toggleClienteLead('existente')">
+              <span>🔍 Cliente já cadastrado</span>
+            </label>
+          </div>
+          <div id="nl2-cliente-existente" style="display:none;margin-bottom:10px">
+            <div class="field"><label>Selecione o cliente</label>
+              <select id="nl2-cliente-id" style="width:100%">
+                <option value="">— Selecione o cliente —</option>
               </select>
             </div>
+          </div>
+          <div id="nl2-campos-novo-cliente">
+            <div class="form-row col2"><div class="field"><label>Nome completo *</label><input id="nl2-nome" placeholder="Nome do interessado"></div><div class="field"><label>Telefone / WhatsApp *</label><input id="nl2-tel" placeholder="(11) 9 9999-0000"></div></div>
+            <div class="form-row col2"><div class="field"><label>E-mail</label><input id="nl2-email" type="email" placeholder="email@exemplo.com"></div><div class="field"><label>CPF</label><input id="nl2-cpf" placeholder="000.000.000-00"></div></div>
+          </div>
+          <div class="form-section">Interesse</div>
+          <div class="form-row col2"><div class="field"><label>Origem</label><select id="nl2-origem"><option>Meta Ads</option><option>Google Ads</option><option>Indicação</option><option>Stand</option><option>WhatsApp</option><option>Site</option><option>Outros</option></select></div>
+            <div class="field"><label>Loteamento de interesse</label><select id="nl2-lot"><option value="">— Selecione o loteamento —</option></select></div>
           </div>
           <div class="form-section">Status e etapas</div>
           <div class="form-row col2">
@@ -2045,20 +2057,117 @@ tbody tr.clickable{cursor:pointer}
 
       <!-- Modal: Editar status do lead -->
       <div class="modal-overlay" id="modal-edit-lead" onclick="if(event.target===this)closeModal('modal-edit-lead')">
-        <div class="modal-box" style="width:420px">
+        <div class="modal-box" style="width:640px;max-height:90vh;overflow-y:auto">
           <div class="modal-header">
             <span class="modal-title" id="edit-lead-titulo">Lead</span>
             <button class="modal-close" onclick="closeModal('modal-edit-lead')">✕</button>
           </div>
-          <div class="form-section">Etapas comerciais</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="etapas-grid"></div>
-          <div class="form-row"><div class="field"><label>Atualizar status</label><select id="edit-lead-status"><option>Novo</option><option>Contato feito</option><option>Visita realizada</option><option>Proposta enviada</option><option>Contrato assinado</option><option>Entrada paga</option><option>Perdido</option></select></div></div>
-          <div class="form-row col2">
-            <div class="field"><label>Data da visita</label><input id="edit-lead-data-visita" type="date"></div>
-            <div class="field"><label>Horário da visita</label><input id="edit-lead-hora-visita" type="time"></div>
+
+          <!-- Abas internas do lead -->
+          <div style="display:flex;gap:0;border-bottom:1px solid var(--border-tertiary);margin-bottom:16px">
+            <div class="tab active" id="lead-tab-acomp" onclick="switchLeadTab('acomp')" style="font-size:12px">Acompanhamento</div>
+            <div class="tab" id="lead-tab-venda" onclick="switchLeadTab('venda')" style="font-size:12px">💰 Venda</div>
+            <div class="tab" id="lead-tab-dados" onclick="switchLeadTab('dados')" style="font-size:12px">Dados do cliente</div>
           </div>
-          <div class="form-row"><div class="field"><label>Observação</label><input id="edit-lead-obs" placeholder="Registro desta atualização..."></div></div>
-          <div class="modal-footer"><button class="btn" onclick="closeModal('modal-edit-lead')">Cancelar</button><button class="btn btn-primary" onclick="salvarEdicaoLead()">Atualizar lead</button></div>
+
+          <!-- ABA: Acompanhamento -->
+          <div id="lead-section-acomp">
+            <div class="form-section">Etapas comerciais</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px" id="etapas-grid"></div>
+            <div class="form-row col2">
+              <div class="field"><label>Status</label>
+                <select id="edit-lead-status">
+                  <option>Novo</option><option>Contato feito</option><option>Visita realizada</option>
+                  <option>Proposta enviada</option><option>Contrato assinado</option>
+                  <option>Entrada paga</option><option>Perdido</option>
+                </select>
+              </div>
+              <div class="field"><label>Corretor responsável</label>
+                <select id="edit-lead-corretor"><option value="">— Nenhum —</option></select>
+              </div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>Data da visita</label><input id="edit-lead-data-visita" type="date"></div>
+              <div class="field"><label>Horário</label><input id="edit-lead-hora-visita" type="time"></div>
+            </div>
+            <div class="form-row"><div class="field"><label>Observação</label><input id="edit-lead-obs" placeholder="Registro desta atualização..."></div></div>
+          </div>
+
+          <!-- ABA: Venda -->
+          <div id="lead-section-venda" style="display:none">
+            <div class="form-section">Lotes negociados</div>
+            <div id="lead-lotes-venda" style="margin-bottom:10px"></div>
+            <button class="btn btn-sm" onclick="adicionarLoteVenda()" style="margin-bottom:14px">+ Adicionar lote</button>
+
+            <div class="form-section">Condições financeiras</div>
+            <div class="form-row col2">
+              <div class="field"><label>Valor total da venda (R$)</label><input id="venda-valor-total" type="text" placeholder="0,00" oninput="maskMoney(this)"></div>
+              <div class="field"><label>Valor de entrada (R$)</label><input id="venda-entrada" type="text" placeholder="0,00" oninput="maskMoney(this)"></div>
+            </div>
+            <div class="form-row col3">
+              <div class="field"><label>Nº de parcelas</label><input id="venda-parcelas" type="number" placeholder="48" min="1"></div>
+              <div class="field"><label>Taxa de juros (% a.m.)</label><input id="venda-taxa" type="text" placeholder="0,00" oninput="maskDecimal(this)"></div>
+              <div class="field"><label>Sistema</label>
+                <select id="venda-sistema"><option value="Price">Price</option><option value="SAC">SAC</option><option value="Simples">Sem juros</option></select>
+              </div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>Data da assinatura</label><input id="venda-data-assina" type="date"></div>
+              <div class="field"><label>Data 1ª parcela</label><input id="venda-data-venc1" type="date"></div>
+            </div>
+
+            <div class="form-section">Documentos e observações</div>
+            <div class="form-row col2">
+              <div class="field"><label>Nº do contrato</label><input id="venda-num-contrato" placeholder="Ex: 2024-001"></div>
+              <div class="field"><label>Cartório / Matrícula</label><input id="venda-cartorio" placeholder="Ex: 3º RI / Mat. 12345"></div>
+            </div>
+            <div class="form-row"><div class="field"><label>Observações da venda</label><textarea id="venda-obs" rows="2" style="font-size:12px;padding:7px 10px;border-radius:6px;border:0.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-primary);resize:vertical;outline:none;width:100%" placeholder="Condições especiais, descontos, permuta..."></textarea></div></div>
+
+            <!-- Resumo da venda -->
+            <div id="venda-resumo" style="background:var(--bg-secondary);border-radius:8px;padding:12px;margin-top:4px;display:none">
+              <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Resumo</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+                <div><div style="font-size:10px;color:var(--text-secondary)">Valor financiado</div><div style="font-weight:600;font-size:13px" id="venda-res-financiado">—</div></div>
+                <div><div style="font-size:10px;color:var(--text-secondary)">Valor da parcela</div><div style="font-weight:600;font-size:13px;color:var(--accent)" id="venda-res-parcela">—</div></div>
+                <div><div style="font-size:10px;color:var(--text-secondary)">Total com juros</div><div style="font-weight:600;font-size:13px" id="venda-res-total">—</div></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn btn-sm" onclick="calcularVenda()">Calcular parcelas</button>
+              <button class="btn btn-sm btn-primary" onclick="salvarVendaLead()">💾 Salvar venda</button>
+            </div>
+          </div>
+
+          <!-- ABA: Dados do cliente -->
+          <div id="lead-section-dados" style="display:none">
+            <div class="form-section">Dados pessoais</div>
+            <div class="form-row col2">
+              <div class="field"><label>Nome completo</label><input id="edit-lead-nome-cli" placeholder="Nome do cliente"></div>
+              <div class="field"><label>CPF</label><input id="edit-lead-cpf" placeholder="000.000.000-00"></div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>Telefone / WhatsApp</label><input id="edit-lead-tel" placeholder="(11) 9 9999-0000"></div>
+              <div class="field"><label>E-mail</label><input id="edit-lead-email" type="email" placeholder="email@exemplo.com"></div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>Data de nascimento</label><input id="edit-lead-nasc" type="date"></div>
+              <div class="field"><label>Estado civil</label>
+                <select id="edit-lead-estcivil"><option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União estável</option></select>
+              </div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>Profissão</label><input id="edit-lead-prof" placeholder="Ex: Engenheiro"></div>
+              <div class="field"><label>Renda mensal (R$)</label><input id="edit-lead-renda" type="text" placeholder="0,00" oninput="maskMoney(this)"></div>
+            </div>
+            <div style="margin-top:8px;text-align:right">
+              <button class="btn btn-sm btn-primary" onclick="salvarDadosClienteLead()">💾 Atualizar cliente</button>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn" onclick="closeModal('modal-edit-lead')">Fechar</button>
+            <button class="btn btn-primary" id="btn-salvar-lead-edicao" onclick="salvarEdicaoLead()">Salvar acompanhamento</button>
+          </div>
         </div>
       </div>
 
@@ -2388,6 +2497,7 @@ function switchTab(el,which){
   document.getElementById('tab-lotes-lista').style.display=which==='lista'?'block':'none';
   document.getElementById('tab-lotes-link').style.display=which==='link'?'block':'none';
   if(which==='link') renderLinksCorretores();
+  if(which==='link') renderLinksCorretores();
 }
 
 function filtrarLotes(){
@@ -2427,35 +2537,55 @@ function buildGridPreviewCorretor(containerId,count,seed){
 const loteamentos=[];
 
 function gerarLinkCorretor(id){
-  // Na versão real, este seria um link real do sistema
   return `${window.location.href.split('?')[0]}?corretor=1&lot=${id}&token=${btoa(id+'-'+Date.now()).slice(0,12)}`;
 }
 
-function renderLinksCorretores(){
+async function renderLinksCorretores(){
   const el=document.getElementById('links-corretores');
   if(!el)return;
-  el.innerHTML=loteamentos.map(lot=>{
+
+  el.innerHTML='<div style="padding:20px 0;text-align:center;color:var(--text-secondary);font-size:13px">Carregando loteamentos...</div>';
+
+  const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+
+  if(!lots.length){
+    el.innerHTML='<div style="padding:20px 0;text-align:center;color:var(--text-secondary);font-size:13px">Nenhum loteamento cadastrado. Cadastre um loteamento primeiro.</div>';
+    return;
+  }
+
+  // Para cada loteamento, buscar contagem de lotes
+  const loteCountsRows = await dbSelect('lotes',{select:'loteamento_id,status'});
+  const counts={};
+  loteCountsRows.forEach(r=>{
+    if(!counts[r.loteamento_id]) counts[r.loteamento_id]={disp:0,res:0,total:0};
+    counts[r.loteamento_id].total++;
+    if(r.status==='Disponível') counts[r.loteamento_id].disp++;
+    if(r.status==='Reservado')  counts[r.loteamento_id].res++;
+  });
+
+  el.innerHTML=lots.map(lot=>{
+    const c=counts[lot.id]||{disp:0,res:0,total:0};
     const link=gerarLinkCorretor(lot.id);
+    const slugId=lot.id.replace(/-/g,'').substring(0,8);
     return `
     <div style="background:var(--bg-secondary);border-radius:10px;padding:14px 16px;margin-bottom:10px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div>
-          <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${lot.nome}</div>
-          <div style="font-size:11px;color:var(--text-secondary);margin-top:1px">${lot.cidade} · ${lot.disp} disponíveis · ${lot.res} reservados</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-primary)">${lot.nome}${lot.fase?' <span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:1px 6px;border-radius:4px;font-weight:600">'+lot.fase+'</span>':''}</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:3px">${lot.cidade||'—'} ${lot.estado?'/ '+lot.estado:''} · <strong style="color:var(--success)">${c.disp} disponíveis</strong> · ${c.res} reservados · ${c.total} total</div>
         </div>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-sm" onclick="copiarLink('link-${lot.id}','copied-${lot.id}')">Copiar link</button>
-          <button class="btn btn-sm btn-primary" onclick="abrirPaginaCorretor('${lot.id}')">Abrir ↗</button>
+          <button class="btn btn-sm" onclick="copiarLink('link-${slugId}','copied-${slugId}')">Copiar link</button>
+          <button class="btn btn-sm btn-primary" onclick="window.open('${link}','_blank')">Abrir ↗</button>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <input id="link-${lot.id}" value="${link}" readonly
+        <input id="link-${slugId}" value="${link}" readonly
           style="flex:1;font-size:11px;padding:6px 10px;border-radius:6px;border:0.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-secondary);font-family:monospace;outline:none">
-        <span id="copied-${lot.id}" style="font-size:11px;color:var(--success);display:none;white-space:nowrap">✓ Copiado!</span>
+        <span id="copied-${slugId}" style="font-size:11px;color:var(--success);display:none;white-space:nowrap">✓ Copiado!</span>
       </div>
     </div>`;
   }).join('');
-  buildGridPreviewCorretor('grid-preview-corretor',24,3);
 }
 
 function copiarLink(inputId,feedbackId){
@@ -3218,20 +3348,333 @@ async function abrirModalNovoLote(){
 }
 
 async function popularSelectsLead(){
-  // Loteamentos reais do Supabase
+  // Loteamentos
   const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
   const selLot = document.getElementById('nl2-lot');
   if(selLot){
     selLot.innerHTML = '<option value="">— Selecione o loteamento —</option>' +
       lots.map(r=>`<option value="${r.nome}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
   }
-  // Corretores reais
+  // Corretores
   const corts = await dbSelect('corretores',{filter:[['status','eq','Ativo']],order:'nome',asc:true});
   const selCor = document.getElementById('nl2-corretor');
   if(selCor){
     selCor.innerHTML = '<option value="">— Nenhum —</option>' +
       corts.map(r=>`<option value="${r.nome}">${r.nome}</option>`).join('');
   }
+  // Clientes existentes para o radio "Cliente já cadastrado"
+  const clientes = await dbSelect('clientes',{order:'nome',asc:true});
+  const selCli = document.getElementById('nl2-cliente-id');
+  if(selCli){
+    selCli.innerHTML = '<option value="">— Selecione o cliente —</option>' +
+      clientes.map(c=>`<option value="${c.id}">${c.nome}${c.cpf?' — '+c.cpf:''}</option>`).join('');
+  }
+  // Reset para "Novo cliente"
+  toggleClienteLead('novo');
+  const radio = document.querySelector('input[name="nl2-cliente-tipo"][value="novo"]');
+  if(radio) radio.checked = true;
+}
+
+function toggleClienteLead(tipo){
+  const camposNovo    = document.getElementById('nl2-campos-novo-cliente');
+  const camposExist   = document.getElementById('nl2-cliente-existente');
+  if(tipo==='novo'){
+    if(camposNovo)  camposNovo.style.display='';
+    if(camposExist) camposExist.style.display='none';
+  } else {
+    if(camposNovo)  camposNovo.style.display='none';
+    if(camposExist) camposExist.style.display='';
+  }
+}
+
+// ── Salvar lead no Supabase (com criação opcional de cliente) ─
+async function salvarLeadDB(){
+  const tipo = document.querySelector('input[name="nl2-cliente-tipo"]:checked')?.value||'novo';
+  let nome='', clienteId=null;
+
+  if(tipo==='existente'){
+    clienteId = document.getElementById('nl2-cliente-id')?.value;
+    if(!clienteId){showToast('Selecione o cliente.','error');return;}
+    // Buscar nome do cliente
+    const cls = await dbSelect('clientes',{filter:[['id','eq',clienteId]],select:'nome'});
+    nome = cls[0]?.nome||'Cliente';
+  } else {
+    nome = document.getElementById('nl2-nome')?.value?.trim();
+    const tel  = document.getElementById('nl2-tel')?.value?.trim();
+    if(!nome||!tel){showToast('Informe nome e telefone.','error');return;}
+    // Criar cliente automaticamente
+    showLoading('Criando cliente...');
+    const novoCliente = await dbInsert('clientes',{
+      nome, cpf: document.getElementById('nl2-cpf')?.value?.trim()||null,
+      celular: tel,
+      email:   document.getElementById('nl2-email')?.value?.trim()||null,
+    });
+    if(novoCliente) clienteId = novoCliente.id;
+    hideLoading();
+  }
+
+  showLoading('Salvando lead...');
+  const row = {
+    nome,
+    telefone:    document.getElementById('nl2-tel')?.value?.trim()||null,
+    email:       document.getElementById('nl2-email')?.value?.trim()||null,
+    origem:      document.getElementById('nl2-origem')?.value||null,
+    loteamento:  document.getElementById('nl2-lot')?.value||null,
+    status:      document.getElementById('nl2-status')?.value||'Novo',
+    corretor:    document.getElementById('nl2-corretor')?.value||null,
+    data_visita: document.getElementById('nl2-data-visita')?.value||null,
+    hora_visita: document.getElementById('nl2-hora-visita')?.value||null,
+    observacoes: document.getElementById('nl2-obs')?.value||null,
+  };
+  const saved = await dbInsert('leads', row);
+  hideLoading();
+  if(!saved) return;
+  closeModal('modal-new-lead');
+  ['nl2-nome','nl2-tel','nl2-email','nl2-obs','nl2-data-visita','nl2-cpf'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  carregarLeadsDB();
+  if(tipo==='novo') showToast(`Lead "${nome}" criado e cliente cadastrado!`);
+  else showToast(`Lead "${nome}" adicionado!`);
+}
+
+// ── Editar lead — compatível com UUIDs do Supabase ────────────
+// ── Abas internas do modal de lead ───────────────────────────
+function switchLeadTab(tab){
+  ['acomp','venda','dados'].forEach(t=>{
+    document.getElementById('lead-section-'+t).style.display = t===tab?'block':'none';
+    document.getElementById('lead-tab-'+t).classList.toggle('active', t===tab);
+  });
+  const btn = document.getElementById('btn-salvar-lead-edicao');
+  if(btn) btn.style.display = tab==='venda'||tab==='dados' ? 'none' : '';
+}
+
+// Lotes da venda (array temporário por sessão de edição)
+let _vendaLotes = [];
+
+function adicionarLoteVenda(){
+  const idx = _vendaLotes.length;
+  _vendaLotes.push({quadra:'', numero:'', loteamento:'', valor:0});
+  renderLoteVenda();
+}
+
+function removerLoteVenda(idx){
+  _vendaLotes.splice(idx,1);
+  renderLoteVenda();
+}
+
+function renderLoteVenda(){
+  const el = document.getElementById('lead-lotes-venda');
+  if(!el) return;
+  if(!_vendaLotes.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--text-secondary);padding:8px 0">Nenhum lote adicionado ainda.</div>';
+    return;
+  }
+  el.innerHTML = _vendaLotes.map((l,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 80px 80px 120px 32px;gap:6px;margin-bottom:6px;align-items:end">
+      <div class="field" style="margin:0"><label style="font-size:10px">Loteamento</label>
+        <select onchange="_vendaLotes[${i}].loteamento=this.value" id="vl-lot-${i}" style="font-size:11px">
+          <option value="">— Selecione —</option>
+        </select>
+      </div>
+      <div class="field" style="margin:0"><label style="font-size:10px">Quadra</label>
+        <input value="${l.quadra}" oninput="_vendaLotes[${i}].quadra=this.value" placeholder="A" style="font-size:11px">
+      </div>
+      <div class="field" style="margin:0"><label style="font-size:10px">Nº lote</label>
+        <input value="${l.numero}" oninput="_vendaLotes[${i}].numero=this.value" placeholder="01" style="font-size:11px">
+      </div>
+      <div class="field" style="margin:0"><label style="font-size:10px">Valor (R$)</label>
+        <input value="${l.valor||''}" oninput="_vendaLotes[${i}].valor=parseFloat(this.value.replace(/\\./g,'').replace(',','.'))||0;maskMoney(this)" placeholder="0,00" style="font-size:11px">
+      </div>
+      <button onclick="removerLoteVenda(${i})" style="background:var(--danger-bg);color:var(--danger);border:none;border-radius:6px;cursor:pointer;padding:6px 8px;height:32px;align-self:end">✕</button>
+    </div>
+  `).join('');
+  // Popular selects de loteamento dinamicamente
+  dbSelect('loteamentos',{order:'nome',asc:true}).then(lots=>{
+    _vendaLotes.forEach((_,i)=>{
+      const sel = document.getElementById('vl-lot-'+i);
+      if(sel){
+        const cur = _vendaLotes[i].loteamento;
+        sel.innerHTML = '<option value="">— Selecione —</option>' +
+          lots.map(r=>`<option value="${r.nome}" ${r.nome===cur?'selected':''}>${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+        sel.onchange = function(){ _vendaLotes[i].loteamento=this.value; };
+      }
+    });
+  });
+}
+
+function calcularVenda(){
+  const total = parseFloat((document.getElementById('venda-valor-total')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const entrada = parseFloat((document.getElementById('venda-entrada')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const n = parseInt(document.getElementById('venda-parcelas')?.value)||0;
+  const taxa = parseFloat((document.getElementById('venda-taxa')?.value||'0').replace(',','.'))/100||0;
+  const sis = document.getElementById('venda-sistema')?.value||'Price';
+  const financiado = total - entrada;
+  if(!financiado||!n){ showToast('Informe valor total, entrada e número de parcelas.','error'); return; }
+  let parcela=0, totalFinal=0;
+  if(!taxa||sis==='Simples'){
+    parcela = financiado/n;
+    totalFinal = entrada + financiado;
+  } else if(sis==='Price'){
+    const coef = (taxa*Math.pow(1+taxa,n))/(Math.pow(1+taxa,n)-1);
+    parcela = financiado*coef;
+    totalFinal = entrada + parcela*n;
+  } else { // SAC
+    parcela = financiado/n + financiado*taxa;
+    totalFinal = entrada + financiado + financiado*taxa*((n+1)/2);
+  }
+  const fmt2 = v=>'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  sv('venda-res-financiado', fmt2(financiado));
+  sv('venda-res-parcela', fmt2(parcela)+' × '+n);
+  sv('venda-res-total', fmt2(totalFinal));
+  const res = document.getElementById('venda-resumo');
+  if(res) res.style.display='block';
+}
+
+async function salvarVendaLead(){
+  if(!_editLeadId){ showToast('Selecione um lead.','error'); return; }
+  const total = parseFloat((document.getElementById('venda-valor-total')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  if(!total){ showToast('Informe o valor total da venda.','error'); return; }
+  showLoading('Salvando venda...');
+  const venda = {
+    lotes:         JSON.stringify(_vendaLotes),
+    valor_total:   total,
+    valor_entrada: parseFloat((document.getElementById('venda-entrada')?.value||'0').replace(/\./g,'').replace(',','.'))||0,
+    num_parcelas:  parseInt(document.getElementById('venda-parcelas')?.value)||0,
+    taxa_juros_am: parseFloat((document.getElementById('venda-taxa')?.value||'0').replace(',','.'))/100||0,
+    sistema_amort: document.getElementById('venda-sistema')?.value||'Price',
+    data_assinatura: document.getElementById('venda-data-assina')?.value||null,
+    data_venc1:    document.getElementById('venda-data-venc1')?.value||null,
+    num_contrato:  document.getElementById('venda-num-contrato')?.value||null,
+    cartorio:      document.getElementById('venda-cartorio')?.value||null,
+    obs_venda:     document.getElementById('venda-obs')?.value||null,
+  };
+  // Salvar como JSON extra no campo observacoes do lead (compatível sem migração)
+  await dbUpdate('leads', _editLeadId, {
+    observacoes: '[VENDA]'+JSON.stringify(venda),
+    status: 'Contrato assinado'
+  });
+  hideLoading();
+  // Atualizar status local e lista
+  const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+  if(lead) lead.status='Contrato assinado';
+  renderLeads();
+  showToast('Venda registrada com sucesso!');
+  switchLeadTab('acomp');
+}
+
+async function salvarDadosClienteLead(){
+  if(!_editLeadId){ showToast('Lead não encontrado.','error'); return; }
+  const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+  const nome = document.getElementById('edit-lead-nome-cli')?.value?.trim()||lead?.nome||'';
+  showLoading('Salvando dados do cliente...');
+  // Atualizar cliente se existir, ou criar novo
+  const cls = await dbSelect('clientes',{filter:[['nome','eq',nome||'XXXXXXXXXXX']]});
+  if(cls.length){
+    await dbUpdate('clientes', cls[0].id, {
+      celular:      document.getElementById('edit-lead-tel')?.value||null,
+      email:        document.getElementById('edit-lead-email')?.value||null,
+      data_nasc:    document.getElementById('edit-lead-nasc')?.value||null,
+      estado_civil: document.getElementById('edit-lead-estcivil')?.value||null,
+      profissao:    document.getElementById('edit-lead-prof')?.value||null,
+    });
+  }
+  hideLoading();
+  showToast('Dados do cliente atualizados!');
+}
+
+let _editLeadId = null;
+
+function abrirEditLead(id){
+  const lead=leads.find(l=>String(l.id)===String(id));
+  if(!lead){showToast('Lead não encontrado.','error');return;}
+  _editLeadId = lead.id;
+  editLeadId  = lead.id; // manter compatibilidade
+  _vendaLotes = [];
+
+  const titulo=document.getElementById('edit-lead-titulo');
+  if(titulo)titulo.textContent=lead.nome;
+
+  // Preencher aba Acompanhamento
+  const sel=document.getElementById('edit-lead-status');
+  if(sel)sel.value=lead.status;
+  const obs=document.getElementById('edit-lead-obs');
+  if(obs)obs.value='';
+  const dv=document.getElementById('edit-lead-data-visita');
+  if(dv)dv.value=lead.dataVisita||'';
+  const hv=document.getElementById('edit-lead-hora-visita');
+  if(hv)hv.value=lead.horaVisita||'10:00';
+
+  // Popular corretores no select
+  dbSelect('corretores',{filter:[['status','eq','Ativo']],order:'nome',asc:true}).then(corts=>{
+    const selCor=document.getElementById('edit-lead-corretor');
+    if(selCor){
+      selCor.innerHTML='<option value="">— Nenhum —</option>'+
+        corts.map(r=>`<option value="${r.nome}" ${r.nome===lead.corretor?'selected':''}>${r.nome}</option>`).join('');
+    }
+  });
+
+  // Etapas
+  const grid=document.getElementById('etapas-grid');
+  if(grid){
+    grid.innerHTML=CRM_ETAPAS.map(e=>{
+      const checked=!!lead.etapas[e.key];
+      return `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:0.5px solid ${checked?'var(--accent)':'var(--border-tertiary)'};background:${checked?'var(--accent-light)':'var(--bg-secondary)'};cursor:pointer;font-size:12px;user-select:none" id="etapa-label-${e.key}">
+        <input type="checkbox" ${checked?'checked':''} onchange="toggleEtapaCheck('${e.key}',this)" style="display:none">
+        <span style="font-size:14px">${e.icon}</span>
+        <span>${e.label}</span>
+        ${checked?'<span style="margin-left:auto;color:var(--success);font-size:12px">✓</span>':''}
+      </label>`;
+    }).join('');
+  }
+
+  // Preencher aba Dados do cliente
+  const sv=(elId,v)=>{const el=document.getElementById(elId);if(el)el.value=v||'';};
+  sv('edit-lead-nome-cli', lead.nome);
+  sv('edit-lead-tel', lead.tel);
+  sv('edit-lead-email', lead.email);
+
+  // Preencher aba Venda se tiver dados salvos
+  if(lead.obs && lead.obs.startsWith('[VENDA]')){
+    try{
+      const venda = JSON.parse(lead.obs.replace('[VENDA]',''));
+      sv('venda-valor-total', (venda.valor_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2}));
+      sv('venda-entrada',     (venda.valor_entrada||0).toLocaleString('pt-BR',{minimumFractionDigits:2}));
+      sv('venda-parcelas',    venda.num_parcelas||'');
+      sv('venda-taxa',        ((venda.taxa_juros_am||0)*100).toLocaleString('pt-BR',{minimumFractionDigits:2}));
+      sv('venda-data-assina', venda.data_assinatura||'');
+      sv('venda-data-venc1',  venda.data_venc1||'');
+      sv('venda-num-contrato',venda.num_contrato||'');
+      sv('venda-cartorio',    venda.cartorio||'');
+      sv('venda-obs',         venda.obs_venda||'');
+      if(venda.sistema_amort){const ss=document.getElementById('venda-sistema');if(ss)ss.value=venda.sistema_amort;}
+      if(venda.lotes) try{_vendaLotes=JSON.parse(venda.lotes);}catch(e){}
+    }catch(e){}
+  }
+  renderLoteVenda();
+
+  switchLeadTab('acomp');
+  openModal('modal-edit-lead');
+}
+
+async function salvarEdicaoLead(){
+  const lead=leads.find(l=>String(l.id)===String(editLeadId));
+  if(!lead)return;
+  const status   = document.getElementById('edit-lead-status')?.value||lead.status;
+  const dataVis  = document.getElementById('edit-lead-data-visita')?.value||lead.dataVisita;
+  const horaVis  = document.getElementById('edit-lead-hora-visita')?.value||lead.horaVisita;
+  showLoading('Atualizando lead...');
+  await dbUpdate('leads', editLeadId, {
+    status, data_visita: dataVis||null, hora_visita: horaVis||null,
+    etapa_visitou:    !!lead.etapas?.visitou,
+    etapa_proposta:   !!lead.etapas?.proposta,
+    etapa_contrato:   !!lead.etapas?.contrato,
+    etapa_entrada:    !!lead.etapas?.entrada,
+  });
+  hideLoading();
+  closeModal('modal-edit-lead');
+  carregarLeadsDB();
+  showToast('Lead "'+lead.nome+'" atualizado!');
+  editLeadId=null;
 }
 
 function abrirModalNovoLead(){
@@ -3523,61 +3966,8 @@ function salvarLead(){
   showToast('Lead "'+nome+'" adicionado!');
 }
 
-function abrirEditLead(id){
-  const lead=leads.find(l=>l.id===id);
-  if(!lead)return;
-  editLeadId=id;
-  const titulo=document.getElementById('edit-lead-titulo');
-  if(titulo)titulo.textContent=lead.nome;
-  const sel=document.getElementById('edit-lead-status');
-  if(sel)sel.value=lead.status;
-  const obs=document.getElementById('edit-lead-obs');
-  if(obs)obs.value='';
-  // Data e hora da visita
-  const dv=document.getElementById('edit-lead-data-visita');
-  if(dv)dv.value=lead.dataVisita||'';
-  const hv=document.getElementById('edit-lead-hora-visita');
-  if(hv)hv.value=lead.horaVisita||'10:00';
-  const grid=document.getElementById('etapas-grid');
-  if(grid){
-    grid.innerHTML=CRM_ETAPAS.map(e=>{
-      const checked=!!lead.etapas[e.key];
-      return `<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;border:0.5px solid ${checked?'var(--accent)':'var(--border-tertiary)'};background:${checked?'var(--accent-light)':'var(--bg-secondary)'};cursor:pointer;font-size:12px;user-select:none" id="etapa-label-${e.key}">
-        <input type="checkbox" ${checked?'checked':''} onchange="toggleEtapaCheck('${e.key}',this)" style="display:none">
-        <span style="font-size:14px">${e.icon}</span>
-        <span>${e.label}</span>
-        ${checked?'<span style="margin-left:auto;color:var(--success);font-size:12px">✓</span>':''}
-      </label>`;
-    }).join('');
-  }
-  openModal('modal-edit-lead');
-}
 
-function toggleEtapaCheck(key,checkbox){
-  const lead=leads.find(l=>l.id===editLeadId);
-  if(!lead)return;
-  lead.etapas[key]=checkbox.checked;
-  const lbl=document.getElementById('etapa-label-'+key);
-  if(lbl){
-    lbl.style.borderColor=checkbox.checked?'var(--accent)':'var(--border-tertiary)';
-    lbl.style.background=checkbox.checked?'var(--accent-light)':'var(--bg-secondary)';
-  }
-  // Auto-avançar status
-  if(key==='contrato'&&checkbox.checked){const s=document.getElementById('edit-lead-status');if(s)s.value='Contrato assinado';}
-  if(key==='entrada'&&checkbox.checked){const s=document.getElementById('edit-lead-status');if(s)s.value='Entrada paga';}
-  if(key==='visitou'&&checkbox.checked){const s=document.getElementById('edit-lead-status');if(s&&s.value==='Novo')s.value='Visita realizada';}
-}
 
-function salvarEdicaoLead(){
-  const lead=leads.find(l=>l.id===editLeadId);
-  if(!lead)return;
-  lead.status=document.getElementById('edit-lead-status')?.value||lead.status;
-  lead.dataVisita=document.getElementById('edit-lead-data-visita')?.value||lead.dataVisita;
-  lead.horaVisita=document.getElementById('edit-lead-hora-visita')?.value||lead.horaVisita;
-  closeModal('modal-edit-lead');
-  renderLeads();
-  showToast('Lead "'+lead.nome+'" atualizado!');
-}
 
 // ================================================================
 // PARCELAS — marcação manual de pagamento
@@ -6701,30 +7091,6 @@ async function carregarLeadsDB() {
   renderLeads();
 }
 
-async function salvarLeadDB() {
-  const nome = document.getElementById('nl2-nome')?.value?.trim();
-  const tel  = document.getElementById('nl2-tel')?.value?.trim();
-  if(!nome||!tel){showToast('Informe nome e telefone.','error');return;}
-  showLoading('Salvando lead...');
-  const row = {
-    nome, telefone: tel,
-    email:       document.getElementById('nl2-email')?.value||null,
-    origem:      document.getElementById('nl2-origem')?.value||null,
-    loteamento:  document.getElementById('nl2-lot')?.value||null,
-    status:      document.getElementById('nl2-status')?.value||'Novo',
-    corretor:    document.getElementById('nl2-corretor')?.value||null,
-    data_visita: document.getElementById('nl2-data-visita')?.value||null,
-    hora_visita: document.getElementById('nl2-hora-visita')?.value||null,
-    observacoes: document.getElementById('nl2-obs')?.value||null,
-  };
-  const saved = await dbInsert('leads', row);
-  hideLoading();
-  if(!saved) return;
-  closeModal('modal-new-lead');
-  ['nl2-nome','nl2-tel','nl2-email','nl2-obs','nl2-data-visita'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  carregarLeadsDB();
-  showToast('Lead "'+nome+'" adicionado!');
-}
 
 async function atualizarLeadDB(id, updates) {
   await dbUpdate('leads', id, updates);
