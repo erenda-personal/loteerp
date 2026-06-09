@@ -943,6 +943,26 @@ tbody tr.clickable{cursor:pointer}
 
         <!-- VISÃO KANBAN -->
         <div id="crm-visao-kanban" style="display:none">
+          <!-- Modal gestão de colunas -->
+          <div id="modal-kanban-cols" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.35);align-items:center;justify-content:center" onclick="if(event.target===this)fecharGestaoKanban()">
+            <div style="background:var(--bg-primary);border-radius:14px;padding:24px;width:420px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18)">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <span style="font-size:14px;font-weight:600">Configurar colunas do Kanban</span>
+                <button onclick="fecharGestaoKanban()" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-tertiary)">✕</button>
+              </div>
+              <div style="font-size:11px;color:var(--text-secondary);margin-bottom:12px">Arraste para reordenar · Clique no nome para renomear · Escolha a cor</div>
+              <div id="kanban-cols-list"></div>
+              <button onclick="adicionarColunaKanban()" class="btn btn-sm" style="margin-top:8px;width:100%">+ Adicionar coluna</button>
+              <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+                <button class="btn" onclick="fecharGestaoKanban()">Cancelar</button>
+                <button class="btn btn-primary" onclick="aplicarColunasKanban()">Aplicar</button>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <span style="font-size:12px;color:var(--text-secondary)" id="crm-kanban-info"></span>
+            <button class="btn btn-sm" onclick="abrirGestaoKanban()" style="font-size:11px">⚙ Configurar colunas</button>
+          </div>
           <div id="crm-kanban-board" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;min-height:400px"></div>
         </div>
 
@@ -5379,7 +5399,8 @@ function renderLancamentos(){
 // ================================================================
 // CRM — KANBAN COM DRAG AND DROP
 // ================================================================
-const KANBAN_COLUNAS=[
+// Colunas padrão — podem ser customizadas pelo usuário
+let KANBAN_COLUNAS=[
   {key:'Novo',              label:'Novo',              color:'#888780'},
   {key:'Contato feito',     label:'Contato feito',     color:'#378ADD'},
   {key:'Visita realizada',  label:'Visita realizada',  color:'#185FA5'},
@@ -5388,6 +5409,112 @@ const KANBAN_COLUNAS=[
   {key:'Entrada paga',      label:'Entrada paga',      color:'#0F6E56'},
   {key:'Perdido',           label:'Perdido',           color:'#A32D2D'},
 ];
+
+// ── Persistência das colunas no Supabase ──────────────────────
+async function salvarColunasKanban(){
+  await dbUpsert('empresa',{
+    id:'00000000-0000-0000-0000-000000000001',
+    kanban_colunas: JSON.stringify(KANBAN_COLUNAS)
+  },'id').catch(()=>{});
+}
+
+async function carregarColunasKanban(){
+  const rows = await dbSelect('empresa',{filter:[['id','eq','00000000-0000-0000-0000-000000000001']]});
+  if(rows[0]?.kanban_colunas){
+    try{
+      const saved = JSON.parse(rows[0].kanban_colunas);
+      if(Array.isArray(saved) && saved.length) KANBAN_COLUNAS = saved;
+    }catch(e){}
+  }
+}
+
+// ── Gestão de colunas ─────────────────────────────────────────
+function abrirGestaoKanban(){
+  renderGestaoKanban();
+  document.getElementById('modal-kanban-cols').style.display='flex';
+}
+function fecharGestaoKanban(){
+  document.getElementById('modal-kanban-cols').style.display='none';
+}
+
+function renderGestaoKanban(){
+  const el = document.getElementById('kanban-cols-list');
+  if(!el) return;
+  el.innerHTML = KANBAN_COLUNAS.map((col,i)=>`
+    <div id="kcol-${i}" draggable="true"
+      ondragstart="kcDragIdx=${i};event.dataTransfer.effectAllowed='move'"
+      ondragover="event.preventDefault()"
+      ondrop="kcDrop(${i})"
+      style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border-radius:8px;margin-bottom:6px;cursor:grab;border:1.5px solid var(--border-tertiary)">
+      <span style="font-size:14px;cursor:grab;color:var(--text-tertiary)">⠿</span>
+      <div style="width:14px;height:14px;border-radius:50%;background:${col.color};flex-shrink:0"></div>
+      <input value="${col.label}" oninput="KANBAN_COLUNAS[${i}].label=this.value;KANBAN_COLUNAS[${i}].key=this.value"
+        style="flex:1;font-size:12px;padding:4px 8px;border-radius:6px;border:0.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-primary)">
+      <input type="color" value="${col.color}" oninput="KANBAN_COLUNAS[${i}].color=this.value;renderGestaoKanban()"
+        style="width:28px;height:28px;padding:2px;border-radius:6px;border:0.5px solid var(--border-secondary);cursor:pointer;background:var(--bg-primary)">
+      ${KANBAN_COLUNAS.length>1?`<button onclick="excluirColunaKanban(${i})"
+        style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:2px 4px" title="Excluir coluna">✕</button>`:''}
+    </div>`).join('');
+}
+
+let kcDragIdx = null;
+function kcDrop(toIdx){
+  if(kcDragIdx===null || kcDragIdx===toIdx) return;
+  const moved = KANBAN_COLUNAS.splice(kcDragIdx,1)[0];
+  KANBAN_COLUNAS.splice(toIdx,0,moved);
+  kcDragIdx=null;
+  renderGestaoKanban();
+}
+
+function adicionarColunaKanban(){
+  const nome = prompt('Nome da nova coluna:');
+  if(!nome||!nome.trim()) return;
+  const key = nome.trim();
+  if(KANBAN_COLUNAS.some(c=>c.key===key)){showToast('Já existe uma coluna com este nome.','error');return;}
+  KANBAN_COLUNAS.push({key, label:key, color:'#888780'});
+  renderGestaoKanban();
+}
+
+function excluirColunaKanban(i){
+  const col = KANBAN_COLUNAS[i];
+  const count = leads.filter(l=>l.status===col.key).length;
+  const msg = count>0
+    ? `Excluir a coluna "${col.label}"?\n\n${count} lead(s) serão movidos para "Novo".`
+    : `Excluir a coluna "${col.label}"?`;
+  if(!confirm(msg)) return;
+  // Mover leads orphãos para "Novo"
+  if(count>0){
+    leads.forEach(l=>{ if(l.status===col.key) l.status='Novo'; });
+    // Persistir no banco em batch
+    leads.filter(l=>l.status==='Novo').forEach(l=>{
+      dbUpdate('leads',l.id,{status:'Novo'}).catch(()=>{});
+    });
+  }
+  KANBAN_COLUNAS.splice(i,1);
+  renderGestaoKanban();
+}
+
+async function aplicarColunasKanban(){
+  await salvarColunasKanban();
+  // Atualizar STATUS_CRM_BADGE com as novas colunas
+  KANBAN_COLUNAS.forEach(col=>{
+    if(!STATUS_CRM_BADGE[col.key]) STATUS_CRM_BADGE[col.key]='badge-gray';
+  });
+  // Atualizar selects de status em toda a interface
+  ['nl2-status','edit-lead-status'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(sel){
+      const cur=sel.value;
+      sel.innerHTML=KANBAN_COLUNAS.map(c=>`<option value="${c.key}">${c.label}</option>`).join('');
+      if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+    }
+  });
+  fecharGestaoKanban();
+  renderKanban();
+  renderLeads();
+  showToast('Colunas do kanban atualizadas!');
+}
+
 let crmVisao='tabela';
 let dragLeadId=null;
 
@@ -7786,7 +7913,10 @@ async function initPageDB(id) {
   if(id==='contratos')    await carregarContratos();
   if(id==='financeiro')   { initFinanceiro(); renderLancamentosDB(); atualizarKpisFinanceiroDB(); }
   if(id==='contas-bancarias') await carregarContasBancariasDB();
-  if(id==='crm')          await carregarLeadsDB();
+  if(id==='crm'){
+    await carregarColunasKanban();
+    await carregarLeadsDB();
+  }
   if(id==='corretores')   await carregarCorretoresDB();
   if(id==='investidores') await carregarInvestidoresDB();
   if(id==='obras')        await carregarObrasDB();
