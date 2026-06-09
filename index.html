@@ -2083,23 +2083,13 @@ tbody tr.clickable{cursor:pointer}
           <!-- ABA: Acompanhamento -->
           <div id="lead-section-acomp">
 
-            <!-- Linha do tempo -->
+            <!-- Linha do tempo — gerada dinamicamente por KANBAN_COLUNAS -->
             <div id="lead-timeline" style="margin-bottom:16px"></div>
 
-            <!-- Corretor + visita -->
-            <div class="form-row col2">
+            <div class="form-row">
               <div class="field"><label>Corretor responsável</label>
                 <select id="edit-lead-corretor"><option value="">— Nenhum —</option></select>
               </div>
-              <div class="field"><label>Situação</label>
-                <select id="edit-lead-status">
-                  <option>Novo</option><option>Contato feito</option><option>Perdido</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row col2">
-              <div class="field"><label>Data da visita agendada</label><input id="edit-lead-data-visita" type="date"></div>
-              <div class="field"><label>Horário</label><input id="edit-lead-hora-visita" type="time"></div>
             </div>
             <div class="form-row"><div class="field"><label>Observação</label><input id="edit-lead-obs" placeholder="Registro desta atualização..."></div></div>
           </div>
@@ -3799,10 +3789,7 @@ function abrirEditLead(id){
   // Preencher aba Acompanhamento
   const obs=document.getElementById('edit-lead-obs');
   if(obs)obs.value='';
-  const dv=document.getElementById('edit-lead-data-visita');
-  if(dv)dv.value=lead.dataVisita||'';
-  const hv=document.getElementById('edit-lead-hora-visita');
-  if(hv)hv.value=lead.horaVisita||'10:00';
+  // data/hora visita agora na timeline
   const sel=document.getElementById('edit-lead-status');
   if(sel){ const s=['Novo','Contato feito','Perdido']; sel.value=s.includes(lead.status)?lead.status:'Contato feito'; }
 
@@ -3866,131 +3853,174 @@ function abrirEditLead(id){
 // ================================================================
 // LINHA DO TEMPO DO LEAD
 // ================================================================
-const LEAD_ETAPAS = [
-  { key:'visitou',  label:'Visitou o lote',    icon:'🏠', campo_data:'data_visita',   campo_hora:'hora_visita' },
-  { key:'proposta', label:'Proposta enviada',   icon:'📋', campo_data:'dt_proposta',   campo_hora:null },
-  { key:'contrato', label:'Contrato assinado',  icon:'✍️', campo_data:'dt_contrato',   campo_hora:null },
-  { key:'entrada',  label:'Entrada paga',       icon:'💰', campo_data:'dt_entrada',    campo_hora:null },
-];
+// LEAD_ETAPAS é derivado de KANBAN_COLUNAS — sempre em sincronia
+// Mapeamento fixo de key → campo de data no banco
+const ETAPA_DATA_MAP = {
+  'Visitou o lote':    {campo:'data_visita',  hora:'hora_visita'},
+  'Proposta enviada':  {campo:'dt_proposta',  hora:null},
+  'Contrato assinado': {campo:'dt_contrato',  hora:null},
+  'Entrada paga':      {campo:'dt_entrada',   hora:null},
+};
+
+function getLeadEtapas(){
+  // Gera etapas a partir das colunas do kanban, excluindo "Novo", "Perdido" e "Contato feito"
+  // que são estados, não marcos comerciais
+  const excluir = new Set(['Novo','Perdido','Contato feito']);
+  return KANBAN_COLUNAS
+    .filter(c=>!excluir.has(c.key))
+    .map((col,i)=>{
+      const map = ETAPA_DATA_MAP[col.label] || ETAPA_DATA_MAP[col.key] || {campo:null,hora:null};
+      // Criar slug para usar como chave de etapa no lead
+      const slug = col.key.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+      return {
+        key:        slug,
+        kanbanKey:  col.key,
+        label:      col.label,
+        color:      col.color,
+        campo_data: map.campo,
+        campo_hora: map.hora,
+      };
+    });
+}
 
 function renderLeadTimeline(lead){
   const el = document.getElementById('lead-timeline');
   if(!el) return;
+  const etapas = getLeadEtapas();
 
-  el.innerHTML = LEAD_ETAPAS.map((etapa,i)=>{
-    const feito = !!lead.etapas?.[etapa.key];
-    const data  = lead[etapa.campo_data] || lead.etapas?.[etapa.key+'_data'] || '';
-    const hora  = etapa.campo_hora ? (lead[etapa.campo_hora]||'') : '';
-    const dataFmt = data ? new Date(data+'T12:00').toLocaleDateString('pt-BR') : '';
-    const isLast = i === LEAD_ETAPAS.length-1;
+  el.innerHTML = etapas.map((etapa,i)=>{
+    const feito   = !!(lead.etapas?.[etapa.key] || lead.etapas?.[etapa.kanbanKey]);
+    const dataVal = lead.etapas?.[etapa.key+'_data'] || (etapa.campo_data ? lead[etapa.campo_data]||'' : '');
+    const horaVal = lead.etapas?.[etapa.key+'_hora'] || '';
+    const dataFmt = dataVal ? new Date(dataVal+'T12:00').toLocaleDateString('pt-BR') : '';
+    const isLast  = i === etapas.length-1;
+    const cor     = etapa.color || 'var(--accent)';
 
     return `
     <div style="display:flex;gap:0;align-items:flex-start;margin-bottom:${isLast?'0':'4px'}">
-      <!-- Conector vertical -->
       <div style="display:flex;flex-direction:column;align-items:center;margin-right:12px;flex-shrink:0">
         <div onclick="concluirEtapaLead('${etapa.key}')"
-          style="width:36px;height:36px;border-radius:50%;background:${feito?'var(--success)':'var(--bg-secondary)'};
-          border:2px solid ${feito?'var(--success)':'var(--border-secondary)'};
+          style="width:36px;height:36px;border-radius:50%;
+          background:${feito?cor:'var(--bg-secondary)'};
+          border:2px solid ${feito?cor:'var(--border-secondary)'};
           display:flex;align-items:center;justify-content:center;cursor:pointer;
-          transition:all .18s;font-size:${feito?'16':'14'}px"
-          title="${feito?'Clique para desfazer':'Clique para marcar como concluído'}"
-          onmouseenter="if(!${feito})this.style.borderColor='var(--accent)'"
-          onmouseleave="if(!${feito})this.style.borderColor='var(--border-secondary)'">
-          ${feito ? '✓' : etapa.icon}
+          transition:all .18s;font-size:${feito?'16':'15'}px"
+          title="${feito?'Clique para desfazer':'Clique para marcar como concluído'}">
+          ${feito ? '<span style="color:#fff;font-weight:700">✓</span>' : '<span style="color:var(--text-tertiary)">○</span>'}
         </div>
-        ${!isLast?`<div style="width:2px;height:20px;background:${feito?'var(--success)':'var(--border-tertiary)'};margin:2px 0"></div>`:''}
+        ${!isLast?`<div style="width:2px;height:20px;background:${feito?cor:'var(--border-tertiary)'};margin:2px 0"></div>`:''}
       </div>
-      <!-- Conteúdo -->
       <div style="flex:1;padding-top:6px;min-height:${isLast?'36':'56'}px">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span style="font-size:13px;font-weight:${feito?'600':'400'};color:${feito?'var(--text-primary)':'var(--text-secondary)'}">${etapa.label}</span>
-          ${feito && dataFmt ? `<span style="font-size:11px;padding:1px 7px;border-radius:20px;background:var(--success-bg);color:var(--success);font-weight:500">${dataFmt}${hora?' · '+hora:''}</span>` : ''}
-          ${!feito ? `<button onclick="concluirEtapaLead('${etapa.key}')"
-            style="font-size:10px;padding:2px 10px;border-radius:20px;border:1px solid var(--accent);background:var(--accent-light);color:var(--accent-text);cursor:pointer;font-weight:600">
-            Marcar como feito
-          </button>` : `<button onclick="concluirEtapaLead('${etapa.key}')"
-            style="font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid var(--border-secondary);background:transparent;color:var(--text-tertiary);cursor:pointer">
-            Desfazer
-          </button>`}
+          ${feito && dataFmt ? `<span style="font-size:11px;padding:1px 7px;border-radius:20px;background:var(--success-bg);color:var(--success);font-weight:500">${dataFmt}${horaVal?' · '+horaVal:''}</span>` : ''}
+          ${!feito
+            ? `<button onclick="concluirEtapaLead('${etapa.key}')"
+                style="font-size:10px;padding:2px 10px;border-radius:20px;border:1px solid ${cor};background:transparent;color:${cor};cursor:pointer;font-weight:600">
+                Marcar como feito
+               </button>`
+            : `<button onclick="concluirEtapaLead('${etapa.key}')"
+                style="font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid var(--border-secondary);background:transparent;color:var(--text-tertiary);cursor:pointer">
+                Desfazer
+               </button>`}
         </div>
-        ${feito && etapa.campo_data ? `<div style="margin-top:4px">
-          <input type="${etapa.campo_hora?'datetime-local':'date'}" id="timeline-data-${etapa.key}"
-            value="${etapa.campo_hora?data+'T'+(hora||'00:00'):data}"
-            onchange="atualizarDataEtapa('${etapa.key}',this.value)"
+        ${feito && etapa.campo_data ? `<div style="display:flex;gap:6px;margin-top:5px;align-items:center">
+          <input type="date" id="timeline-data-${etapa.key}"
+            value="${dataVal}"
+            onchange="atualizarDataEtapa('${etapa.key}','data',this.value)"
             style="font-size:11px;padding:3px 8px;border-radius:6px;border:0.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-secondary);outline:none">
+          <input type="time" id="timeline-hora-${etapa.key}"
+            value="${horaVal||'00:00'}"
+            onchange="atualizarDataEtapa('${etapa.key}','hora',this.value)"
+            style="font-size:11px;padding:3px 8px;border-radius:6px;border:0.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-secondary);outline:none;width:90px">
         </div>` : ''}
       </div>
     </div>`;
   }).join('');
 }
 
+
+// ── helpers de etapas (salva tudo como JSON no campo etapas_json) ──
+function getEtapasJson(lead){
+  // Retorna o objeto de etapas — compatível com formato antigo
+  return lead.etapas || {};
+}
+
+async function persistirEtapas(lead){
+  // Salva etapas como JSON + status + datas no Supabase
+  const upd = {
+    status:       lead.status,
+    etapas_json:  JSON.stringify(lead.etapas||{}),
+    // Datas conhecidas (colunas fixas que existem no banco)
+    data_visita:  lead.etapas_datas?.data_visita||lead.data_visita||null,
+    dt_proposta:  lead.etapas_datas?.dt_proposta||lead.dt_proposta||null,
+    dt_contrato:  lead.etapas_datas?.dt_contrato||lead.dt_contrato||null,
+    dt_entrada:   lead.etapas_datas?.dt_entrada||lead.dt_entrada||null,
+  };
+  // Remover chaves com undefined
+  Object.keys(upd).forEach(k=>{ if(upd[k]===undefined) delete upd[k]; });
+  await dbUpdate('leads', lead.id, upd);
+}
+
 async function concluirEtapaLead(key){
   const lead = leads.find(l=>String(l.id)===String(_editLeadId));
   if(!lead) return;
-  if(!lead.etapas) lead.etapas = {};
+  if(!lead.etapas)      lead.etapas      = {};
+  if(!lead.etapas_datas)lead.etapas_datas= {};
+
   const feito = !!lead.etapas[key];
+  const agora = new Date();
+  const dataHoje = agora.toISOString().split('T')[0];
+  const horaAgora= agora.toTimeString().substring(0,5); // HH:MM
 
   if(!feito){
-    // Marcar como feito — registrar data atual
-    lead.etapas[key] = true;
-    const hoje = new Date().toISOString().split('T')[0];
-    const etapa = LEAD_ETAPAS.find(e=>e.key===key);
-    if(etapa?.campo_data) lead[etapa.campo_data] = hoje;
-    // Atualizar status do lead conforme a etapa mais avançada
-    const statusMap = { entrada:'Entrada paga', contrato:'Contrato assinado', proposta:'Proposta enviada', visitou:'Visita realizada' };
-    for(const k of ['entrada','contrato','proposta','visitou']){
-      if(lead.etapas[k]){ lead.status = statusMap[k]; break; }
+    lead.etapas[key]            = true;
+    lead.etapas[key+'_data']    = dataHoje;
+    lead.etapas[key+'_hora']    = horaAgora;
+    // Sincronizar com colunas fixas do banco
+    const etapa = getLeadEtapas().find(e=>e.key===key);
+    if(etapa?.campo_data){ lead[etapa.campo_data] = dataHoje; lead.etapas_datas[etapa.campo_data] = dataHoje; }
+    // Status = etapa mais avançada concluída
+    const ordem = getLeadEtapas();
+    for(let i=ordem.length-1;i>=0;i--){
+      if(lead.etapas[ordem[i].key]){ lead.status=ordem[i].kanbanKey; break; }
     }
-    // Salvar no Supabase
-    const upd = { status: lead.status };
-    if(etapa?.campo_data) upd[etapa.campo_data] = hoje;
-    // Sincronizar com campos de data das abas
-    if(key==='visitou'){upd.data_visita=hoje;}
-    if(key==='proposta'){upd.dt_proposta=hoje;}
-    if(key==='contrato'){upd.dt_contrato=hoje;}
-    if(key==='entrada') {upd.dt_entrada=hoje;}
-    // Etapas como flags
-    upd['etapa_'+key] = true;
-    showLoading('Salvando...');
-    await dbUpdate('leads', _editLeadId, upd);
-    hideLoading();
   } else {
-    // Desfazer
-    lead.etapas[key] = false;
-    const etapa = LEAD_ETAPAS.find(e=>e.key===key);
-    if(etapa?.campo_data) lead[etapa.campo_data] = null;
-    const upd = { ['etapa_'+key]: false };
-    if(etapa?.campo_data) upd[etapa.campo_data]=null;
+    lead.etapas[key]          = false;
+    lead.etapas[key+'_data']  = null;
+    lead.etapas[key+'_hora']  = null;
+    const etapa = getLeadEtapas().find(e=>e.key===key);
+    if(etapa?.campo_data){ lead[etapa.campo_data]=null; lead.etapas_datas[etapa.campo_data]=null; }
     // Recalcular status
-    const statusMap = { entrada:'Entrada paga', contrato:'Contrato assinado', proposta:'Proposta enviada', visitou:'Visita realizada' };
-    let novoStatus = 'Novo';
-    for(const k of ['entrada','contrato','proposta','visitou']){
-      if(lead.etapas[k]){ novoStatus = statusMap[k]; break; }
+    const ordem2 = getLeadEtapas();
+    lead.status = 'Novo';
+    for(let i=ordem2.length-1;i>=0;i--){
+      if(lead.etapas[ordem2[i].key]){ lead.status=ordem2[i].kanbanKey; break; }
     }
-    lead.status = novoStatus;
-    upd.status = novoStatus;
-    showLoading('Atualizando...');
-    await dbUpdate('leads', _editLeadId, upd);
-    hideLoading();
   }
 
+  showLoading('Salvando...');
+  await persistirEtapas(lead);
+  hideLoading();
   renderLeadTimeline(lead);
   renderLeads();
 }
 
-async function atualizarDataEtapa(key, valor){
+async function atualizarDataEtapa(key, campo, valor){
   const lead = leads.find(l=>String(l.id)===String(_editLeadId));
   if(!lead) return;
-  const etapa = LEAD_ETAPAS.find(e=>e.key===key);
-  if(!etapa) return;
-  const data = etapa.campo_hora ? valor.split('T')[0] : valor;
-  const hora = etapa.campo_hora ? valor.split('T')[1] : null;
-  if(etapa.campo_data) lead[etapa.campo_data] = data;
-  if(etapa.campo_hora && hora) lead[etapa.campo_hora] = hora;
-  const upd = {};
-  if(etapa.campo_data) upd[etapa.campo_data]=data;
-  if(etapa.campo_hora && hora) upd[etapa.campo_hora]=hora;
-  await dbUpdate('leads', _editLeadId, upd);
+  if(!lead.etapas)      lead.etapas      = {};
+  if(!lead.etapas_datas)lead.etapas_datas= {};
+  lead.etapas[key+'_'+campo] = valor;
+  // Se for data ou hora de coluna fixa, sincronizar
+  const etapa = getLeadEtapas().find(e=>e.key===key);
+  if(campo==='data' && etapa?.campo_data){
+    lead[etapa.campo_data]=valor;
+    lead.etapas_datas[etapa.campo_data]=valor;
+  }
+  await persistirEtapas(lead);
 }
 
 async function salvarEdicaoLead(){
@@ -3999,8 +4029,8 @@ async function salvarEdicaoLead(){
   // Status: se lead tem etapa concluída, status vem da timeline; senão usar o select
   const statusSelect = document.getElementById('edit-lead-status')?.value||lead.status;
   const status = lead.status !== statusSelect ? statusSelect : lead.status;
-  const dataVis  = document.getElementById('edit-lead-data-visita')?.value||null;
-  const horaVis  = document.getElementById('edit-lead-hora-visita')?.value||null;
+  const dataVis  = null; // removido — data capturada pela timeline
+  const horaVis  = null;
   const corretor = document.getElementById('edit-lead-corretor')?.value||null;
   const obs      = document.getElementById('edit-lead-obs')?.value||null;
   showLoading('Salvando lead...');
@@ -4010,10 +4040,7 @@ async function salvarEdicaoLead(){
     hora_visita:   horaVis,
     corretor:      corretor,
     observacoes:   obs && !obs.startsWith('[VENDA]') ? obs : lead.obs||null,
-    etapa_visitou: !!lead.etapas?.visitou,
-    etapa_proposta:!!lead.etapas?.proposta,
-    etapa_contrato:!!lead.etapas?.contrato,
-    etapa_entrada: !!lead.etapas?.entrada,
+    etapas_json:   JSON.stringify(lead.etapas||{}),
   });
   // Atualizar array local
   lead.status=status; lead.dataVisita=dataVis||lead.dataVisita;
@@ -5514,6 +5541,11 @@ async function aplicarColunasKanban(){
   fecharGestaoKanban();
   renderKanban();
   renderLeads();
+  // Re-renderizar timeline se modal de lead estiver aberto
+  if(_editLeadId){
+    const lead=leads.find(l=>String(l.id)===String(_editLeadId));
+    if(lead) renderLeadTimeline(lead);
+  }
   showToast('Colunas do kanban atualizadas!');
 }
 
@@ -7680,26 +7712,38 @@ async function carregarLeadsDB() {
   showLoading('Carregando leads...');
   const rows = await dbSelect('leads',{order:'created_at',asc:false});
   hideLoading();
-  leads = rows.map(r => ({
-    id: r.id, nome: r.nome, tel: r.telefone||'', email: r.email||'',
-    origem: r.origem||'', lote: r.loteamento||'', status: r.status||'Novo',
-    corretor: r.corretor||'', cpf: r.cpf||'',
-    dataVisita: r.data_visita||'', horaVisita: r.hora_visita||'',
-    etapas: {
-      visitou:     r.etapa_visitou||false,
-      proposta:    r.etapa_proposta||false,
-      contrato:    r.etapa_contrato||false,
-      entrada:     r.etapa_entrada||false,
-      parcela1:    r.etapa_parcela1||false,
-      financiado:  r.etapa_financiado||false,
-    },
-    obs: r.observacoes||'',
-    clienteId: r.cliente_id||null,
-    dt_proposta: r.dt_proposta||'',
-    dt_contrato: r.dt_contrato||'',
-    dt_entrada:  r.dt_entrada||'',
-    doc_url:     r.doc_url||null,
-  }));
+  leads = rows.map(r => {
+    // Carregar etapas do JSON (novo formato) ou das colunas booleanas (compatibilidade)
+    let etapas = {};
+    if(r.etapas_json){
+      try{ etapas = JSON.parse(r.etapas_json); }catch(e){}
+    } else {
+      // Migrar formato antigo
+      if(r.etapa_visitou)  etapas.visitou  = true;
+      if(r.etapa_proposta) etapas.proposta = true;
+      if(r.etapa_contrato) etapas.contrato = true;
+      if(r.etapa_entrada)  etapas.entrada  = true;
+    }
+    return {
+      id: r.id, nome: r.nome, tel: r.telefone||'', email: r.email||'',
+      origem: r.origem||'', lote: r.loteamento||'', status: r.status||'Novo',
+      corretor: r.corretor||'', cpf: r.cpf||'',
+      dataVisita: r.data_visita||'', horaVisita: r.hora_visita||'',
+      etapas,
+      etapas_datas: {
+        data_visita: r.data_visita||null,
+        dt_proposta: r.dt_proposta||null,
+        dt_contrato: r.dt_contrato||null,
+        dt_entrada:  r.dt_entrada||null,
+      },
+      obs: r.observacoes||'',
+      clienteId: r.cliente_id||null,
+      dt_proposta: r.dt_proposta||'',
+      dt_contrato: r.dt_contrato||'',
+      dt_entrada:  r.dt_entrada||'',
+      doc_url:     r.doc_url||null,
+    };
+  });
   renderLeads();
 }
 
