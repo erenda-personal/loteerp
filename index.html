@@ -3948,10 +3948,18 @@ function getEtapasJson(lead){
   return lead.etapas || {};
 }
 
+// Status permitidos pelo banco (CHECK constraint)
+const STATUS_VALIDOS_DB = new Set([
+  'Novo','Contato feito','Visita realizada','Proposta enviada',
+  'Contrato assinado','Entrada paga','Perdido'
+]);
+
 async function persistirEtapas(lead){
   // Salva etapas como JSON + status + datas no Supabase
+  // Só envia status se for um valor aceito pelo banco
+  const statusDB = STATUS_VALIDOS_DB.has(lead.status) ? lead.status : 'Contato feito';
   const upd = {
-    status:       lead.status,
+    status:       statusDB,
     etapas_json:  JSON.stringify(lead.etapas||{}),
     // Datas conhecidas (colunas fixas que existem no banco)
     data_visita:  lead.etapas_datas?.data_visita||lead.data_visita||null,
@@ -4375,7 +4383,7 @@ function renderLeads(){
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cpf}</td>
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.origem||'—'}</td>
       <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lote}</td>
-      <td><span class="badge ${bc}" style="font-size:10px">${l.status}</span><br><span style="font-size:10px;color:var(--text-secondary)">${etapasFeitas} etapa${etapasFeitas!==1?'s':''}</span></td>
+      <td><span class="badge ${bc}" style="font-size:10px">${l.status}</span></td>
       <td style="text-align:left"><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditLead('${idStr}')">Editar</button></td>
     </tr>`;
   }).join('');
