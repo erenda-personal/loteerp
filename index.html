@@ -2019,49 +2019,88 @@ tbody tr.clickable{cursor:pointer}
 
       <!-- Modal: Novo Lead -->
       <div class="modal-overlay" id="modal-new-lead" onclick="if(event.target===this)closeModal('modal-new-lead')">
-        <div class="modal-box" style="width:580px">
+        <div class="modal-box" style="width:620px;max-height:90vh;overflow-y:auto">
           <div class="modal-header">
             <span class="modal-title">Novo lead</span>
             <button class="modal-close" onclick="closeModal('modal-new-lead')">✕</button>
           </div>
-          <div class="form-section">Dados do lead</div>
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;padding:8px 12px;background:var(--bg-secondary);border-radius:8px">
-            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;flex:1;padding:6px 10px;border-radius:6px;border:1.5px solid var(--border-tertiary)" id="nl2-radio-wrap-novo">
+          <!-- Seleção: novo ou existente -->
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;flex:1;padding:7px 12px;border-radius:8px;border:1.5px solid var(--border-tertiary);background:var(--bg-secondary)" id="nl2-radio-wrap-novo">
               <input type="radio" name="nl2-cliente-tipo" value="novo" checked onchange="toggleClienteLead('novo')">
               <span>✚ Novo cliente</span>
             </label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;flex:1;padding:6px 10px;border-radius:6px;border:1.5px solid var(--border-tertiary)" id="nl2-radio-wrap-exist">
+            <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;flex:1;padding:7px 12px;border-radius:8px;border:1.5px solid var(--border-tertiary);background:var(--bg-secondary)" id="nl2-radio-wrap-exist">
               <input type="radio" name="nl2-cliente-tipo" value="existente" onchange="toggleClienteLead('existente')">
               <span>🔍 Cliente já cadastrado</span>
             </label>
           </div>
+          <!-- Cliente existente -->
           <div id="nl2-cliente-existente" style="display:none;margin-bottom:10px">
             <div class="field"><label>Selecione o cliente</label>
-              <select id="nl2-cliente-id" style="width:100%">
-                <option value="">— Selecione o cliente —</option>
-              </select>
+              <select id="nl2-cliente-id" style="width:100%"><option value="">— Selecione o cliente —</option></select>
             </div>
           </div>
+          <!-- Campos novo cliente -->
           <div id="nl2-campos-novo-cliente">
-            <div class="form-row col2"><div class="field"><label>Nome completo *</label><input id="nl2-nome" placeholder="Nome do interessado"></div><div class="field"><label>Telefone / WhatsApp *</label><input id="nl2-tel" placeholder="(11) 9 9999-0000"></div></div>
-            <div class="form-row col2"><div class="field"><label>E-mail</label><input id="nl2-email" type="email" placeholder="email@exemplo.com"></div><div class="field"><label>CPF</label><input id="nl2-cpf" placeholder="000.000.000-00"></div></div>
+            <div class="form-section">Dados pessoais</div>
+            <div class="form-row col2">
+              <div class="field"><label>Tipo de cliente</label>
+                <select id="nl2-tipo-cliente"><option value="Cliente final">Cliente final</option><option value="Construtor">Construtor</option></select>
+              </div>
+              <div class="field"><label>Nome completo *</label><input id="nl2-nome" placeholder="Nome completo do cliente"></div>
+            </div>
+            <div class="form-row col3">
+              <div class="field"><label>CPF / CNPJ *</label><input id="nl2-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
+              <div class="field"><label>RG</label><input id="nl2-rg" placeholder="00.000.000-0"></div>
+              <div class="field"><label>Data de nascimento</label><input id="nl2-nasc" type="date"></div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>Estado civil</label>
+                <select id="nl2-estcivil"><option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União estável</option></select>
+              </div>
+              <div class="field"><label>Profissão</label><input id="nl2-prof" placeholder="Ex: Engenheiro"></div>
+            </div>
+            <div class="form-section">Contato</div>
+            <div class="form-row col3">
+              <div class="field"><label>Celular / WhatsApp *</label><input id="nl2-tel" placeholder="(11) 9 9999-0000"></div>
+              <div class="field"><label>Telefone</label><input id="nl2-telefone-fixo" placeholder="(11) 3333-0000"></div>
+              <div class="field"><label>E-mail</label><input id="nl2-email" type="email" placeholder="email@exemplo.com"></div>
+            </div>
+            <div class="form-section">Endereço</div>
+            <div class="form-row col3">
+              <div class="field"><label>CEP</label><input id="nl2-cep" placeholder="00000-000"></div>
+              <div class="field"><label>Cidade</label><input id="nl2-cidade" placeholder="Cidade"></div>
+              <div class="field"><label>Estado</label>
+                <select id="nl2-estado"><option value="">—</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select>
+              </div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>Logradouro</label><input id="nl2-rua" placeholder="Rua, Av..."></div>
+              <div class="field"><label>Número / Compl.</label><input id="nl2-num-end" placeholder="123, Apto 4"></div>
+            </div>
           </div>
           <div class="form-section">Interesse</div>
-          <div class="form-row col2"><div class="field"><label>Origem</label><select id="nl2-origem"><option>Meta Ads</option><option>Google Ads</option><option>Indicação</option><option>Stand</option><option>WhatsApp</option><option>Site</option><option>Outros</option></select></div>
-            <div class="field"><label>Loteamento de interesse</label><select id="nl2-lot"><option value="">— Selecione o loteamento —</option></select></div>
-          </div>
-          <div class="form-section">Status e etapas</div>
           <div class="form-row col2">
-            <div class="field"><label>Status inicial</label><select id="nl2-status"><option>Novo</option><option>Contato feito</option><option>Visita realizada</option><option>Proposta enviada</option><option>Contrato assinado</option><option>Entrada paga</option><option>Perdido</option></select></div>
-            <div class="field"><label>Corretor responsável</label><select id="nl2-corretor"><option value="">— Nenhum —</option></select></div>
+            <div class="field"><label>Origem</label>
+              <select id="nl2-origem"><option>Meta Ads</option><option>Google Ads</option><option>Indicação</option><option>Stand</option><option>WhatsApp</option><option>Site</option><option>Outros</option></select>
+            </div>
+            <div class="field"><label>Loteamento de interesse</label>
+              <select id="nl2-lot"><option value="">— Selecione o loteamento —</option></select>
+            </div>
           </div>
-          <div class="form-row"><div class="field"><label>Observações</label><input id="nl2-obs" placeholder="Interesse específico, preferência de lote..."></div></div>
-          <div class="form-section">Agendamento de visita</div>
           <div class="form-row col2">
-            <div class="field"><label>Data da visita</label><input id="nl2-data-visita" type="date"></div>
-            <div class="field"><label>Horário</label><input id="nl2-hora-visita" type="time" value="10:00"></div>
+            <div class="field"><label>Corretor responsável</label>
+              <select id="nl2-corretor"><option value="">— Nenhum —</option></select>
+            </div>
+            <div class="field"><label>Observações</label>
+              <input id="nl2-obs" placeholder="Interesse específico, preferência de lote...">
+            </div>
           </div>
-          <div class="modal-footer"><button class="btn" onclick="closeModal('modal-new-lead')">Cancelar</button><button class="btn btn-primary" onclick="salvarLead()">Salvar lead</button></div>
+          <div class="modal-footer">
+            <button class="btn" onclick="closeModal('modal-new-lead')">Cancelar</button>
+            <button class="btn btn-primary" onclick="salvarLead()">Salvar lead</button>
+          </div>
         </div>
       </div>
 
@@ -3512,6 +3551,22 @@ function toggleClienteLead(tipo){
   }
 }
 
+// Máscara CPF / CNPJ
+function maskCpfCnpj(el){
+  let v = el.value.replace(/\D/g,'');
+  if(v.length<=11){
+    v = v.replace(/(\d{3})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d)/,'$1.$2');
+    v = v.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  } else {
+    v = v.replace(/^(\d{2})(\d)/,'$1.$2');
+    v = v.replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3');
+    v = v.replace(/\.(\d{3})(\d)/,'.$1/$2');
+    v = v.replace(/(\d{4})(\d)/,'$1-$2');
+  }
+  el.value = v;
+}
+
 // ── Salvar lead no Supabase (com criação opcional de cliente) ─
 async function salvarLeadDB(){
   const tipo = document.querySelector('input[name="nl2-cliente-tipo"]:checked')?.value||'novo';
@@ -3527,12 +3582,24 @@ async function salvarLeadDB(){
     nome = document.getElementById('nl2-nome')?.value?.trim();
     const tel  = document.getElementById('nl2-tel')?.value?.trim();
     if(!nome||!tel){showToast('Informe nome e telefone.','error');return;}
-    // Criar cliente automaticamente
+    // Criar cliente automaticamente com todos os campos
     showLoading('Criando cliente...');
     const novoCliente = await dbInsert('clientes',{
-      nome, cpf: document.getElementById('nl2-cpf')?.value?.trim()||null,
-      celular: tel,
-      email:   document.getElementById('nl2-email')?.value?.trim()||null,
+      nome,
+      cpf:          document.getElementById('nl2-cpf')?.value?.trim()||null,
+      rg:           document.getElementById('nl2-rg')?.value?.trim()||null,
+      data_nasc:    document.getElementById('nl2-nasc')?.value||null,
+      estado_civil: document.getElementById('nl2-estcivil')?.value||null,
+      profissao:    document.getElementById('nl2-prof')?.value?.trim()||null,
+      celular:      tel,
+      telefone:     document.getElementById('nl2-telefone-fixo')?.value?.trim()||null,
+      email:        document.getElementById('nl2-email')?.value?.trim()||null,
+      cep:          document.getElementById('nl2-cep')?.value?.trim()||null,
+      cidade:       document.getElementById('nl2-cidade')?.value?.trim()||null,
+      estado:       document.getElementById('nl2-estado')?.value||null,
+      logradouro:   document.getElementById('nl2-rua')?.value?.trim()||null,
+      numero_end:   document.getElementById('nl2-num-end')?.value?.trim()||null,
+      tipo_cliente: document.getElementById('nl2-tipo-cliente')?.value||'Cliente final',
     });
     if(novoCliente) clienteId = novoCliente.id;
     hideLoading();
