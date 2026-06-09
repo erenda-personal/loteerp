@@ -3926,7 +3926,7 @@ function renderLeadTimeline(lead){
                 Desfazer
                </button>`}
         </div>
-        ${feito && etapa.campo_data ? `<div style="display:flex;gap:6px;margin-top:5px;align-items:center">
+        ${feito ? `<div style="display:flex;gap:6px;margin-top:5px;align-items:center">
           <input type="date" id="timeline-data-${etapa.key}"
             value="${dataVal}"
             onchange="atualizarDataEtapa('${etapa.key}','data',this.value)"
