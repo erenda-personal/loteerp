@@ -901,6 +901,7 @@ tbody tr.clickable{cursor:pointer}
         </div>
 
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+          <!-- Esquerda: filtro de status + visões -->
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <select class="filter-select" id="crm-filtro-status" onchange="renderLeads()">
               <option value="">Todos os status</option>
@@ -912,14 +913,16 @@ tbody tr.clickable{cursor:pointer}
               <option value="Entrada paga">Entrada paga</option>
               <option value="Perdido">Perdido</option>
             </select>
-<!-- filtro loteamento via menu lateral -->
-          </div>
-          <div style="display:flex;gap:8px;align-items:center">
+            <!-- filtro loteamento via menu lateral -->
             <div class="tabs" style="margin-bottom:0">
               <div class="tab active" id="crm-tab-tabela" onclick="setCrmVisao('tabela')">Tabela</div>
               <div class="tab" id="crm-tab-kanban" onclick="setCrmVisao('kanban')">Kanban</div>
               <div class="tab" id="crm-tab-calendario" onclick="setCrmVisao('calendario')">📅 Calendário</div>
             </div>
+          </div>
+          <!-- Direita: configurar colunas + novo lead -->
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="btn btn-sm" onclick="abrirGestaoKanban()" style="font-size:11px">⚙ Configurar colunas</button>
             <button class="btn btn-primary btn-sm" onclick="abrirModalNovoLead()">+ Novo lead</button>
           </div>
         </div>
@@ -959,10 +962,7 @@ tbody tr.clickable{cursor:pointer}
               </div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <span style="font-size:12px;color:var(--text-secondary)" id="crm-kanban-info"></span>
-            <button class="btn btn-sm" onclick="abrirGestaoKanban()" style="font-size:11px">⚙ Configurar colunas</button>
-          </div>
+          <div style="display:none" id="crm-kanban-info"></div>
           <div id="crm-kanban-board" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;min-height:400px"></div>
         </div>
 
@@ -5419,12 +5419,14 @@ async function salvarColunasKanban(){
 }
 
 async function carregarColunasKanban(){
-  const rows = await dbSelect('empresa',{filter:[['id','eq','00000000-0000-0000-0000-000000000001']]});
-  if(rows[0]?.kanban_colunas){
-    try{
+  try{
+    const rows = await dbSelect('empresa',{filter:[['id','eq','00000000-0000-0000-0000-000000000001']]});
+    if(rows[0]?.kanban_colunas){
       const saved = JSON.parse(rows[0].kanban_colunas);
       if(Array.isArray(saved) && saved.length) KANBAN_COLUNAS = saved;
-    }catch(e){}
+    }
+  }catch(e){
+    console.warn('kanban_colunas não disponível, usando padrão:', e.message);
   }
 }
 
@@ -7907,19 +7909,24 @@ async function salvarObraDB() {
 
 // ── PÁGINA INICIALIZAÇÃO ──────────────────────────────────────
 async function initPageDB(id) {
-  if(id==='loteamentos')  await carregarLoteamentos();
-  if(id==='clientes')     await carregarClientes();
-  if(id==='lotes')        await carregarLotes();
-  if(id==='contratos')    await carregarContratos();
-  if(id==='financeiro')   { initFinanceiro(); renderLancamentosDB(); atualizarKpisFinanceiroDB(); }
-  if(id==='contas-bancarias') await carregarContasBancariasDB();
-  if(id==='crm'){
-    await carregarColunasKanban();
-    await carregarLeadsDB();
+  try{
+    if(id==='loteamentos')  await carregarLoteamentos();
+    if(id==='clientes')     await carregarClientes();
+    if(id==='lotes')        await carregarLotes();
+    if(id==='contratos')    await carregarContratos();
+    if(id==='financeiro')   { initFinanceiro(); renderLancamentosDB(); atualizarKpisFinanceiroDB(); }
+    if(id==='contas-bancarias') await carregarContasBancariasDB();
+    if(id==='crm'){
+      await carregarColunasKanban();
+      await carregarLeadsDB();
+    }
+    if(id==='corretores')   await carregarCorretoresDB();
+    if(id==='investidores') await carregarInvestidoresDB();
+    if(id==='obras')        await carregarObrasDB();
+  }catch(e){
+    console.error('initPageDB erro em "'+id+'":', e);
+    hideLoading(); // garantir que o loading nunca trava
   }
-  if(id==='corretores')   await carregarCorretoresDB();
-  if(id==='investidores') await carregarInvestidoresDB();
-  if(id==='obras')        await carregarObrasDB();
 }
 
 // Conectar botões de salvar aos métodos DB
