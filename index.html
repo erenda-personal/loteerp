@@ -2050,9 +2050,8 @@ tbody tr.clickable{cursor:pointer}
               </div>
               <div class="field"><label>Nome completo *</label><input id="nl2-nome" placeholder="Nome completo do cliente"></div>
             </div>
-            <div class="form-row col3">
+            <div class="form-row col2">
               <div class="field"><label>CPF / CNPJ *</label><input id="nl2-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
-              <div class="field"><label>RG</label><input id="nl2-rg" placeholder="00.000.000-0"></div>
               <div class="field"><label>Data de nascimento</label><input id="nl2-nasc" type="date"></div>
             </div>
             <div class="form-row col2">
@@ -2069,7 +2068,7 @@ tbody tr.clickable{cursor:pointer}
             </div>
             <div class="form-section">Endereço</div>
             <div class="form-row col3">
-              <div class="field"><label>CEP</label><input id="nl2-cep" placeholder="00000-000"></div>
+              <div class="field"><label>CEP</label><input id="nl2-cep" placeholder="00000-000" oninput="maskCep(this)" onblur="buscarCep(this.value,'nl2')"></div>
               <div class="field"><label>Cidade</label><input id="nl2-cidade" placeholder="Cidade"></div>
               <div class="field"><label>Estado</label>
                 <select id="nl2-estado"><option value="">—</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select>
@@ -2183,7 +2182,7 @@ tbody tr.clickable{cursor:pointer}
             <div class="form-section">Dados pessoais</div>
             <div class="form-row col2">
               <div class="field"><label>Nome completo</label><input id="edit-lead-nome-cli" placeholder="Nome do cliente"></div>
-              <div class="field"><label>CPF</label><input id="edit-lead-cpf" placeholder="000.000.000-00"></div>
+              <div class="field"><label>CPF</label><input id="edit-lead-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
             </div>
             <div class="form-row col2">
               <div class="field"><label>Telefone / WhatsApp</label><input id="edit-lead-tel" placeholder="(11) 9 9999-0000"></div>
@@ -2384,12 +2383,12 @@ tbody tr.clickable{cursor:pointer}
           </div>
           <div class="form-section">Dados pessoais</div>
           <div class="form-row"><div class="field"><label>Nome completo *</label><input id="nc-nome" placeholder="Nome completo do cliente"></div></div>
-          <div class="form-row col3"><div class="field"><label>CPF / CNPJ *</label><input id="nc-cpf" placeholder="000.000.000-00"></div><div class="field"><label>RG</label><input id="nc-rg" placeholder="00.000.000-0"></div><div class="field"><label>Data de nascimento</label><input id="nc-nasc" type="date"></div></div>
+          <div class="form-row col2"><div class="field"><label>CPF / CNPJ *</label><input id="nc-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div><div class="field"><label>Data de nascimento</label><input id="nc-nasc" type="date"></div></div>
           <div class="form-row col2"><div class="field"><label>Estado civil</label><select id="nc-estcivil"><option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União estável</option></select></div><div class="field"><label>Profissão</label><input id="nc-prof" placeholder="Ex: Engenheiro"></div></div>
           <div class="form-section">Contato</div>
           <div class="form-row col3"><div class="field"><label>Celular *</label><input id="nc-cel" placeholder="(11) 9 9999-0000"></div><div class="field"><label>Telefone</label><input id="nc-tel" placeholder="(11) 3333-0000"></div><div class="field"><label>E-mail</label><input id="nc-email" type="email" placeholder="email@exemplo.com"></div></div>
           <div class="form-section">Endereço</div>
-          <div class="form-row col3"><div class="field"><label>CEP</label><input id="nc-cep" placeholder="00000-000"></div><div class="field"><label>Cidade</label><input id="nc-cidade" placeholder="Cidade"></div><div class="field"><label>Estado</label><select id="nc-est"><option>SP</option><option>RJ</option><option>MG</option><option>PR</option><option>RS</option><option>BA</option><option>GO</option><option>DF</option></select></div></div>
+          <div class="form-row col3"><div class="field"><label>CEP</label><input id="nc-cep" placeholder="00000-000" oninput="maskCep(this)" onblur="buscarCep(this.value,'nc')"></div><div class="field"><label>Cidade</label><input id="nc-cidade" placeholder="Cidade"></div><div class="field"><label>Estado</label><select id="nc-est"><option value="">—</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></div></div>
           <div class="form-row col2"><div class="field"><label>Logradouro</label><input id="nc-rua" placeholder="Rua, Av..."></div><div class="field"><label>Número / Compl.</label><input id="nc-num" placeholder="123, Apto 4"></div></div>
           <div class="modal-footer"><button class="btn" onclick="closeModal('modal-new-cliente')">Cancelar</button><button class="btn btn-primary" onclick="salvarCliente()">Salvar cliente</button></div>
         </div>
@@ -3551,6 +3550,38 @@ function toggleClienteLead(tipo){
   }
 }
 
+// Máscara CEP
+function maskCep(el){
+  let v = el.value.replace(/\D/g,'').substring(0,8);
+  if(v.length > 5) v = v.substring(0,5)+'-'+v.substring(5);
+  el.value = v;
+}
+
+// Autopreenchimento de endereço via ViaCEP
+async function buscarCep(cep, prefix){
+  const digits = cep.replace(/\D/g,'');
+  if(digits.length !== 8) return;
+  try{
+    const res  = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+    const data = await res.json();
+    if(data.erro) return;
+    // Prefixos mapeados: nl2 = novo lead, nc = novo cliente
+    const set = (id, val) => { const el=document.getElementById(id); if(el && val) el.value=val; };
+    set(`${prefix}-rua`,    data.logradouro);
+    set(`${prefix}-cidade`, data.localidade);
+    // Estado: selects
+    const selEst = document.getElementById(
+      prefix==='nc' ? 'nc-est' : `${prefix}-estado`
+    );
+    if(selEst && data.uf){
+      [...selEst.options].forEach(o => o.selected = o.value===data.uf||o.text===data.uf);
+    }
+    // Bairro como complemento se existir
+    const bairro = document.getElementById(`${prefix}-bairro`)||document.getElementById(`${prefix}-num-end`);
+    if(bairro && data.bairro && !bairro.value) bairro.placeholder = data.bairro;
+  }catch(e){ console.warn('CEP não encontrado:', e); }
+}
+
 // Máscara CPF / CNPJ
 function maskCpfCnpj(el){
   let v = el.value.replace(/\D/g,'');
@@ -3587,7 +3618,6 @@ async function salvarLeadDB(){
     const novoCliente = await dbInsert('clientes',{
       nome,
       cpf:          document.getElementById('nl2-cpf')?.value?.trim()||null,
-      rg:           document.getElementById('nl2-rg')?.value?.trim()||null,
       data_nasc:    document.getElementById('nl2-nasc')?.value||null,
       estado_civil: document.getElementById('nl2-estcivil')?.value||null,
       profissao:    document.getElementById('nl2-prof')?.value?.trim()||null,
@@ -7477,7 +7507,6 @@ async function salvarClienteDB() {
   showLoading('Salvando cliente...');
   const row = {
     nome, cpf,
-    rg:           document.getElementById('nc-rg')?.value||null,
     data_nasc:    document.getElementById('nc-nasc')?.value||null,
     estado_civil: document.getElementById('nc-estcivil')?.value||null,
     profissao:    document.getElementById('nc-prof')?.value||null,
