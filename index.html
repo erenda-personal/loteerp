@@ -516,7 +516,13 @@ tbody tr.clickable{cursor:pointer}
             <table>
               <thead><tr>
                 <th style="width:32px"><input type="checkbox" id="lote-sel-all" onchange="toggleSelLotesAll(this)" title="Selecionar todos"></th>
-                <th style="width:120px">Lote</th><th style="width:80px">Quadra</th><th style="width:70px">Área</th><th>Valor tabela</th><th>Status</th><th>Cliente</th>
+                <th style="width:90px">Cód. Lote</th>
+                <th style="width:80px">Quadra</th>
+                <th style="width:60px">Lote</th>
+                <th style="width:80px">Área</th>
+                <th>Valor tabela</th>
+                <th style="width:120px">Status</th>
+                <th>Cliente</th>
               </tr></thead>
               <tbody id="tbody-lotes-lista"></tbody>
             </table>
@@ -1277,12 +1283,12 @@ tbody tr.clickable{cursor:pointer}
             <div class="field"><label>CRECI</label><input id="nc2-creci" placeholder="Nº CRECI"></div>
           </div>
           <div class="form-row col2">
-            <div class="field"><label>CPF</label><input id="nc2-cpf" placeholder="000.000.000-00"></div>
+            <div class="field"><label>CPF</label><input id="nc2-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
             <div class="field"><label>Data de nascimento</label><input id="nc2-nasc" type="date"></div>
           </div>
           <div class="form-section">Contato</div>
           <div class="form-row col2">
-            <div class="field"><label>Celular *</label><input id="nc2-cel" placeholder="(11) 9 9999-0000"></div>
+            <div class="field"><label>Celular *</label><input id="nc2-cel" placeholder="(11) 9 9999-0000" oninput="maskTelefone(this)"></div>
             <div class="field"><label>E-mail</label><input id="nc2-email" type="email" placeholder="corretor@email.com"></div>
           </div>
           <div class="form-section">Vinculação e comissão</div>
@@ -2394,6 +2400,91 @@ tbody tr.clickable{cursor:pointer}
           <div class="form-row col3"><div class="field"><label>CEP</label><input id="nc-cep" placeholder="00000-000" oninput="maskCep(this)" onblur="buscarCep(this.value,'nc')"></div><div class="field"><label>Cidade</label><input id="nc-cidade" placeholder="Cidade"></div><div class="field"><label>Estado</label><select id="nc-est"><option value="">—</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></div></div>
           <div class="form-row col2"><div class="field"><label>Logradouro</label><input id="nc-rua" placeholder="Rua, Av..."></div><div class="field"><label>Número / Compl.</label><input id="nc-num" placeholder="123, Apto 4"></div></div>
           <div class="modal-footer"><button class="btn" onclick="closeModal('modal-new-cliente')">Cancelar</button><button class="btn btn-primary" onclick="salvarCliente()">Salvar cliente</button></div>
+        </div>
+      </div>
+
+      <!-- Modal: Editar Cliente -->
+      <div class="modal-overlay" id="modal-edit-cliente" onclick="if(event.target===this)closeModal('modal-edit-cliente')">
+        <div class="modal-box" style="width:600px;max-height:90vh;overflow-y:auto">
+          <div class="modal-header">
+            <span class="modal-title">Editar cliente</span>
+            <button class="modal-close" onclick="closeModal('modal-edit-cliente')">✕</button>
+          </div>
+          <input type="hidden" id="ec-id">
+          <div class="form-section">Dados pessoais</div>
+          <div class="form-row col2">
+            <div class="field"><label>Tipo de cliente</label>
+              <select id="ec-tipo-cliente"><option value="Cliente final">Cliente final</option><option value="Construtor">Construtor</option></select>
+            </div>
+            <div class="field"><label>Nome completo *</label><input id="ec-nome" placeholder="Nome completo do cliente"></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>CPF / CNPJ</label><input id="ec-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
+            <div class="field"><label>Data de nascimento</label><input id="ec-nasc" type="date"></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>Estado civil</label>
+              <select id="ec-estcivil"><option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União estável</option></select>
+            </div>
+            <div class="field"><label>Profissão</label><input id="ec-prof" placeholder="Ex: Engenheiro"></div>
+          </div>
+          <div class="form-section">Contato</div>
+          <div class="form-row col3">
+            <div class="field"><label>Celular / WhatsApp</label><input id="ec-cel" oninput="maskTelefone(this)" placeholder="(11) 9 9999-0000"></div>
+            <div class="field"><label>Telefone</label><input id="ec-tel" oninput="maskTelefone(this)" placeholder="(11) 3333-0000"></div>
+            <div class="field"><label>E-mail</label><input id="ec-email" type="email" placeholder="email@exemplo.com"></div>
+          </div>
+          <div class="form-section">Endereço</div>
+          <div class="form-row col3">
+            <div class="field"><label>CEP</label><input id="ec-cep" placeholder="00000-000" oninput="maskCep(this)" onblur="buscarCep(this.value,'ec')"></div>
+            <div class="field"><label>Cidade</label><input id="ec-cidade" placeholder="Cidade"></div>
+            <div class="field"><label>Estado</label>
+              <select id="ec-est"><option value="">—</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select>
+            </div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>Logradouro</label><input id="ec-rua" placeholder="Rua, Av..."></div>
+            <div class="field"><label>Número / Compl.</label><input id="ec-num" placeholder="123, Apto 4"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn" onclick="closeModal('modal-edit-cliente')">Cancelar</button>
+            <button class="btn btn-primary" onclick="salvarEdicaoCliente()">Salvar alterações</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Editar Corretor -->
+      <div class="modal-overlay" id="modal-edit-corretor" onclick="if(event.target===this)closeModal('modal-edit-corretor')">
+        <div class="modal-box" style="width:520px">
+          <div class="modal-header">
+            <span class="modal-title">Editar corretor</span>
+            <button class="modal-close" onclick="closeModal('modal-edit-corretor')">✕</button>
+          </div>
+          <input type="hidden" id="ecc-id">
+          <div class="form-row col2">
+            <div class="field"><label>Nome completo *</label><input id="ecc-nome" placeholder="Nome do corretor"></div>
+            <div class="field"><label>CRECI</label><input id="ecc-creci" placeholder="Nº CRECI"></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>CPF</label><input id="ecc-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
+            <div class="field"><label>Celular</label><input id="ecc-cel" placeholder="(11) 9 9999-0000" oninput="maskTelefone(this)"></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>E-mail</label><input id="ecc-email" type="email" placeholder="email@exemplo.com"></div>
+            <div class="field"><label>Comissão (%)</label><input id="ecc-comissao" type="text" placeholder="3,00"></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>Tipo</label>
+              <select id="ecc-tipo"><option value="Interno">Interno</option><option value="Externo">Externo</option><option value="Parceiro">Parceiro</option></select>
+            </div>
+            <div class="field"><label>Status</label>
+              <select id="ecc-status"><option value="Ativo">Ativo</option><option value="Inativo">Inativo</option></select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn" onclick="closeModal('modal-edit-corretor')">Cancelar</button>
+            <button class="btn btn-primary" onclick="salvarEdicaoCorretor()">Salvar alterações</button>
+          </div>
         </div>
       </div>
 
@@ -3587,7 +3678,7 @@ async function buscarCep(cep, prefix){
     set(`${prefix}-cidade`, data.localidade);
     // Estado: selects
     const selEst = document.getElementById(
-      prefix==='nc' ? 'nc-est' : `${prefix}-estado`
+      prefix==='nc' ? 'nc-est' : prefix==='ec' ? 'ec-est' : `${prefix}-estado`
     );
     if(selEst && data.uf){
       [...selEst.options].forEach(o => o.selected = o.value===data.uf||o.text===data.uf);
@@ -4786,7 +4877,7 @@ function salvarLote(){
     tr.dataset.status=status;tr.dataset.quadra=quadra;
     const bc=status==='Quitado'?'':badgeCls[status]||'badge-gray';
     const bStyle=status==='Quitado'?' style="background:#EDE9FE;color:#5B21B6"':'';
-    tr.innerHTML=`<td>${quadra}-${num.padStart(2,'0')}</td><td>${quadra}</td><td>${area} m²</td><td>R$ ${valor}</td><td><span class="badge ${bc}"${bStyle}>${status}</span></td><td>—</td>`;
+    tr.innerHTML=`<td></td><td style="font-weight:500;font-size:12px">${quadra}-${num.padStart(2,'0')}</td><td style="color:var(--text-secondary)">${quadra}</td><td style="color:var(--text-secondary)">${num.padStart(2,'0')}</td><td style="color:var(--text-secondary)">${area} m²</td><td>R$ ${valor}</td><td><span class="badge ${bc}"${bStyle}>${status}</span></td><td style="color:var(--text-secondary)">—</td>`;
     tbody.prepend(tr);
   }
   closeModal('modal-new-lote');
@@ -6323,7 +6414,7 @@ function renderCorretores(){
     <td style="text-align:center;font-size:12px;font-weight:600;color:var(--accent)">${c.vendas}</td>
     <td style="text-align:right;font-size:12px;font-weight:600">${c.comissaoTotal>0?fmt(c.comissaoTotal):'—'}</td>
     <td><span class="badge ${c.status==='Ativo'?'badge-teal':'badge-gray'}">${c.status}</span></td>
-    <td style="text-align:center"><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditarCorretor(${c.id})">✏️</button></td>
+    <td style="text-align:center"><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditarCorretor('${c.id}')">✏️</button></td>
   </tr>`).join('');
   const ativos=corretores.filter(c=>c.status==='Ativo').length;
   const visitas=alocacoes.filter(a=>a.tipo==='Visita').length;
@@ -7448,6 +7539,118 @@ async function excluirLead(id, nome){
   showToast(`Lead "${nome}" excluído.`,'error');
 }
 
+// ── Editar Cliente ────────────────────────────────────────────
+async function abrirEditarCliente(id){
+  showLoading('Carregando cliente...');
+  const rows = await dbSelect('clientes',{filter:[['id','eq',id]]});
+  hideLoading();
+  const r = rows[0];
+  if(!r){ showToast('Cliente não encontrado.','error'); return; }
+  const sv = (elId, v) => { const el=document.getElementById(elId); if(el) el.value=v||''; };
+  document.getElementById('ec-id').value = r.id;
+  sv('ec-nome',   r.nome);      sv('ec-cpf',    r.cpf);
+  sv('ec-nasc',   r.data_nasc); sv('ec-prof',   r.profissao);
+  sv('ec-cel',    r.celular);   sv('ec-tel',    r.telefone);
+  sv('ec-email',  r.email);     sv('ec-cep',    r.cep);
+  sv('ec-cidade', r.cidade);    sv('ec-rua',    r.logradouro);
+  sv('ec-num',    r.numero_end);
+  const selEst = document.getElementById('ec-est');
+  if(selEst)[...selEst.options].forEach(o=>o.selected=o.value===r.estado);
+  const selEC = document.getElementById('ec-estcivil');
+  if(selEC)[...selEC.options].forEach(o=>o.selected=o.text===r.estado_civil||o.value===r.estado_civil);
+  const selTipo = document.getElementById('ec-tipo-cliente');
+  if(selTipo)[...selTipo.options].forEach(o=>o.selected=o.value===r.tipo_cliente);
+  openModal('modal-edit-cliente');
+}
+
+async function salvarEdicaoCliente(){
+  const id   = document.getElementById('ec-id')?.value;
+  const nome = document.getElementById('ec-nome')?.value?.trim();
+  if(!id||!nome){ showToast('Informe o nome.','error'); return; }
+  showLoading('Salvando cliente...');
+  const row = {
+    nome,
+    cpf:          document.getElementById('ec-cpf')?.value?.trim()||null,
+    data_nasc:    document.getElementById('ec-nasc')?.value||null,
+    estado_civil: document.getElementById('ec-estcivil')?.value||null,
+    profissao:    document.getElementById('ec-prof')?.value?.trim()||null,
+    celular:      document.getElementById('ec-cel')?.value?.trim()||null,
+    telefone:     document.getElementById('ec-tel')?.value?.trim()||null,
+    email:        document.getElementById('ec-email')?.value?.trim()||null,
+    cep:          document.getElementById('ec-cep')?.value?.trim()||null,
+    cidade:       document.getElementById('ec-cidade')?.value?.trim()||null,
+    estado:       document.getElementById('ec-est')?.value||null,
+    logradouro:   document.getElementById('ec-rua')?.value?.trim()||null,
+    numero_end:   document.getElementById('ec-num')?.value?.trim()||null,
+    tipo_cliente: document.getElementById('ec-tipo-cliente')?.value||null,
+  };
+  await dbUpdate('clientes', id, row);
+
+  // Propagar para leads vinculados (exceto Entrada paga e Perdido)
+  const STATUS_EXCLUIR = new Set(['Entrada paga','Perdido']);
+  const leadsVinculados = await dbSelect('leads',{
+    filter:[['cliente_id','eq',id]],
+    select:'id,status'
+  });
+  for(const lead of leadsVinculados){
+    if(!STATUS_EXCLUIR.has(lead.status)){
+      await dbUpdate('leads', lead.id, {
+        nome:      nome,
+        telefone:  row.celular||null,
+        email:     row.email||null,
+        loteamento: null, // não sobrescrever
+      });
+    }
+  }
+  hideLoading();
+  closeModal('modal-edit-cliente');
+  carregarClientes();
+  showToast(`Cliente "${nome}" atualizado!`);
+}
+
+// ── Editar Corretor ───────────────────────────────────────────
+async function abrirEditarCorretor(id){
+  showLoading('Carregando corretor...');
+  const rows = await dbSelect('corretores',{filter:[['id','eq',String(id)]]});
+  hideLoading();
+  const r = rows[0];
+  if(!r){ showToast('Corretor não encontrado.','error'); return; }
+  const sv = (elId, v) => { const el=document.getElementById(elId); if(el) el.value=v||''; };
+  document.getElementById('ecc-id').value = r.id;
+  sv('ecc-nome',     r.nome);   sv('ecc-creci',    r.creci);
+  sv('ecc-cpf',      r.cpf);    sv('ecc-cel',      r.celular);
+  sv('ecc-email',    r.email);
+  sv('ecc-comissao', (r.comissao_pct||3).toLocaleString('pt-BR',{minimumFractionDigits:2}));
+  const selTipo = document.getElementById('ecc-tipo');
+  if(selTipo)[...selTipo.options].forEach(o=>o.selected=o.value===r.tipo);
+  const selStat = document.getElementById('ecc-status');
+  if(selStat)[...selStat.options].forEach(o=>o.selected=o.value===r.status);
+  openModal('modal-edit-corretor');
+}
+
+async function salvarEdicaoCorretor(){
+  const id   = document.getElementById('ecc-id')?.value;
+  const nome = document.getElementById('ecc-nome')?.value?.trim();
+  if(!id||!nome){ showToast('Informe o nome.','error'); return; }
+  showLoading('Salvando corretor...');
+  const row = {
+    nome,
+    creci:       document.getElementById('ecc-creci')?.value?.trim()||null,
+    cpf:         document.getElementById('ecc-cpf')?.value?.trim()||null,
+    celular:     document.getElementById('ecc-cel')?.value?.trim()||null,
+    email:       document.getElementById('ecc-email')?.value?.trim()||null,
+    comissao_pct: parseFloat((document.getElementById('ecc-comissao')?.value||'3').replace(',','.'))||3,
+    tipo:        document.getElementById('ecc-tipo')?.value||'Interno',
+    status:      document.getElementById('ecc-status')?.value||'Ativo',
+  };
+  await dbUpdate('corretores', id, row);
+  hideLoading();
+  closeModal('modal-edit-corretor');
+  carregarCorretoresDB();
+  showToast(`Corretor "${nome}" atualizado!`);
+}
+
+
 async function excluirCliente(id, nome){
   if(!confirm(`Excluir o cliente "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
   showLoading('Excluindo cliente...');
@@ -7593,7 +7796,10 @@ async function carregarClientes() {
     <td style="color:var(--text-secondary);font-size:11px">${r.celular||'—'}</td>
     <td style="color:var(--text-secondary);font-size:11px">${r.cidade||'—'}</td>
     <td><span class="badge badge-green">Adimplente</span></td>
-    <td><button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger)" onclick="excluirCliente('${idStr}','${nomeEsc}')">✕</button></td>
+    <td>
+      <button class="btn btn-sm" style="font-size:10px" onclick="abrirEditarCliente('${idStr}')">✏️</button>
+      <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger);margin-left:4px" onclick="excluirCliente('${idStr}','${nomeEsc}')">✕</button>
+    </td>
   </tr>`;
   }).join('');
   // Atualizar selects de cliente em outros modais
@@ -7664,12 +7870,13 @@ async function carregarLotesFiltrados(slugs){
       const sel = _lotesSelecionados.has(String(r.id));
       return `<tr data-status="${r.status}" data-quadra="${r.quadra}">
         <td><input type="checkbox" data-id="${r.id}" ${sel?'checked':''} onchange="toggleSelLote(this,'${r.id}')"></td>
-        <td>${r.quadra}-${(r.numero||'').padStart(2,'0')}</td>
-        <td>${r.quadra}</td>
-        <td>${r.area_m2||'—'} m²</td>
+        <td style="font-weight:500;font-size:12px">${r.quadra}-${(r.numero||'').padStart(2,'0')}</td>
+        <td style="color:var(--text-secondary)">${r.quadra}</td>
+        <td style="color:var(--text-secondary)">${(r.numero||'').padStart(2,'0')}</td>
+        <td style="color:var(--text-secondary)">${r.area_m2||'—'} m²</td>
         <td>R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</td>
         <td><span class="badge ${badgeCls[r.status]||'badge-gray'}"${bStyle}>${r.status}</span></td>
-        <td>—</td>
+        <td style="color:var(--text-secondary)">—</td>
       </tr>`;
     }).join('');
   }
