@@ -460,13 +460,12 @@ tbody tr.clickable{cursor:pointer}
           <button class="btn btn-primary" onclick="abrirModalNovoLote()">+ Novo lote</button>
         </div>
         <div class="tabs">
-          <div class="tab active" onclick="switchTab(this,'mapa')">Mapa visual</div>
-          <div class="tab" onclick="switchTab(this,'lista')">Lista</div>
+          <div class="tab active" onclick="switchTab(this,'lista')">Lista</div>
           <div class="tab" onclick="switchTab(this,'link')">🔗 Link corretores</div>
         </div>
 
         <!-- ABA MAPA -->
-        <div id="tab-lotes-mapa">
+        <div id="tab-lotes-mapa" style="display:none">
           <div class="card">
             <div class="card-header">
               <span class="section-title" id="mapa-lote-titulo">Mapa de lotes</span>
@@ -494,7 +493,7 @@ tbody tr.clickable{cursor:pointer}
         </div>
 
         <!-- ABA LISTA -->
-        <div id="tab-lotes-lista" style="display:none">
+        <div id="tab-lotes-lista">
           <div class="filter-row">
             <select class="filter-select" id="filtro-status-lote" onchange="filtrarLotes()">
               <option value="">Todos os status</option>
@@ -514,7 +513,7 @@ tbody tr.clickable{cursor:pointer}
           </div>
           <div class="card">
             <table>
-              <thead><tr><th style="width:60px">Lote</th><th style="width:80px">Quadra</th><th>Área</th><th>Valor tabela</th><th>Status</th><th>Cliente</th></tr></thead>
+              <thead><tr><th style="width:120px">Lote</th><th style="width:80px">Quadra</th><th style="width:70px">Área</th><th>Valor tabela</th><th>Status</th><th>Cliente</th></tr></thead>
               <tbody id="tbody-lotes-lista"></tbody>
             </table>
           </div>
@@ -2062,8 +2061,8 @@ tbody tr.clickable{cursor:pointer}
             </div>
             <div class="form-section">Contato</div>
             <div class="form-row col3">
-              <div class="field"><label>Celular / WhatsApp *</label><input id="nl2-tel" placeholder="(11) 9 9999-0000"></div>
-              <div class="field"><label>Telefone</label><input id="nl2-telefone-fixo" placeholder="(11) 3333-0000"></div>
+              <div class="field"><label>Celular / WhatsApp *</label><input id="nl2-tel" oninput="maskTelefone(this)" placeholder="(11) 9 9999-0000"></div>
+              <div class="field"><label>Telefone</label><input id="nl2-telefone-fixo" oninput="maskTelefone(this)" placeholder="(11) 3333-0000"></div>
               <div class="field"><label>E-mail</label><input id="nl2-email" type="email" placeholder="email@exemplo.com"></div>
             </div>
             <div class="form-section">Endereço</div>
@@ -2185,7 +2184,7 @@ tbody tr.clickable{cursor:pointer}
               <div class="field"><label>CPF</label><input id="edit-lead-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
             </div>
             <div class="form-row col2">
-              <div class="field"><label>Telefone / WhatsApp</label><input id="edit-lead-tel" placeholder="(11) 9 9999-0000"></div>
+              <div class="field"><label>Telefone / WhatsApp</label><input id="edit-lead-tel" oninput="maskTelefone(this)" placeholder="(11) 9 9999-0000"></div>
               <div class="field"><label>E-mail</label><input id="edit-lead-email" type="email" placeholder="email@exemplo.com"></div>
             </div>
             <div class="form-row col2">
@@ -2386,7 +2385,7 @@ tbody tr.clickable{cursor:pointer}
           <div class="form-row col2"><div class="field"><label>CPF / CNPJ *</label><input id="nc-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div><div class="field"><label>Data de nascimento</label><input id="nc-nasc" type="date"></div></div>
           <div class="form-row col2"><div class="field"><label>Estado civil</label><select id="nc-estcivil"><option>Solteiro(a)</option><option>Casado(a)</option><option>Divorciado(a)</option><option>Viúvo(a)</option><option>União estável</option></select></div><div class="field"><label>Profissão</label><input id="nc-prof" placeholder="Ex: Engenheiro"></div></div>
           <div class="form-section">Contato</div>
-          <div class="form-row col3"><div class="field"><label>Celular *</label><input id="nc-cel" placeholder="(11) 9 9999-0000"></div><div class="field"><label>Telefone</label><input id="nc-tel" placeholder="(11) 3333-0000"></div><div class="field"><label>E-mail</label><input id="nc-email" type="email" placeholder="email@exemplo.com"></div></div>
+          <div class="form-row col3"><div class="field"><label>Celular *</label><input id="nc-cel" oninput="maskTelefone(this)" placeholder="(11) 9 9999-0000"></div><div class="field"><label>Telefone</label><input id="nc-tel" oninput="maskTelefone(this)" placeholder="(11) 3333-0000"></div><div class="field"><label>E-mail</label><input id="nc-email" type="email" placeholder="email@exemplo.com"></div></div>
           <div class="form-section">Endereço</div>
           <div class="form-row col3"><div class="field"><label>CEP</label><input id="nc-cep" placeholder="00000-000" oninput="maskCep(this)" onblur="buscarCep(this.value,'nc')"></div><div class="field"><label>Cidade</label><input id="nc-cidade" placeholder="Cidade"></div><div class="field"><label>Estado</label><select id="nc-est"><option value="">—</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></div></div>
           <div class="form-row col2"><div class="field"><label>Logradouro</label><input id="nc-rua" placeholder="Rua, Av..."></div><div class="field"><label>Número / Compl.</label><input id="nc-num" placeholder="123, Apto 4"></div></div>
@@ -3550,6 +3549,19 @@ function toggleClienteLead(tipo){
   }
 }
 
+// Máscara Telefone — (11) 9 9999-0000 ou (11) 3333-0000
+function maskTelefone(el){
+  let v = el.value.replace(/\D/g,'').substring(0,11);
+  if(v.length<=10){
+    v = v.replace(/^(\d{2})(\d)/,'($1) $2');
+    v = v.replace(/(\d{4})(\d)/,'$1-$2');
+  } else {
+    v = v.replace(/^(\d{2})(\d)/,'($1) $2');
+    v = v.replace(/(\d{5})(\d)/,'$1-$2');
+  }
+  el.value = v;
+}
+
 // Máscara CEP
 function maskCep(el){
   let v = el.value.replace(/\D/g,'').substring(0,8);
@@ -3789,14 +3801,19 @@ async function salvarDadosClienteLead(){
   const nome = document.getElementById('edit-lead-nome-cli')?.value?.trim()||lead?.nome||'';
   showLoading('Salvando dados do cliente...');
 
-  const dadosCliente = {
-    cpf,
-    celular:      document.getElementById('edit-lead-tel')?.value?.trim()||null,
-    email:        document.getElementById('edit-lead-email')?.value?.trim()||null,
-    data_nasc:    document.getElementById('edit-lead-nasc')?.value||null,
-    estado_civil: document.getElementById('edit-lead-estcivil')?.value||null,
-    profissao:    document.getElementById('edit-lead-prof')?.value?.trim()||null,
-  };
+  // Não sobrescrever com null — só incluir campos que foram preenchidos
+  const dadosCliente = {};
+  if(cpf)    dadosCliente.cpf          = cpf;
+  const cel = document.getElementById('edit-lead-tel')?.value?.trim();
+  const eml = document.getElementById('edit-lead-email')?.value?.trim();
+  const nsc = document.getElementById('edit-lead-nasc')?.value;
+  const est = document.getElementById('edit-lead-estcivil')?.value;
+  const prf = document.getElementById('edit-lead-prof')?.value?.trim();
+  if(cel) dadosCliente.celular      = cel;
+  if(eml) dadosCliente.email        = eml;
+  if(nsc) dadosCliente.data_nasc    = nsc;
+  if(est) dadosCliente.estado_civil = est;
+  if(prf) dadosCliente.profissao    = prf;
   if(window._leadDocBase64) dadosCliente.doc_url = window._leadDocBase64;
 
   const dadosLead = {
@@ -4857,11 +4874,11 @@ function handleImportFile(input){
       .normalize('NFD').replace(/[\u0300-\u036f]/g,''));
 
     const idx = {
-      quadra:       headers.indexOf('quadra'),
-      numero:       headers.findIndex(h=>h==='numero'||h==='num'||h==='lote'),
-      area:         headers.findIndex(h=>h==='area'||h==='area_m2'),
-      valor:        headers.findIndex(h=>h.includes('valor')),
-      status:       headers.indexOf('status'),
+      quadra:       headers.findIndex(h=>h==='quadra'||h==='quadra_lote'||h==='bloco'),
+      numero:       headers.findIndex(h=>h==='numero'||h==='num'||h==='lote'||h==='numero_lote'||h==='nr'),
+      area:         headers.findIndex(h=>h==='area'||h==='area_m2'||h==='m2'),
+      valor:        headers.findIndex(h=>h.includes('valor')||h.includes('preco')||h.includes('price')),
+      status:       headers.findIndex(h=>h==='status'||h==='situacao'),
       testada:      headers.findIndex(h=>h.includes('testada')),
       profundidade: headers.findIndex(h=>h.includes('prof')),
     };
@@ -4871,7 +4888,7 @@ function handleImportFile(input){
       const cols = lines[i].split(sep).map(c=>c.trim().replace(/^"|"$/g,''));
       if(cols.every(c=>!c)) continue; // pular linhas vazias
       _importRows.push({
-        quadra:       idx.quadra>=0      ? cols[idx.quadra]||'A' : 'A',
+        quadra:       idx.quadra>=0      ? (cols[idx.quadra]?.trim()||'') : '',
         numero:       idx.numero>=0      ? cols[idx.numero]||String(i) : String(i),
         area_m2:      idx.area>=0        ? parseFloat(cols[idx.area])||null : null,
         valor_tabela: idx.valor>=0       ? parseFloat(cols[idx.valor].replace(/\./g,'').replace(',','.'))||0 : 0,
