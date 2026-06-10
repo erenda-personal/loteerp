@@ -329,17 +329,17 @@ tbody tr.clickable{cursor:pointer}
       <span class="topbar-title" id="topbar-title" style="font-size:18px;font-weight:700;color:#111">Dashboard executivo</span>
       <div style="margin-left:auto;position:relative" id="perfil-wrap">
         <div onclick="togglePerfil()" style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 10px;border-radius:9px;border:0.5px solid var(--border-tertiary);background:var(--bg-primary);transition:background .12s" onmouseenter="this.style.background='var(--bg-secondary)'" onmouseleave="this.style.background='var(--bg-primary)'">
-          <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0">JM</div>
+          <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent);flex-shrink:0">ER</div>
           <div style="line-height:1.3">
-            <div style="font-size:12px;font-weight:600;color:var(--text-primary)" id="perfil-nome-topbar">João Mendes</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary)" id="perfil-nome-topbar">Eduardo Renda</div>
             <div style="font-size:10px;color:var(--text-secondary)">Admin</div>
           </div>
           <svg width="11" height="11" viewBox="0 0 16 16" fill="none" style="color:var(--text-tertiary);margin-left:2px"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </div>
         <div id="perfil-menu" style="display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--bg-primary);border:0.5px solid var(--border-secondary);border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.13);min-width:210px;z-index:600;overflow:hidden">
           <div style="padding:12px 14px;border-bottom:0.5px solid var(--border-tertiary)">
-            <div style="font-size:12px;font-weight:600;color:var(--text-primary)" id="perfil-nome-menu">João Mendes</div>
-            <div style="font-size:11px;color:var(--text-secondary);margin-top:1px">joao@horizonte.com.br</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-primary)" id="perfil-nome-menu">Eduardo Renda</div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:1px">erendafilho@gmail.com</div>
             <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:20px;background:var(--danger-bg);color:var(--danger);font-weight:600">Admin</span></div>
           </div>
           <div style="padding:5px">
@@ -2926,7 +2926,7 @@ let cfg={
   accentText:'#0C447C',
   tema:'auto',
   usuarios:[
-    {id:1,nome:'João Mendes',email:'joao@horizonte.com.br',perfil:'Admin',status:'Ativo',ultimo:'Hoje, 09:42'},
+    {id:1,nome:'Eduardo Renda',email:'erendafilho@gmail.com',perfil:'Admin',status:'Ativo',ultimo:'Hoje, 09:42'},
     {id:2,nome:'Ana Paula Costa',email:'ana@horizonte.com.br',perfil:'Financeiro',status:'Ativo',ultimo:'Hoje, 08:15'},
     {id:3,nome:'Ricardo Souza',email:'ricardo@horizonte.com.br',perfil:'Comercial',status:'Ativo',ultimo:'Ontem, 17:30'},
     {id:4,nome:'Paula Gomes',email:'paula@horizonte.com.br',perfil:'Corretor',status:'Ativo',ultimo:'Ontem, 14:22'},
@@ -3642,10 +3642,8 @@ async function salvarLeadDB(){
     email:       document.getElementById('nl2-email')?.value?.trim()||null,
     origem:      document.getElementById('nl2-origem')?.value||null,
     loteamento:  document.getElementById('nl2-lot')?.value||null,
-    status:      document.getElementById('nl2-status')?.value||'Novo',
+    status:      KANBAN_COLUNAS[0]?.key||'Novo',
     corretor:    document.getElementById('nl2-corretor')?.value||null,
-    data_visita: document.getElementById('nl2-data-visita')?.value||null,
-    hora_visita: document.getElementById('nl2-hora-visita')?.value||null,
     observacoes: document.getElementById('nl2-obs')?.value||null,
   };
   const saved = await dbInsert('leads', row);
@@ -4170,7 +4168,8 @@ function showNovoUsuario(){
 // ── Carregar usuários do Supabase ─────────────────────────────
 async function carregarUsuarios(){
   showLoading('Carregando usuários...');
-  const rows = await dbSelect('usuarios',{order:'nome',asc:true});
+  // Buscar apenas usuários ativos
+  const rows = await dbSelect('usuarios',{order:'nome',asc:true,filter:[['ativo','eq',true]]});
   hideLoading();
   cfg.usuarios = rows.map(r=>({
     id:r.id, nome:r.nome||r.email, email:r.email,
@@ -4950,7 +4949,7 @@ document.addEventListener('click',function(e){
   }
 });
 function alterarUsuario(){
-  const nome=prompt('Nome do usuário:','João Mendes');
+  const nome=prompt('Nome do usuário:','Eduardo Renda');
   if(nome){
     const els=['perfil-nome-topbar','perfil-nome-menu'];
     els.forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=nome;});
@@ -7503,7 +7502,7 @@ function atualizarSelectClientes(rows) {
 async function salvarClienteDB() {
   const nome = document.getElementById('nc-nome')?.value?.trim();
   const cpf  = document.getElementById('nc-cpf')?.value?.trim();
-  if(!nome || !cpf){showToast('Informe nome e CPF.','error');return;}
+  if(!nome){showToast('Informe o nome do cliente.','error');return;}
   showLoading('Salvando cliente...');
   const row = {
     nome, cpf,
