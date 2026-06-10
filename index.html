@@ -456,6 +456,7 @@ tbody tr.clickable{cursor:pointer}
           <div class="lote-kpi-box" style="background:var(--bg-secondary)"><div class="lote-kpi-dot" style="background:#f1f0ec;border:1.5px solid #B4B2A9"></div><div><div class="lote-kpi-label">Total</div><div class="lote-kpi-val" id="kpi-total">0</div></div></div>
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:4px">
+          <button id="btn-excluir-lotes" class="btn" style="color:var(--danger);border-color:var(--danger);display:none" onclick="excluirLotesSelecionados()">✕ Excluir selecionados</button>
           <button class="btn" onclick="abrirModalImportCSV()">⬆ Importar Excel/CSV</button>
           <button class="btn btn-primary" onclick="abrirModalNovoLote()">+ Novo lote</button>
         </div>
@@ -513,7 +514,10 @@ tbody tr.clickable{cursor:pointer}
           </div>
           <div class="card">
             <table>
-              <thead><tr><th style="width:120px">Lote</th><th style="width:80px">Quadra</th><th style="width:70px">Área</th><th>Valor tabela</th><th>Status</th><th>Cliente</th></tr></thead>
+              <thead><tr>
+                <th style="width:32px"><input type="checkbox" id="lote-sel-all" onchange="toggleSelLotesAll(this)" title="Selecionar todos"></th>
+                <th style="width:120px">Lote</th><th style="width:80px">Quadra</th><th style="width:70px">Área</th><th>Valor tabela</th><th>Status</th><th>Cliente</th>
+              </tr></thead>
               <tbody id="tbody-lotes-lista"></tbody>
             </table>
           </div>
@@ -574,7 +578,7 @@ tbody tr.clickable{cursor:pointer}
         </div>
         <div class="card">
           <table>
-            <thead><tr><th>Nome</th><th style="width:130px">CPF</th><th style="width:130px">Telefone</th><th style="width:100px">Contratos</th><th style="width:70px">Score</th><th style="width:100px">Status</th></tr></thead>
+            <thead><tr><th>Nome</th><th style="width:130px">CPF</th><th style="width:130px">Telefone</th><th style="width:100px">Cidade</th><th style="width:100px">Status</th><th style="width:80px">Ações</th></tr></thead>
             <tbody id="tbody-clientes"></tbody>
           </table>
         </div>
@@ -4509,7 +4513,10 @@ function renderLeads(){
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.origem||'—'}</td>
       <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lote}</td>
       <td><span class="badge ${bc}" style="font-size:10px">${l.status}</span></td>
-      <td style="text-align:left"><button class="btn btn-sm" style="font-size:10px" onclick="abrirEditLead('${idStr}')">Editar</button></td>
+      <td style="text-align:left;white-space:nowrap">
+        <button class="btn btn-sm" style="font-size:10px" onclick="abrirEditLead('${idStr}')">Editar</button>
+        <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger);margin-left:4px" onclick="excluirLead('${idStr}',this.dataset.nome)" data-nome="${l.nome.replace(/"/g,'&quot;')}">✕</button>
+      </td>
     </tr>`;
   }).join('');
   atualizarKpisCRM();
@@ -7428,8 +7435,78 @@ function renderExtrato(){
 
 // Adicionar pageTitles e init para contas bancárias
 // ================================================================
-// INTEGRAÇÃO SUPABASE — funções assíncronas de dados
+// EXCLUSÃO — Leads, Clientes, Lotes
 // ================================================================
+
+async function excluirLead(id, nome){
+  if(!confirm(`Excluir o lead "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  showLoading('Excluindo lead...');
+  await dbDelete('leads', id);
+  hideLoading();
+  leads = leads.filter(l=>String(l.id)!==String(id));
+  renderLeads();
+  showToast(`Lead "${nome}" excluído.`,'error');
+}
+
+async function excluirCliente(id, nome){
+  if(!confirm(`Excluir o cliente "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  showLoading('Excluindo cliente...');
+  await dbDelete('clientes', id);
+  hideLoading();
+  carregarClientes();
+  showToast(`Cliente "${nome}" excluído.`,'error');
+}
+
+// ── Lotes — seleção em massa ──────────────────────────────────
+let _lotesSelecionados = new Set();
+
+function toggleSelLote(checkbox, id){
+  if(checkbox.checked) _lotesSelecionados.add(id);
+  else _lotesSelecionados.delete(id);
+  _atualizarBtnExcluirLotes();
+  // Atualizar "selecionar todos" se necessário
+  const all = document.getElementById('lote-sel-all');
+  const total = document.querySelectorAll('#tbody-lotes-lista input[type=checkbox]').length;
+  if(all) all.indeterminate = _lotesSelecionados.size>0 && _lotesSelecionados.size<total;
+  if(all) all.checked = _lotesSelecionados.size>0 && _lotesSelecionados.size===total;
+}
+
+function toggleSelLotesAll(cb){
+  _lotesSelecionados.clear();
+  document.querySelectorAll('#tbody-lotes-lista input[type=checkbox]').forEach(el=>{
+    el.checked = cb.checked;
+    if(cb.checked) _lotesSelecionados.add(el.dataset.id);
+  });
+  _atualizarBtnExcluirLotes();
+}
+
+function _atualizarBtnExcluirLotes(){
+  const btn = document.getElementById('btn-excluir-lotes');
+  if(!btn) return;
+  if(_lotesSelecionados.size>0){
+    btn.style.display='inline-flex';
+    btn.textContent=`✕ Excluir ${_lotesSelecionados.size} lote${_lotesSelecionados.size>1?'s':''}`;
+  } else {
+    btn.style.display='none';
+  }
+}
+
+async function excluirLotesSelecionados(){
+  const qty = _lotesSelecionados.size;
+  if(!qty) return;
+  if(!confirm(`Excluir ${qty} lote${qty>1?'s':''} selecionado${qty>1?'s':''}?\n\nEsta ação não pode ser desfeita.`)) return;
+  showLoading(`Excluindo ${qty} lote${qty>1?'s':''}...`);
+  for(const id of _lotesSelecionados){
+    await dbDelete('lotes', id);
+  }
+  hideLoading();
+  _lotesSelecionados.clear();
+  _atualizarBtnExcluirLotes();
+  carregarLotes();
+  showToast(`${qty} lote${qty>1?'s':''} excluído${qty>1?'s':''}.`,'error');
+}
+
+
 
 // ── LOTEAMENTOS ──────────────────────────────────────────────
 async function carregarLoteamentos() {
@@ -7507,14 +7584,18 @@ async function carregarClientes() {
   hideLoading();
   const tbody = document.querySelector('#page-clientes table tbody');
   if(!tbody) return;
-  tbody.innerHTML = rows.map(r => `<tr class="clickable">
+  tbody.innerHTML = rows.map(r => {
+    const idStr = String(r.id).replace(/'/g,"\\'");
+    const nomeEsc = (r.nome||'').replace(/'/g,"\\'");
+    return `<tr>
     <td style="font-weight:500">${r.nome}</td>
-    <td style="color:var(--text-secondary)">${r.cpf||'—'}</td>
-    <td style="color:var(--text-secondary)">${r.celular||'—'}</td>
-    <td>—</td>
-    <td style="color:var(--text-secondary)">—</td>
+    <td style="color:var(--text-secondary);font-size:11px">${r.cpf||'—'}</td>
+    <td style="color:var(--text-secondary);font-size:11px">${r.celular||'—'}</td>
+    <td style="color:var(--text-secondary);font-size:11px">${r.cidade||'—'}</td>
     <td><span class="badge badge-green">Adimplente</span></td>
-  </tr>`).join('');
+    <td><button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger)" onclick="excluirCliente('${idStr}','${nomeEsc}')">✕</button></td>
+  </tr>`;
+  }).join('');
   // Atualizar selects de cliente em outros modais
   atualizarSelectClientes(rows);
 }
@@ -7575,10 +7656,14 @@ async function carregarLotesFiltrados(slugs){
   hideLoading();
   const tbody = document.getElementById('tbody-lotes-lista');
   const badgeCls = {'Disponível':'badge-green','Vendido':'badge-blue','Reservado':'badge-amber','Inadimplente':'badge-red','Distratado':'badge-gray','Quitado':''};
+  _lotesSelecionados.clear();
+  _atualizarBtnExcluirLotes();
   if(tbody){
     tbody.innerHTML = allRows.map(r=>{
       const bStyle = r.status==='Quitado'?' style="background:#EDE9FE;color:#5B21B6"':'';
+      const sel = _lotesSelecionados.has(String(r.id));
       return `<tr data-status="${r.status}" data-quadra="${r.quadra}">
+        <td><input type="checkbox" data-id="${r.id}" ${sel?'checked':''} onchange="toggleSelLote(this,'${r.id}')"></td>
         <td>${r.quadra}-${(r.numero||'').padStart(2,'0')}</td>
         <td>${r.quadra}</td>
         <td>${r.area_m2||'—'} m²</td>
