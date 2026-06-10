@@ -3799,15 +3799,24 @@ async function salvarDadosClienteLead(){
   };
   if(window._leadDocBase64) dadosCliente.doc_url = window._leadDocBase64;
 
-  // Datas comerciais — salvar no lead
   const dadosLead = {
     dt_proposta: document.getElementById('edit-lead-dt-proposta')?.value||null,
     dt_contrato: document.getElementById('edit-lead-dt-contrato')?.value||null,
     dt_entrada:  document.getElementById('edit-lead-dt-entrada')?.value||null,
   };
 
-  // Buscar cliente pelo CPF (mais confiável) ou pelo nome
+  // Ordem de busca do cliente:
+  // 1. cliente_id já vinculado ao lead (mais confiável)
+  // 2. pelo CPF digitado
+  // 3. pelo nome
   let clienteId = lead?.clienteId || null;
+
+  // Tentar buscar cliente_id salvo no banco se não tiver em memória
+  if(!clienteId){
+    const leadDb = await dbSelect('leads',{filter:[['id','eq',_editLeadId]],select:'cliente_id'});
+    if(leadDb[0]?.cliente_id) clienteId = leadDb[0].cliente_id;
+  }
+
   if(!clienteId && cpf){
     const porCpf = await dbSelect('clientes',{filter:[['cpf','eq',cpf]]});
     if(porCpf.length) clienteId = porCpf[0].id;
@@ -3818,21 +3827,24 @@ async function salvarDadosClienteLead(){
   }
 
   if(clienteId){
+    // Atualizar cliente existente
     await dbUpdate('clientes', clienteId, dadosCliente);
   } else {
-    // Criar cliente novo
+    // Criar cliente novo e vincular ao lead
     const novo = await dbInsert('clientes',{nome,...dadosCliente});
     if(novo) clienteId = novo.id;
   }
 
-  // Salvar datas no lead
+  // Salvar datas + cliente_id no lead
   const leadUpdate = {...dadosLead};
+  if(clienteId) leadUpdate.cliente_id = clienteId;
   if(window._leadDocBase64) leadUpdate.doc_url = window._leadDocBase64;
   await dbUpdate('leads', _editLeadId, leadUpdate);
 
   // Atualizar array local
   if(lead){
-    lead.cpf = cpf; lead.tel = dadosCliente.celular||lead.tel;
+    lead.cpf = cpf;
+    lead.tel   = dadosCliente.celular||lead.tel;
     lead.email = dadosCliente.email||lead.email;
     if(clienteId) lead.clienteId = clienteId;
   }
