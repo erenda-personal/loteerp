@@ -434,7 +434,7 @@ tbody tr.clickable{cursor:pointer}
         </div>
         <div class="card">
           <table>
-            <thead><tr><th style="width:180px">Nome</th><th style="width:80px">Fase</th><th>Cidade / UF</th><th>Lotes</th><th>VGV</th><th>Lançamento</th><th style="width:90px">Status</th><th style="width:120px">Ações</th></tr></thead>
+            <thead><tr><th style="width:180px">Nome</th><th style="width:120px">Fase</th><th>Cidade / UF</th><th style="width:60px">Lotes</th><th style="width:90px">VGV</th><th style="width:90px">Lançamento</th><th style="width:90px">Status</th><th style="width:120px">Ações</th></tr></thead>
             <tbody id="tbody-loteamentos"></tbody>
           </table>
         </div>
@@ -878,7 +878,7 @@ tbody tr.clickable{cursor:pointer}
               <option value="Paralisada">Paralisada</option>
             </select>
           </div>
-          <button class="btn btn-primary" onclick="openModal('modal-new-obra')">+ Nova obra</button>
+          <button class="btn btn-primary" onclick="abrirModalNovaObra()">+ Nova obra</button>
         </div>
 
         <div class="card">
@@ -1882,15 +1882,17 @@ tbody tr.clickable{cursor:pointer}
           <div class="form-row col2">
             <div class="field"><label>Loteamento *</label>
               <select id="no-loteamento">
-                <option value="">Selecione o loteamento</option>
-                <option value="Verde Vale">Res. Verde Vale</option>
-                <option value="Jardins do Sul">Cond. Jardins do Sul</option>
-                <option value="Nova Esperança">Res. Nova Esperança</option>
+                <option value="">— Selecione —</option>
               </select>
             </div>
             <div class="field"><label>Fase</label>
-              <input id="no-fase" placeholder="Ex: Fase 1" list="no-fases-list">
-              <datalist id="no-fases-list"><option>Fase 1</option><option>Fase 2</option><option>Fase 3</option><option>Fase única</option></datalist>
+              <select id="no-fase">
+                <option value="">— Selecione —</option>
+                <option>Fase única</option><option>Fase 1</option><option>Fase 2</option>
+                <option>Fase 3</option><option>Fase 4</option><option>Fase 5</option>
+                <option>Fase 6</option><option>Fase 7</option><option>Fase 8</option>
+                <option>Fase 9</option><option>Fase 10</option>
+              </select>
             </div>
           </div>
           <div class="form-section">Dados da obra</div>
@@ -2262,7 +2264,11 @@ tbody tr.clickable{cursor:pointer}
           <div class="form-section">Dados gerais</div>
           <div class="form-row col3">
             <div class="field"><label>Nome do loteamento</label><input id="nl-nome" placeholder="Ex: Res. Verde Vale"></div>
-            <div class="field"><label>Fase</label><input id="nl-fase" placeholder="Ex: Fase 1, Fase 2..." list="fases-list"><datalist id="fases-list"><option>Fase 1</option><option>Fase 2</option><option>Fase 3</option><option>Fase 4</option><option>Fase única</option></datalist></div>
+            <div class="field"><label>Fase</label><select id="nl-fase"><option value="">— Selecione —</option>
+                <option>Fase única</option><option>Fase 1</option><option>Fase 2</option>
+                <option>Fase 3</option><option>Fase 4</option><option>Fase 5</option>
+                <option>Fase 6</option><option>Fase 7</option><option>Fase 8</option>
+                <option>Fase 9</option><option>Fase 10</option></select></div>
             <div class="field"><label>Status</label><select id="nl-status"><option>Ativo</option><option>Em obras</option><option>Planejado</option><option>Encerrado</option></select></div>
           </div>
           <div class="form-row col3"><div class="field"><label>Cidade</label><input id="nl-cidade" placeholder="Sorocaba"></div><div class="field"><label>Estado</label><select id="nl-estado"><option value="">—</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></div><div class="field"><label>CEP</label><input id="nl-cep" placeholder="00000-000"></div></div>
@@ -2320,7 +2326,11 @@ tbody tr.clickable{cursor:pointer}
           <input type="hidden" id="el-id">
           <div class="form-row col2">
             <div class="field"><label>Nome *</label><input id="el-nome" placeholder="Nome do loteamento"></div>
-            <div class="field"><label>Fase</label><input id="el-fase" placeholder="Ex: Fase 1"></div>
+            <div class="field"><label>Fase</label><select id="el-fase"><option value="">— Selecione —</option>
+                <option>Fase única</option><option>Fase 1</option><option>Fase 2</option>
+                <option>Fase 3</option><option>Fase 4</option><option>Fase 5</option>
+                <option>Fase 6</option><option>Fase 7</option><option>Fase 8</option>
+                <option>Fase 9</option><option>Fase 10</option></select></div>
           </div>
           <div class="form-row col2">
             <div class="field"><label>Status</label>
@@ -6266,6 +6276,16 @@ function toggleGlobalLot(el){
 // ================================================================
 // OBRAS — FILTRO E CADASTRO
 // ================================================================
+async function abrirModalNovaObra(){
+  openModal('modal-new-obra');
+  const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+  const sel = document.getElementById('no-loteamento');
+  if(sel){
+    sel.innerHTML = '<option value="">— Selecione —</option>' +
+      lots.map(r=>`<option value="${r.id}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+  }
+}
+
 function renderObras(){
   const fl=document.getElementById('obras-filtro-lot')?.value||'';
   const fs=document.getElementById('obras-filtro-status')?.value||'';
