@@ -517,12 +517,13 @@ tbody tr.clickable{cursor:pointer}
             <table style="table-layout:auto">
               <thead><tr>
                 <th style="width:32px"><input type="checkbox" id="lote-sel-all" onchange="toggleSelLotesAll(this)" title="Selecionar todos"></th>
-                <th style="width:100px">Cód. Lote</th>
-                <th style="width:80px">Quadra</th>
-                <th style="width:60px">Nº Lote</th>
-                <th style="width:80px">Área</th>
-                <th style="width:130px">Valor tabela</th>
-                <th style="width:120px">Status</th>
+                <th style="width:90px">Cód. Lote</th>
+                <th style="width:140px">Loteamento</th>
+                <th style="width:70px">Quadra</th>
+                <th style="width:55px">Nº</th>
+                <th style="width:75px">Área</th>
+                <th style="width:120px">Valor tabela</th>
+                <th style="width:110px">Status</th>
                 <th>Cliente</th>
               </tr></thead>
               <tbody id="tbody-lotes-lista"></tbody>
@@ -2293,7 +2294,7 @@ tbody tr.clickable{cursor:pointer}
 
       <!-- Modal: Novo Lote -->
       <div class="modal-overlay" id="modal-new-lote" onclick="if(event.target===this)closeModal('modal-new-lote')">
-        <div class="modal-box">
+        <div class="modal-box" style="width:640px">
           <div class="modal-header">
             <span class="modal-title">Novo lote</span>
             <button class="modal-close" onclick="closeModal('modal-new-lote')">✕</button>
@@ -7848,8 +7849,9 @@ async function salvarClienteDB() {
 // Carrega lotes de múltiplos loteamentos (filtro com vários selecionados)
 async function carregarLotesFiltrados(slugs){
   showLoading('Carregando lotes...');
-  // Buscar todos os loteamentos para mapear slug → id
   const todos = await dbSelect('loteamentos',{order:'nome',asc:true});
+  const lotMap2 = {};
+  todos.forEach(l => { lotMap2[l.id] = l.nome; });
   const ids = todos
     .filter(r => slugs.some(s => slugLoteamento(r.nome)===s))
     .map(r => r.id);
@@ -7872,6 +7874,7 @@ async function carregarLotesFiltrados(slugs){
       return `<tr data-status="${r.status}" data-quadra="${r.quadra}">
         <td><input type="checkbox" data-id="${r.id}" ${sel?'checked':''} onchange="toggleSelLote(this,'${r.id}')"></td>
         <td style="font-weight:500;font-size:12px">${r.quadra}-${(r.numero||'').padStart(2,'0')}</td>
+        <td style="color:var(--text-secondary);font-size:11px">${lotMap2[r.loteamento_id]||'—'}</td>
         <td style="color:var(--text-secondary)">${r.quadra}</td>
         <td style="color:var(--text-secondary)">${(r.numero||'').padStart(2,'0')}</td>
         <td style="color:var(--text-secondary)">${r.area_m2||'—'} m²</td>
@@ -7887,7 +7890,12 @@ async function carregarLotesFiltrados(slugs){
 async function carregarLotes(loteamentoId) {
   showLoading('Carregando lotes...');
   const filter = loteamentoId ? [['loteamento_id','eq',loteamentoId]] : [];
-  const rows = await dbSelect('lotes', {order:'quadra', asc:true, filter});
+  const [rows, lotRows] = await Promise.all([
+    dbSelect('lotes', {order:'quadra', asc:true, filter}),
+    dbSelect('loteamentos', {order:'nome', asc:true})
+  ]);
+  const lotMap = {};
+  lotRows.forEach(l => { lotMap[l.id] = l.nome; });
   hideLoading();
   const tbody = document.getElementById('tbody-lotes-lista');
   if(!tbody) return;
@@ -7900,6 +7908,7 @@ async function carregarLotes(loteamentoId) {
     return `<tr data-status="${r.status}" data-quadra="${r.quadra}">
       <td><input type="checkbox" data-id="${r.id}" ${sel?'checked':''} onchange="toggleSelLote(this,'${r.id}')"></td>
       <td style="font-weight:500;font-size:12px">${r.quadra}-${(r.numero||'').padStart(2,'0')}</td>
+      <td style="color:var(--text-secondary);font-size:11px">${lotMap[r.loteamento_id]||'—'}</td>
       <td style="color:var(--text-secondary)">${r.quadra}</td>
       <td style="color:var(--text-secondary)">${(r.numero||'').padStart(2,'0')}</td>
       <td style="color:var(--text-secondary)">${r.area_m2||'—'} m²</td>
