@@ -7896,12 +7896,13 @@ async function carregarLotesFiltrados(slugs){
     allRows = allRows.concat(rows);
   }
   hideLoading();
+  const allRowsOrdenadas = ordenarLotes(allRows, lotMap2);
   const tbody = document.getElementById('tbody-lotes-lista');
   const badgeCls = {'Disponível':'badge-green','Vendido':'badge-blue','Reservado':'badge-amber','Inadimplente':'badge-red','Distratado':'badge-gray','Quitado':''};
   _lotesSelecionados.clear();
   _atualizarBtnExcluirLotes();
   if(tbody){
-    tbody.innerHTML = allRows.map(r=>{
+    tbody.innerHTML = allRowsOrdenadas.map(r=>{
       const bStyle = r.status==='Quitado'?' style="background:#EDE9FE;color:#5B21B6"':'';
       const sel = _lotesSelecionados.has(String(r.id));
       return `<tr data-status="${r.status}" data-quadra="${r.quadra}">
@@ -7920,6 +7921,21 @@ async function carregarLotesFiltrados(slugs){
   atualizarKpisLotesDB(allRows);
 }
 
+// Ordena lotes por: 1) nome do loteamento, 2) quadra (alfabética), 3) número (numérico)
+function ordenarLotes(rows, lotMap){
+  return [...rows].sort((a,b)=>{
+    const nomeA = (lotMap?.[a.loteamento_id]||'').toLowerCase();
+    const nomeB = (lotMap?.[b.loteamento_id]||'').toLowerCase();
+    if(nomeA !== nomeB) return nomeA.localeCompare(nomeB);
+    const quadraA = (a.quadra||'').toLowerCase();
+    const quadraB = (b.quadra||'').toLowerCase();
+    if(quadraA !== quadraB) return quadraA.localeCompare(quadraB);
+    const numA = parseInt(a.numero) || 0;
+    const numB = parseInt(b.numero) || 0;
+    return numA - numB;
+  });
+}
+
 async function carregarLotes(loteamentoId) {
   showLoading('Carregando lotes...');
   const filter = loteamentoId ? [['loteamento_id','eq',loteamentoId]] : [];
@@ -7929,13 +7945,14 @@ async function carregarLotes(loteamentoId) {
   ]);
   const lotMap = {};
   lotRows.forEach(l => { lotMap[l.id] = l.nome; });
+  const rowsOrdenadas = ordenarLotes(rows, lotMap);
   hideLoading();
   const tbody = document.getElementById('tbody-lotes-lista');
   if(!tbody) return;
   const badgeCls = {'Disponível':'badge-green','Vendido':'badge-blue','Reservado':'badge-amber','Inadimplente':'badge-red','Distratado':'badge-gray','Quitado':''};
   _lotesSelecionados.clear();
   _atualizarBtnExcluirLotes();
-  tbody.innerHTML = rows.map(r => {
+  tbody.innerHTML = rowsOrdenadas.map(r => {
     const bStyle = r.status==='Quitado' ? ' style="background:#EDE9FE;color:#5B21B6"' : '';
     const sel = _lotesSelecionados.has(String(r.id));
     return `<tr data-status="${r.status}" data-quadra="${r.quadra}">
