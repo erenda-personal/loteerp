@@ -5000,11 +5000,11 @@ function handleImportFile(input){
       _importRows.push({
         quadra:       idx.quadra>=0      ? (cols[idx.quadra]?.trim()||'') : '',
         numero:       idx.numero>=0      ? cols[idx.numero]||String(i) : String(i),
-        area_m2:      idx.area>=0        ? parseFloat(cols[idx.area])||null : null,
+        area_m2:      idx.area>=0        ? parseFloat((cols[idx.area]||'').replace(/\./g,'').replace(',','.'))||null : null,
         valor_tabela: idx.valor>=0       ? parseFloat(cols[idx.valor].replace(/\./g,'').replace(',','.'))||0 : 0,
         status:       idx.status>=0      ? cols[idx.status]||'Disponível' : 'Disponível',
-        testada_m:    idx.testada>=0     ? parseFloat(cols[idx.testada])||null : null,
-        profundidade_m: idx.profundidade>=0 ? parseFloat(cols[idx.profundidade])||null : null,
+        testada_m:    idx.testada>=0     ? parseFloat((cols[idx.testada]||'').replace(/\./g,'').replace(',','.'))||null : null,
+        profundidade_m: idx.profundidade>=0 ? parseFloat((cols[idx.profundidade]||'').replace(/\./g,'').replace(',','.'))||null : null,
       });
     }
 
@@ -5056,10 +5056,23 @@ async function confirmarImport(){
   }));
 
   let erros = 0;
+  let inseridos = 0;
+  let atualizados = 0;
+
   for(let i=0; i<rows.length; i+=50){
     const batch = rows.slice(i, i+50);
-    const {error} = await sb.from('lotes').insert(batch);
-    if(error){ console.error('Batch erro:', error.message); erros++; }
+    // Upsert: se já existe (loteamento_id, quadra, numero), atualiza valor_tabela, área, status etc.
+    const {data, error} = await sb.from('lotes')
+      .upsert(batch, { onConflict: 'loteamento_id,quadra,numero', ignoreDuplicates: false })
+      .select('id');
+    if(error){
+      console.error('Batch erro:', error.message);
+      erros++;
+    } else {
+      // Não há como diferenciar insert vs update no retorno do Supabase REST,
+      // então contamos apenas o total processado
+      inseridos += data?.length || batch.length;
+    }
   }
 
   hideLoading();
@@ -5067,9 +5080,9 @@ async function confirmarImport(){
   _importRows = [];
 
   if(erros){
-    showToast(`Importação parcial: ${erros} lote(s) com erro. Verifique dados duplicados.`,'error');
+    showToast(`Importação parcial: ${erros} lote(s) com erro.`,'error');
   } else {
-    showToast(`✓ ${rows.length} lotes importados para "${lotNome}" com sucesso!`);
+    showToast(`✓ ${rows.length} lotes processados em "${lotNome}" — novos criados e existentes atualizados!`);
   }
   // Recarregar lista de lotes
   if(typeof carregarLotes==='function') carregarLotes(loteamentoId);
