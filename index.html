@@ -374,16 +374,12 @@ tbody tr.clickable{cursor:pointer}
         </div>
         <div class="grid2">
           <div class="card">
-            <div class="card-header"><span class="section-title">Recebimentos — últimos 6 meses</span></div>
-            <div class="chart-area" id="dash-receb-bars">
-              <div class="mini-bars" id="dash-receb-mini">
-                <div style="width:100%;text-align:center;color:var(--text-secondary);font-size:12px;padding:24px 0">Nenhum dado financeiro registrado.</div>
-              </div>
+            <div class="card-header"><span class="section-title" id="dash-vendas-lot-titulo">Vendas por loteamento — últimos 6 meses</span></div>
+            <div class="chart-area" style="padding:8px 0">
+              <canvas id="dash-vendas-lot-chart" height="140" style="width:100%"></canvas>
+              <div id="dash-vendas-lot-empty" style="display:none;text-align:center;color:var(--text-secondary);font-size:12px;padding:24px 0">Nenhuma venda registrada.</div>
             </div>
-            <div class="chart-legend">
-              <div class="chart-leg"><div class="chart-leg-dot" style="background:#378ADD"></div>Recebido</div>
-              <div class="chart-leg"><div class="chart-leg-dot" style="background:#E24B4A"></div>Em atraso</div>
-            </div>
+            <div id="dash-vendas-lot-legend" class="chart-legend" style="flex-wrap:wrap;gap:6px 12px"></div>
           </div>
           <div class="card">
             <div class="card-header">
@@ -524,6 +520,7 @@ tbody tr.clickable{cursor:pointer}
                 <th style="width:75px">Área</th>
                 <th style="width:120px">Valor tabela</th>
                 <th style="width:110px">Status</th>
+                <th style="width:100px">Data venda</th>
                 <th>Cliente</th>
               </tr></thead>
               <tbody id="tbody-lotes-lista"></tbody>
@@ -586,7 +583,7 @@ tbody tr.clickable{cursor:pointer}
         </div>
         <div class="card">
           <table>
-            <thead><tr><th>Nome</th><th style="width:130px">CPF</th><th style="width:130px">Telefone</th><th style="width:100px">Cidade</th><th style="width:100px">Status</th><th style="width:80px">Ações</th></tr></thead>
+            <thead><tr><th>Nome</th><th style="width:130px">CPF</th><th style="width:130px">Telefone</th><th style="width:100px">Cidade</th><th style="width:80px">Estado</th><th style="width:80px">Ações</th></tr></thead>
             <tbody id="tbody-clientes"></tbody>
           </table>
         </div>
@@ -943,12 +940,13 @@ tbody tr.clickable{cursor:pointer}
           <div class="card">
             <table style="table-layout:fixed">
               <thead><tr>
-                <th style="width:160px">Nome</th>
-                <th style="width:110px">CPF</th>
+                <th style="width:150px">Nome</th>
+                <th style="width:120px">Telefone</th>
                 <th style="width:80px">Origem</th>
-                <th style="width:130px">Loteamento</th>
-                <th style="width:120px">Status</th>
-                <th style="width:80px">Ações</th>
+                <th style="width:120px">Loteamento</th>
+                <th style="width:120px">Corretor</th>
+                <th style="width:110px">Status</th>
+                <th style="width:70px">Ações</th>
               </tr></thead>
               <tbody id="crm-tbody"></tbody>
             </table>
@@ -2311,7 +2309,7 @@ tbody tr.clickable{cursor:pointer}
           <div class="form-row col3"><div class="field"><label>Área (m²)</label><input id="nlo-area" type="text" placeholder="0,00" oninput="maskMoney(this)"></div><div class="field"><label>Testada (m)</label><input id="nlo-test" type="text" placeholder="0,00"></div><div class="field"><label>Profundidade (m)</label><input id="nlo-prof" type="text" placeholder="0,00"></div></div>
           <div class="form-row col2"><div class="field"><label>Valor de tabela (R$)</label><input id="nlo-valor" type="text" placeholder="0,00" oninput="maskMoney(this)"></div><div class="field"><label>Status</label><select id="nlo-status"><option>Disponível</option><option>Reservado</option><option>Vendido</option><option>Quitado</option><option>Inadimplente</option><option>Distratado</option><option>Bloqueado</option></select></div></div>
           <div class="form-row"><div class="field"><label>Observações</label><input id="nlo-obs" placeholder="Observações do lote..."></div></div>
-          <div class="modal-footer"><button class="btn" onclick="closeModal('modal-new-lote')">Cancelar</button><button class="btn btn-primary" onclick="salvarLote()">Salvar lote</button></div>
+          <div class="modal-footer"><button class="btn" onclick="closeModal('modal-new-lote')">Cancelar</button><button class="btn btn-primary" onclick="salvarLoteDB()">Salvar lote</button></div>
         </div>
       </div>
 
@@ -4605,16 +4603,16 @@ function renderLeads(){
   });
   tbody.innerHTML=filtered.map(l=>{
     const bc=STATUS_CRM_BADGE[l.status]||'badge-gray';
-    const etapasFeitas=Object.values(l.etapas||{}).filter(Boolean).length;
-    const cpf = l.cpf||l.doc||'—';
+    const tel = l.tel||'—';
     const lote = l.lote||'—';
     // UUID precisa de aspas simples no onclick
     const idStr = String(l.id).replace(/'/g,"\\'");
     return `<tr>
       <td style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.nome}</td>
-      <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${cpf}</td>
+      <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tel}</td>
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.origem||'—'}</td>
       <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lote}</td>
+      <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.corretor||'—'}</td>
       <td><span class="badge ${bc}" style="font-size:10px">${l.status}</span></td>
       <td style="text-align:left;white-space:nowrap">
         <button class="btn btn-sm" style="font-size:10px" onclick="abrirEditLead('${idStr}')">Editar</button>
@@ -6139,10 +6137,94 @@ const dashDados={
   },
 };
 
+// ── Gráfico: Vendas por loteamento por mês ────────────────────
+let _vendasChart = null;
+
+async function renderGraficoVendasLoteamento(){
+  const canvas = document.getElementById('dash-vendas-lot-chart');
+  const empty  = document.getElementById('dash-vendas-lot-empty');
+  if(!canvas) return;
+
+  // Buscar leads com entrada paga
+  const leadsRows = await dbSelect('leads',{
+    filter:[['status','eq','Entrada paga']],
+    select:'loteamento,dt_entrada'
+  });
+
+  // Filtrar por loteamentos do filtro global
+  const isAll = globalLots.has('todos');
+  const filtrados = leadsRows.filter(l=>{
+    if(!l.dt_entrada) return false;
+    if(isAll) return true;
+    const slug = typeof slugLoteamento==='function' ? slugLoteamento(l.loteamento||'') : '';
+    return [...globalLots].some(s=>s===slug);
+  });
+
+  if(!filtrados.length){
+    canvas.style.display='none';
+    if(empty){ empty.style.display='block'; }
+    return;
+  }
+  canvas.style.display='block';
+  if(empty) empty.style.display='none';
+
+  // Últimos 6 meses
+  const hoje = new Date();
+  const meses = [];
+  for(let i=5;i>=0;i--){
+    const d = new Date(hoje.getFullYear(), hoje.getMonth()-i, 1);
+    meses.push({
+      key: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
+      label: d.toLocaleString('pt-BR',{month:'short'}).replace('.',''),
+    });
+  }
+
+  const lots = [...new Set(filtrados.map(l=>l.loteamento||'Sem loteamento'))].sort();
+  const COLORS = ['#185FA5','#EF9F27','#3B6D11','#E24B4A','#8B5CF6','#0F6E56','#888780','#378ADD'];
+  const datasets = lots.map((lot,i)=>({
+    label: lot,
+    backgroundColor: COLORS[i%COLORS.length],
+    data: meses.map(m=>filtrados.filter(l=>{
+      const dk = (l.dt_entrada||'').substring(0,7);
+      return dk===m.key && (l.loteamento||'Sem loteamento')===lot;
+    }).length),
+  }));
+
+  if(_vendasChart){ try{_vendasChart.destroy();}catch(e){} _vendasChart=null; }
+
+  const render = () => {
+    const ctx = canvas.getContext('2d');
+    _vendasChart = new Chart(ctx,{
+      type:'bar',
+      data:{ labels: meses.map(m=>m.label), datasets },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{display:false}, tooltip:{mode:'index',intersect:false} },
+        scales:{
+          x:{ stacked:true, grid:{display:false}, ticks:{color:'#888',font:{size:10}} },
+          y:{ stacked:true, beginAtZero:true, ticks:{color:'#888',font:{size:10},stepSize:1,precision:0},
+              grid:{color:'rgba(0,0,0,.06)'} }
+        }
+      }
+    });
+    const leg = document.getElementById('dash-vendas-lot-legend');
+    if(leg) leg.innerHTML = lots.map((lot,i)=>`
+      <div class="chart-leg"><div class="chart-leg-dot" style="background:${COLORS[i%COLORS.length]}"></div>${lot}</div>`).join('');
+  };
+
+  if(typeof Chart!=='undefined'){ render(); }
+  else {
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+    s.onload=render; document.head.appendChild(s);
+  }
+}
+
 function atualizarDashboard(){
   const lots=[...globalLots];
   const key=lots.includes('todos')||lots.length>1?'todos':lots[0];
   const d=dashDados[key]||dashDados.todos;
+  renderGraficoVendasLoteamento();
   const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
 
   // KPIs
@@ -7749,19 +7831,35 @@ async function excluirLotesSelecionados(){
 // ── LOTEAMENTOS ──────────────────────────────────────────────
 async function carregarLoteamentos() {
   showLoading('Carregando loteamentos...');
-  const rows = await dbSelect('loteamentos', {order:'nome', asc:true});
+  const [rows, lotesRows] = await Promise.all([
+    dbSelect('loteamentos', {order:'nome', asc:true}),
+    dbSelect('lotes', {select:'loteamento_id,valor_tabela,status'})
+  ]);
   hideLoading();
+  // Calcular VGV e contagem por loteamento
+  const vgvMap = {}, countMap = {};
+  lotesRows.forEach(l=>{
+    const lid = l.loteamento_id;
+    if(!vgvMap[lid]){ vgvMap[lid]=0; countMap[lid]=0; }
+    vgvMap[lid] += parseFloat(l.valor_tabela)||0;
+    countMap[lid]++;
+  });
+  const fmtVgv = v => v>=1e6 ? 'R$ '+(v/1e6).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'M'
+    : v>=1e3 ? 'R$ '+(v/1e3).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0})+'K'
+    : v>0 ? 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:0}) : '—';
   const tbody = document.getElementById('tbody-loteamentos');
   if(!tbody) return;
   const badgeCls = {'Ativo':'badge-green','Em obras':'badge-blue','Planejado':'badge-amber','Encerrado':'badge-gray'};
   tbody.innerHTML = rows.map(r => {
     const nomeSafe = (r.nome||'').replace(/'/g,"\'");
+    const qtd = countMap[r.id]||0;
+    const vgv = fmtVgv(vgvMap[r.id]||0);
     return `<tr class="clickable" onclick="showPage('lotes',null)">
       <td style="font-weight:600;color:var(--accent)">${r.nome}</td>
       <td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">${r.fase||'—'}</span></td>
       <td>${r.cidade||''} / ${r.estado||''}</td>
-      <td>${r.qtd_lotes||0} lotes</td>
-      <td>—</td>
+      <td>${qtd} lote${qtd!==1?'s':''}</td>
+      <td>${vgv}</td>
       <td>${r.data_lancamento||'—'}</td>
       <td><span class="badge ${badgeCls[r.status]||'badge-gray'}">${r.status||'Ativo'}</span></td>
       <td style="white-space:nowrap">
@@ -7914,6 +8012,7 @@ async function carregarLotesFiltrados(slugs){
         <td style="color:var(--text-secondary)">${r.area_m2||'—'} m²</td>
         <td>R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</td>
         <td><span class="badge ${badgeCls[r.status]||'badge-gray'}"${bStyle}>${r.status}</span></td>
+        <td style="color:var(--text-secondary);font-size:11px">${r.dt_entrada ? new Date(r.dt_entrada+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
         <td style="color:var(--text-secondary)">—</td>
       </tr>`;
     }).join('');
@@ -7964,6 +8063,7 @@ async function carregarLotes(loteamentoId) {
       <td style="color:var(--text-secondary)">${r.area_m2||'—'} m²</td>
       <td>R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</td>
       <td><span class="badge ${badgeCls[r.status]||'badge-gray'}"${bStyle}>${r.status}</span></td>
+      <td style="color:var(--text-secondary);font-size:11px">${r.dt_entrada ? new Date(r.dt_entrada+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
       <td style="color:var(--text-secondary)">—</td>
     </tr>`;
   }).join('');
