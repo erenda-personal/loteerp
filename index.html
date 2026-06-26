@@ -290,11 +290,134 @@ tbody tr.clickable{cursor:pointer}
       Entrar
     </button>
 
-    <div style="text-align:center;margin-top:14px">
+    <div style="text-align:center;margin-top:12px">
+      <span onclick="mostrarRecuperarSenha()"
+        style="font-size:12px;color:var(--accent);cursor:pointer;text-decoration:underline">
+        Esqueci minha senha
+      </span>
+    </div>
+
+    <div style="text-align:center;margin-top:8px">
       <span style="font-size:11px;color:var(--text-tertiary)">
         Não tem acesso? Solicite ao administrador do sistema.
       </span>
     </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TELA DE RECUPERAR SENHA
+═══════════════════════════════════════════════════════════════ -->
+<div id="recuperar-screen" style="display:none;position:fixed;inset:0;z-index:99999;
+  background:var(--bg-secondary);align-items:center;justify-content:center">
+  <div style="width:380px;background:var(--bg-primary);border-radius:16px;padding:36px 32px;
+    box-shadow:0 8px 40px rgba(0,0,0,.13)">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:32px;margin-bottom:8px">📧</div>
+      <div style="font-size:17px;font-weight:700;color:var(--text-primary)">Recuperar senha</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">
+        Enviaremos um link para você criar uma nova senha</div>
+    </div>
+
+    <div id="recuperar-erro" style="display:none;background:#FEE2E2;color:#991B1B;
+      font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:14px;text-align:center"></div>
+    <div id="recuperar-ok" style="display:none;background:#EAF3DE;color:#3B6D11;
+      font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:14px;text-align:center"></div>
+
+    <div style="margin-bottom:20px">
+      <label style="font-size:11px;font-weight:600;color:var(--text-secondary);
+        display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">E-mail</label>
+      <input id="recuperar-email" type="email" placeholder="seu@email.com"
+        style="width:100%;padding:10px 12px;border-radius:8px;
+        border:1px solid var(--border-secondary);background:var(--bg-primary);
+        color:var(--text-primary);font-size:13px;outline:none"
+        onkeydown="if(event.key==='Enter')enviarRecuperacaoSenha()">
+    </div>
+
+    <button id="recuperar-btn" onclick="enviarRecuperacaoSenha()"
+      style="width:100%;padding:11px;border-radius:8px;background:var(--accent);
+      color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;margin-bottom:10px">
+      Enviar link de recuperação
+    </button>
+
+    <div style="text-align:center">
+      <span onclick="voltarParaLogin()"
+        style="font-size:12px;color:var(--text-secondary);cursor:pointer;text-decoration:underline">
+        ← Voltar ao login
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TELA DE DEFINIR SENHA (convite / recuperação)
+═══════════════════════════════════════════════════════════════ -->
+<div id="senha-screen" style="display:none;position:fixed;inset:0;z-index:99999;
+  background:var(--bg-secondary);align-items:center;justify-content:center">
+
+  <div style="width:380px;background:var(--bg-primary);border-radius:16px;padding:36px 32px;
+    box-shadow:0 8px 40px rgba(0,0,0,.13)">
+
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="font-size:32px;margin-bottom:8px">🔐</div>
+      <div style="font-size:17px;font-weight:700;color:var(--text-primary)">Criar sua senha</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-top:4px">
+        Defina uma senha para acessar o LoteERP</div>
+    </div>
+
+    <div id="senha-erro" style="display:none;background:#FEE2E2;color:#991B1B;
+      font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:14px;text-align:center"></div>
+    <div id="senha-ok" style="display:none;background:#EAF3DE;color:#3B6D11;
+      font-size:12px;padding:10px 12px;border-radius:8px;margin-bottom:14px;text-align:center"></div>
+
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:600;color:var(--text-secondary);
+        display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">E-mail</label>
+      <input id="senha-email" type="email" disabled
+        style="width:100%;padding:10px 12px;border-radius:8px;
+        border:1px solid var(--border-secondary);background:var(--bg-secondary);
+        color:var(--text-secondary);font-size:13px;outline:none;opacity:.8">
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:600;color:var(--text-secondary);
+        display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Nova senha</label>
+      <div style="position:relative">
+        <input id="senha-nova" type="password" placeholder="Mínimo 8 caracteres"
+          style="width:100%;padding:10px 12px;border-radius:8px;
+          border:1px solid var(--border-secondary);background:var(--bg-primary);
+          color:var(--text-primary);font-size:13px;outline:none"
+          oninput="validarForcaSenha(this.value)"
+          onkeydown="if(event.key==='Enter')document.getElementById('senha-confirmar').focus()">
+        <button onclick="toggleSenhaVisib('senha-nova')"
+          style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
+          background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:14px">👁</button>
+      </div>
+      <!-- Barra de força da senha -->
+      <div style="margin-top:6px;display:flex;gap:3px">
+        <div id="forca-1" style="height:3px;flex:1;border-radius:2px;background:var(--border-tertiary)"></div>
+        <div id="forca-2" style="height:3px;flex:1;border-radius:2px;background:var(--border-tertiary)"></div>
+        <div id="forca-3" style="height:3px;flex:1;border-radius:2px;background:var(--border-tertiary)"></div>
+        <div id="forca-4" style="height:3px;flex:1;border-radius:2px;background:var(--border-tertiary)"></div>
+      </div>
+      <div id="forca-label" style="font-size:10px;color:var(--text-tertiary);margin-top:3px"></div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <label style="font-size:11px;font-weight:600;color:var(--text-secondary);
+        display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em">Confirmar senha</label>
+      <input id="senha-confirmar" type="password" placeholder="Repita a senha"
+        style="width:100%;padding:10px 12px;border-radius:8px;
+        border:1px solid var(--border-secondary);background:var(--bg-primary);
+        color:var(--text-primary);font-size:13px;outline:none"
+        onkeydown="if(event.key==='Enter')definirSenha()">
+    </div>
+
+    <button id="senha-btn" onclick="definirSenha()"
+      style="width:100%;padding:11px;border-radius:8px;background:var(--accent);
+      color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">
+      Salvar senha e entrar
+    </button>
   </div>
 </div>
 
@@ -8917,7 +9040,27 @@ applyTheme();
 let _usuarioLogado = null;
 
 async function iniciarApp(){
-  // Carregar configurações da empresa primeiro (logo, cor, nome)
+  // ── Detectar token de convite/recuperação na URL ──────────
+  const hash = window.location.hash;
+  const params = new URLSearchParams(hash.replace('#',''));
+  const tipo   = params.get('type');
+  const token  = params.get('access_token');
+
+  if(token && (tipo==='invite' || tipo==='recovery' || tipo==='signup')){
+    // Limpar hash da URL sem recarregar
+    history.replaceState(null,'',window.location.pathname);
+    // Trocar sessão com o token do link
+    const {data, error} = await sb.auth.setSession({
+      access_token:  token,
+      refresh_token: params.get('refresh_token')||''
+    });
+    if(!error && data?.user){
+      mostrarTelaSenha(data.user.email);
+      return;
+    }
+  }
+
+  // ── Fluxo normal ──────────────────────────────────────────
   if(typeof carregarConfiguracoesDoBanco==='function') await carregarConfiguracoesDoBanco();
   applyTheme();
 
@@ -8929,6 +9072,78 @@ async function iniciarApp(){
     if(event==='SIGNED_IN'  && session) await entrarNoApp(session.user);
     if(event==='SIGNED_OUT')            mostrarLogin();
   });
+}
+
+function mostrarTelaSenha(email){
+  document.getElementById('login-screen').style.display  = 'none';
+  document.getElementById('senha-screen').style.display  = 'flex';
+  document.getElementById('app-main').style.display      = 'none';
+  const el = document.getElementById('senha-email');
+  if(el) el.value = email||'';
+}
+
+async function definirSenha(){
+  const nova      = document.getElementById('senha-nova')?.value;
+  const confirmar = document.getElementById('senha-confirmar')?.value;
+  const erroEl    = document.getElementById('senha-erro');
+  const okEl      = document.getElementById('senha-ok');
+  const btn       = document.getElementById('senha-btn');
+
+  if(erroEl) erroEl.style.display='none';
+  if(okEl)   okEl.style.display='none';
+
+  if(!nova || nova.length < 8){
+    erroEl.textContent='A senha deve ter pelo menos 8 caracteres.';
+    erroEl.style.display='block'; return;
+  }
+  if(nova !== confirmar){
+    erroEl.textContent='As senhas não conferem.';
+    erroEl.style.display='block'; return;
+  }
+
+  if(btn){ btn.textContent='Salvando...'; btn.disabled=true; }
+
+  const {error} = await sb.auth.updateUser({password: nova});
+
+  if(btn){ btn.textContent='Salvar senha e entrar'; btn.disabled=false; }
+
+  if(error){
+    erroEl.textContent='Erro: '+error.message;
+    erroEl.style.display='block'; return;
+  }
+
+  okEl.textContent='✅ Senha criada! Entrando no sistema...';
+  okEl.style.display='block';
+
+  // Entrar automaticamente após 1.5s
+  setTimeout(async ()=>{
+    const {data:{session}} = await sb.auth.getSession();
+    if(session){
+      document.getElementById('senha-screen').style.display='none';
+      await entrarNoApp(session.user);
+    }
+  }, 1500);
+}
+
+function validarForcaSenha(senha){
+  const barras = [1,2,3,4].map(i=>document.getElementById('forca-'+i));
+  const label  = document.getElementById('forca-label');
+  let forca = 0;
+  if(senha.length>=8)              forca++;
+  if(/[A-Z]/.test(senha))          forca++;
+  if(/[0-9]/.test(senha))          forca++;
+  if(/[^A-Za-z0-9]/.test(senha))   forca++;
+  const cores  = ['#E24B4A','#EF9F27','#378ADD','#3B6D11'];
+  const labels = ['Fraca','Média','Boa','Forte'];
+  barras.forEach((b,i)=>{
+    if(b) b.style.background = i<forca ? cores[forca-1] : 'var(--border-tertiary)';
+  });
+  if(label) label.textContent = senha.length>0 ? labels[forca-1]||'' : '';
+}
+
+function toggleSenhaVisib(id){
+  const el = document.getElementById(id);
+  if(el) el.type = el.type==='password'?'text':'password';
 }
 
 function mostrarLogin(){
@@ -8993,6 +9208,42 @@ function toggleLoginSenha(){
   const el = document.getElementById('login-senha');
   if(el) el.type = el.type==='password'?'text':'password';
 }
+function mostrarRecuperarSenha(){
+  const email = document.getElementById('login-email')?.value?.trim();
+  document.getElementById('login-screen').style.display   = 'none';
+  document.getElementById('recuperar-screen').style.display = 'flex';
+  const el = document.getElementById('recuperar-email');
+  if(el && email) el.value = email; // pré-preencher se já digitou
+}
+
+function voltarParaLogin(){
+  document.getElementById('recuperar-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display     = 'flex';
+}
+
+async function enviarRecuperacaoSenha(){
+  const email  = document.getElementById('recuperar-email')?.value?.trim();
+  const erroEl = document.getElementById('recuperar-erro');
+  const okEl   = document.getElementById('recuperar-ok');
+  const btn    = document.getElementById('recuperar-btn');
+  if(erroEl) erroEl.style.display='none';
+  if(okEl)   okEl.style.display='none';
+  if(!email){ erroEl.textContent='Informe seu e-mail.'; erroEl.style.display='block'; return; }
+  if(btn){ btn.textContent='Enviando...'; btn.disabled=true; }
+  const {error} = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  if(btn){ btn.textContent='Enviar link de recuperação'; btn.disabled=false; }
+  if(error){
+    erroEl.textContent = 'Erro: '+error.message;
+    erroEl.style.display='block';
+  } else {
+    okEl.textContent = '✅ Link enviado! Verifique seu e-mail.';
+    okEl.style.display='block';
+    setTimeout(voltarParaLogin, 3000);
+  }
+}
+
 function fazerLogout(){ sb.auth.signOut(); }
 
 iniciarApp();
