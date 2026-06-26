@@ -908,27 +908,62 @@ tbody tr.clickable{cursor:pointer}
           <div class="stat-mini"><div class="stat-mini-label">Perdidos</div><div class="stat-mini-val" style="color:var(--danger)" id="crm-kpi-perdido">0</div></div>
         </div>
 
+        <!-- Filtros avançados CRM -->
+        <div style="background:var(--bg-secondary);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+            <div class="field" style="margin:0;min-width:130px">
+              <label style="font-size:10px">Status</label>
+              <select class="filter-select" id="crm-filtro-status" onchange="renderLeads()" style="font-size:11px;padding:5px 8px">
+                <option value="">Todos os status</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0;min-width:130px">
+              <label style="font-size:10px">Origem</label>
+              <select class="filter-select" id="crm-filtro-origem" onchange="renderLeads()" style="font-size:11px;padding:5px 8px">
+                <option value="">Todas as origens</option>
+                <option>Meta Ads</option><option>Google Ads</option><option>Indicação</option>
+                <option>Stand</option><option>WhatsApp</option><option>Site</option><option>Outros</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0;min-width:130px">
+              <label style="font-size:10px">Responsável</label>
+              <select class="filter-select" id="crm-filtro-corretor" onchange="renderLeads()" style="font-size:11px;padding:5px 8px">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0;min-width:120px">
+              <label style="font-size:10px">Temperatura</label>
+              <select class="filter-select" id="crm-filtro-temp" onchange="renderLeads()" style="font-size:11px;padding:5px 8px">
+                <option value="">Todas</option>
+                <option value="hot">🔥 Quente</option>
+                <option value="warm">🌤 Morno</option>
+                <option value="cold">❄️ Frio</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0;min-width:110px">
+              <label style="font-size:10px">Data inicial</label>
+              <input type="date" id="crm-filtro-dt-ini" onchange="renderLeads()" style="font-size:11px;padding:5px 8px;border:1px solid var(--border-secondary);border-radius:6px;background:var(--bg-primary);color:var(--text-primary)">
+            </div>
+            <div class="field" style="margin:0;min-width:110px">
+              <label style="font-size:10px">Data final</label>
+              <input type="date" id="crm-filtro-dt-fim" onchange="renderLeads()" style="font-size:11px;padding:5px 8px;border:1px solid var(--border-secondary);border-radius:6px;background:var(--bg-primary);color:var(--text-primary)">
+            </div>
+            <div class="field" style="margin:0;min-width:140px">
+              <label style="font-size:10px">Nome do lead</label>
+              <input type="text" id="crm-filtro-nome" oninput="renderLeads()" placeholder="Buscar..." style="font-size:11px;padding:5px 8px;border:1px solid var(--border-secondary);border-radius:6px;background:var(--bg-primary);color:var(--text-primary)">
+            </div>
+            <button class="btn btn-sm" onclick="limparFiltrosCRM()" style="font-size:10px;align-self:flex-end">✕ Limpar</button>
+          </div>
+        </div>
+
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-          <!-- Esquerda: filtro de status + visões -->
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select class="filter-select" id="crm-filtro-status" onchange="renderLeads()">
-              <option value="">Todos os status</option>
-              <option value="Novo">Novo</option>
-              <option value="Contato feito">Contato feito</option>
-              <option value="Visita realizada">Visita realizada</option>
-              <option value="Proposta enviada">Proposta enviada</option>
-              <option value="Contrato assinado">Contrato assinado</option>
-              <option value="Entrada paga">Entrada paga</option>
-              <option value="Perdido">Perdido</option>
-            </select>
-            <!-- filtro loteamento via menu lateral -->
+          <div style="display:flex;gap:8px;align-items:center">
             <div class="tabs" style="margin-bottom:0">
               <div class="tab active" id="crm-tab-tabela" onclick="setCrmVisao('tabela')">Tabela</div>
               <div class="tab" id="crm-tab-kanban" onclick="setCrmVisao('kanban')">Kanban</div>
               <div class="tab" id="crm-tab-calendario" onclick="setCrmVisao('calendario')">📅 Calendário</div>
             </div>
           </div>
-          <!-- Direita: configurar colunas + novo lead -->
           <div style="display:flex;gap:8px;align-items:center">
             <button class="btn btn-sm" onclick="abrirGestaoKanban()" style="font-size:11px">⚙ Configurar colunas</button>
             <button class="btn btn-primary btn-sm" onclick="abrirModalNovoLead()">+ Novo lead</button>
@@ -940,14 +975,14 @@ tbody tr.clickable{cursor:pointer}
           <div class="card">
             <table style="table-layout:fixed">
               <thead><tr>
-                <th style="width:35px">🌡</th>
+                <th style="width:75px">Temp.</th>
                 <th style="width:145px">Nome</th>
                 <th style="width:115px">Telefone</th>
                 <th style="width:75px">Origem</th>
                 <th style="width:115px">Loteamento</th>
                 <th style="width:110px">Corretor</th>
                 <th style="width:105px">Status</th>
-                <th style="width:65px">Ações</th>
+                <th style="width:90px">Ações</th>
               </tr></thead>
               <tbody id="crm-tbody"></tbody>
             </table>
@@ -1258,6 +1293,14 @@ tbody tr.clickable{cursor:pointer}
               <div class="field"><label>Valor do imóvel (R$)</label><input type="text" id="sim-valor" value="85.000,00" oninput="maskMoney(this);calcSim()"></div>
               <div class="field"><label>Desconto (%)</label><input type="text" id="sim-desconto" value="0,00" placeholder="0,00" oninput="maskDecimal(this);calcSim()"></div>
               <div class="field"><label>Entrada (R$)</label><input type="text" id="sim-entrada" value="8.500,00" oninput="maskMoney(this);calcSim()"></div>
+              <div class="field"><label>Parcelar entrada em</label>
+                <select id="sim-entrada-parc" onchange="calcSim()" style="font-size:12px">
+                  <option value="1">À vista (sem parcelar)</option>
+                  <option value="2">2x</option><option value="3">3x</option>
+                  <option value="6">6x</option><option value="12">12x</option>
+                  <option value="24">24x</option><option value="36">36x</option>
+                </select>
+              </div>
               <div class="field"><label>Prazo (meses)</label><input type="number" id="sim-prazo" value="48" min="6" max="240" oninput="calcSim()"></div>
               <div class="field"><label>Taxa de juros (% a.m.)</label><input type="text" id="sim-taxa" value="0,90" oninput="maskDecimal(this);calcSim()"></div>
               <div class="field" style="grid-column:1/-1"><label>Sistema de amortização</label>
@@ -1269,7 +1312,8 @@ tbody tr.clickable{cursor:pointer}
             </div>
             <div class="sim-result" id="sim-result">
               <div class="sim-row"><span class="sim-key">Valor financiado</span><span class="sim-val" id="sr-financiado">—</span></div>
-              <div class="sim-row"><span class="sim-key">Parcela</span><span class="sim-val" id="sr-parcela">—</span></div>
+              <div class="sim-row"><span class="sim-key">Parcela mensal</span><span class="sim-val" id="sr-parcela">—</span></div>
+              <div class="sim-row" id="sr-entrada-row" style="display:none"><span class="sim-key">Parcela entrada</span><span class="sim-val" id="sr-entrada-parc-val">—</span></div>
               <div class="sim-row"><span class="sim-key">Total pago</span><span class="sim-val" id="sr-total">—</span></div>
               <div class="sim-row"><span class="sim-key">Total de juros</span><span class="sim-val" id="sr-juros">—</span></div>
             </div>
@@ -3056,6 +3100,17 @@ function calcSim(){
   document.getElementById('sr-financiado').textContent=fmt(fin);
   document.getElementById('sr-total').textContent=fmt(total);
   document.getElementById('sr-juros').textContent=fmt(jurosT);
+  // Parcelamento da entrada
+  const nEntrada = parseInt(document.getElementById('sim-entrada-parc')?.value)||1;
+  const rowEntrada = document.getElementById('sr-entrada-row');
+  const valEntrada = document.getElementById('sr-entrada-parc-val');
+  if(nEntrada>1 && entrada>0){
+    const parcEntrada = entrada/nEntrada;
+    if(rowEntrada) rowEntrada.style.display='';
+    if(valEntrada) valEntrada.textContent=`${nEntrada}x ${fmt(parcEntrada)}`;
+  } else {
+    if(rowEntrada) rowEntrada.style.display='none';
+  }
   const tbody=document.getElementById('sim-tbody');
   let h='';
   parcelas.forEach((p,i)=>{
@@ -4642,45 +4697,73 @@ let editLeadId=null;
 function renderLeads(){
   const tbody=document.getElementById('crm-tbody');
   if(!tbody)return;
-  const fs=document.getElementById('crm-filtro-status')?.value||'';
-  const fl=document.getElementById('crm-filtro-lot')?.value||'';
-  // Filtro global de loteamento (menu lateral)
-  const globalAtivo=typeof globalLots!=='undefined'&&!globalLots.has('todos');
+
+  const fs   = document.getElementById('crm-filtro-status')?.value||'';
+  const fo   = document.getElementById('crm-filtro-origem')?.value||'';
+  const fc   = document.getElementById('crm-filtro-corretor')?.value||'';
+  const ft   = document.getElementById('crm-filtro-temp')?.value||'';
+  const fn   = (document.getElementById('crm-filtro-nome')?.value||'').toLowerCase();
+  const dIni = document.getElementById('crm-filtro-dt-ini')?.value||'';
+  const dFim = document.getElementById('crm-filtro-dt-fim')?.value||'';
+  const globalAtivo = typeof globalLots!=='undefined' && !globalLots.has('todos');
+
   const filtered=leads.filter(l=>{
     if(fs && l.status!==fs) return false;
-    if(fl && !(l.lote||'').includes(fl)) return false;
+    if(fo && l.origem!==fo) return false;
+    if(fc && l.corretor!==fc) return false;
+    if(ft && l.temperatura!==ft) return false;
+    if(fn && !l.nome.toLowerCase().includes(fn)) return false;
+    if(dIni && l.created_at && l.created_at < dIni) return false;
+    if(dFim && l.created_at && l.created_at > dFim+'T23:59') return false;
     if(globalAtivo){
-      const slugLote=typeof slugLoteamento==='function'?slugLoteamento(l.lote||''):'';
-      if(![...globalLots].some(s=>s===slugLote||s===slugLoteamento(l.lote||''))) return false;
+      const slugLote = typeof slugLoteamento==='function'?slugLoteamento(l.lote||''):'';
+      if(![...globalLots].some(s=>s===slugLote)) return false;
     }
     return true;
   });
+
+  const TEMP_LABEL = {hot:'🔥 Quente', warm:'🌤 Morno', cold:'❄️ Frio'};
+
   tbody.innerHTML=filtered.map(l=>{
-    const bc=STATUS_CRM_BADGE[l.status]||'badge-gray';
-    const tel = l.tel||'—';
+    const bc   = STATUS_CRM_BADGE[l.status]||'badge-gray';
+    const tel  = l.tel||'—';
     const lote = l.lote||'—';
-    // UUID precisa de aspas simples no onclick
     const idStr = String(l.id).replace(/'/g,"\\'");
-    const tempInfo = TEMP_CONFIG.find(t=>t.key===l.temperatura);
-    const tempHtml = tempInfo
-      ? `<span title="${tempInfo.label}" style="font-size:14px;cursor:pointer" onclick="setTemperaturaLead('${idStr}','${tempInfo.key==='hot'?'warm':tempInfo.key==='warm'?'cold':'hot'}')"> ${tempInfo.icon}</span>`
-      : `<span title="Definir temperatura" style="font-size:12px;color:var(--text-tertiary);cursor:pointer" onclick="setTemperaturaLead('${idStr}','hot')">·</span>`;
+    const tempLabel = TEMP_LABEL[l.temperatura]||'—';
+    const tempColor = l.temperatura==='hot'?'color:#E24B4A':l.temperatura==='warm'?'color:#EF9F27':l.temperatura==='cold'?'color:#378ADD':'color:var(--text-tertiary)';
     return `<tr>
-      <td style="text-align:center">${tempHtml}</td>
+      <td style="font-size:11px;font-weight:500;${tempColor};cursor:pointer;white-space:nowrap" onclick="ciclarTemperatura('${idStr}')" title="Clique para alterar">${tempLabel}</td>
       <td style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.nome}</td>
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tel}</td>
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.origem||'—'}</td>
       <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lote}</td>
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.corretor||'—'}</td>
       <td><span class="badge ${bc}" style="font-size:10px">${l.status}</span></td>
-      <td style="text-align:left;white-space:nowrap">
+      <td style="white-space:nowrap">
         <button class="btn btn-sm" style="font-size:10px" onclick="abrirEditLead('${idStr}')">Editar</button>
-        <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger);margin-left:4px" onclick="excluirLead('${idStr}',this.dataset.nome)" data-nome="${l.nome.replace(/"/g,'&quot;')}">✕</button>
+        <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger);margin-left:2px" onclick="excluirLead('${idStr}',this.dataset.nome)" data-nome="${l.nome.replace(/"/g,'&quot;')}">✕</button>
       </td>
     </tr>`;
   }).join('');
   atualizarKpisCRM();
   renderFunil();
+}
+
+function ciclarTemperatura(id){
+  const lead = leads.find(l=>String(l.id)===String(id));
+  if(!lead) return;
+  const ciclo = {null:'hot', hot:'warm', warm:'cold', cold:null};
+  const prox  = ciclo[lead.temperatura]||ciclo['null'];
+  setTemperaturaLead(id, prox);
+}
+
+function limparFiltrosCRM(){
+  ['crm-filtro-status','crm-filtro-origem','crm-filtro-corretor','crm-filtro-temp',
+   'crm-filtro-nome','crm-filtro-dt-ini','crm-filtro-dt-fim'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value='';
+  });
+  renderLeads();
 }
 
 function atualizarKpisCRM(){
@@ -8405,6 +8488,21 @@ async function carregarLeadsDB() {
   showLoading('Carregando leads...');
   const rows = await dbSelect('leads',{order:'created_at',asc:false});
   hideLoading();
+  // Popular filtros dinamicamente
+  const selStatus = document.getElementById('crm-filtro-status');
+  if(selStatus && selStatus.options.length <= 1){
+    const statusOpts = [...new Set(rows.map(r=>r.status).filter(Boolean))].sort();
+    KANBAN_COLUNAS.forEach(col=>{
+      if(![...selStatus.options].some(o=>o.value===col.key)){
+        const opt=document.createElement('option'); opt.value=col.key; opt.textContent=col.label; selStatus.appendChild(opt);
+      }
+    });
+  }
+  const selCor = document.getElementById('crm-filtro-corretor');
+  if(selCor && selCor.options.length <= 1){
+    const cors = [...new Set(rows.map(r=>r.corretor).filter(Boolean))].sort();
+    cors.forEach(n=>{ const opt=document.createElement('option'); opt.value=n; opt.textContent=n; selCor.appendChild(opt); });
+  }
   leads = rows.map(r => {
     // Carregar etapas do JSON (novo formato) ou das colunas booleanas (compatibilidade)
     let etapas = {};
