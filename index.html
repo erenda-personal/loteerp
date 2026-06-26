@@ -430,7 +430,7 @@ tbody tr.clickable{cursor:pointer}
         </div>
         <div class="card">
           <table style="table-layout:fixed;width:100%">
-            <thead><tr><th style="width:180px">Nome</th><th style="width:120px">Fase</th><th style="width:150px">Cidade / UF</th><th style="width:80px">Lotes</th><th style="width:110px">VGV</th><th style="width:110px">Lançamento</th><th style="width:90px">Status</th><th style="width:120px">Ações</th></tr></thead>
+            <thead><tr><th style="width:160px">Nome</th><th style="width:90px">Fase</th><th style="width:130px">Cidade / UF</th><th style="width:60px">Lotes</th><th style="width:100px">VGV</th><th style="width:90px">Início obra</th><th style="width:75px">Andamento</th><th style="width:80px">Status</th><th style="width:100px">Ações</th></tr></thead>
             <tbody id="tbody-loteamentos"></tbody>
           </table>
         </div>
@@ -583,7 +583,7 @@ tbody tr.clickable{cursor:pointer}
         </div>
         <div class="card">
           <table>
-            <thead><tr><th>Nome</th><th style="width:130px">CPF</th><th style="width:130px">Telefone</th><th style="width:100px">Cidade</th><th style="width:80px">Estado</th><th style="width:80px">Ações</th></tr></thead>
+            <thead><tr><th style="width:150px">Nome</th><th style="width:120px">CPF</th><th style="width:120px">Telefone</th><th style="width:90px">Cidade</th><th style="width:40px">UF</th><th style="width:80px;white-space:nowrap">Status</th><th style="width:70px">Ações</th></tr></thead>
             <tbody id="tbody-clientes"></tbody>
           </table>
         </div>
@@ -940,13 +940,14 @@ tbody tr.clickable{cursor:pointer}
           <div class="card">
             <table style="table-layout:fixed">
               <thead><tr>
-                <th style="width:150px">Nome</th>
-                <th style="width:120px">Telefone</th>
-                <th style="width:80px">Origem</th>
-                <th style="width:120px">Loteamento</th>
-                <th style="width:120px">Corretor</th>
-                <th style="width:110px">Status</th>
-                <th style="width:70px">Ações</th>
+                <th style="width:35px">🌡</th>
+                <th style="width:145px">Nome</th>
+                <th style="width:115px">Telefone</th>
+                <th style="width:75px">Origem</th>
+                <th style="width:115px">Loteamento</th>
+                <th style="width:110px">Corretor</th>
+                <th style="width:105px">Status</th>
+                <th style="width:65px">Ações</th>
               </tr></thead>
               <tbody id="crm-tbody"></tbody>
             </table>
@@ -1237,8 +1238,25 @@ tbody tr.clickable{cursor:pointer}
         <div class="grid2">
           <div class="card" style="padding:16px">
             <div class="detail-label" style="margin-bottom:14px">Parâmetros da simulação</div>
+            <!-- Seletor de lote -->
+            <div style="background:var(--bg-secondary);border-radius:8px;padding:10px 12px;margin-bottom:12px">
+              <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Buscar por lote (opcional)</div>
+              <div class="form-row col2" style="margin-bottom:0">
+                <div class="field" style="margin-bottom:8px"><label>Loteamento</label>
+                  <select id="sim-lot-nome" onchange="simCarregarLotes()">
+                    <option value="">— Selecione —</option>
+                  </select>
+                </div>
+                <div class="field" style="margin-bottom:8px"><label>Código do lote</label>
+                  <select id="sim-lot-cod" onchange="simPreencherValorLote()">
+                    <option value="">— Selecione —</option>
+                  </select>
+                </div>
+              </div>
+            </div>
             <div class="form-grid" style="padding:0">
               <div class="field"><label>Valor do imóvel (R$)</label><input type="text" id="sim-valor" value="85.000,00" oninput="maskMoney(this);calcSim()"></div>
+              <div class="field"><label>Desconto (%)</label><input type="text" id="sim-desconto" value="0,00" placeholder="0,00" oninput="maskDecimal(this);calcSim()"></div>
               <div class="field"><label>Entrada (R$)</label><input type="text" id="sim-entrada" value="8.500,00" oninput="maskMoney(this);calcSim()"></div>
               <div class="field"><label>Prazo (meses)</label><input type="number" id="sim-prazo" value="48" min="6" max="240" oninput="calcSim()"></div>
               <div class="field"><label>Taxa de juros (% a.m.)</label><input type="text" id="sim-taxa" value="0,90" oninput="maskDecimal(this);calcSim()"></div>
@@ -2379,10 +2397,10 @@ tbody tr.clickable{cursor:pointer}
             <label>Loteamento destino</label>
             <select id="import-loteamento"><option value="">— Selecione —</option></select>
           </div>
-          <div id="import-drop" onclick="document.getElementById('import-file').click()" style="border:2px dashed var(--border-secondary);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:border .15s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border-secondary)'">
-            <div style="font-size:28px;margin-bottom:8px">📎</div>
-            <div style="font-size:13px;font-weight:600;color:var(--text-primary)">Clique para selecionar o arquivo</div>
-            <div style="font-size:11px;color:var(--text-secondary);margin-top:3px">ou arraste aqui</div>
+          <div id="import-drop" onclick="document.getElementById('import-file').click()" style="border:2px dashed var(--border-secondary);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:all .15s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor=document.getElementById('import-file').value?'var(--success)':'var(--border-secondary)'">
+            <div id="import-drop-icon" style="font-size:28px;margin-bottom:8px">📎</div>
+            <div id="import-drop-text" style="font-size:13px;font-weight:600;color:var(--text-primary)">Clique para selecionar o arquivo</div>
+            <div id="import-drop-sub" style="font-size:11px;color:var(--text-secondary);margin-top:3px">ou arraste aqui · CSV, Excel</div>
             <input type="file" id="import-file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleImportFile(this)">
           </div>
           <div id="import-preview" style="margin-top:12px;display:none">
@@ -2653,7 +2671,7 @@ function showPage(id, navEl){
     });
   }
   if(id==='inadimplencia') renderInadimplencia();
-  if(id==='simulador') calcSim();
+  if(id==='simulador'){ calcSim(); initSimulador(); }
   if(id==='configuracoes') renderConfiguracoes();
   if(typeof initPageDB==='function') initPageDB(id);
 
@@ -2977,8 +2995,44 @@ function parseMoney(id){
   const v=(document.getElementById(id)?.value||'0').replace(/\./g,'').replace(',','.');
   return parseFloat(v)||0;
 }
+// ── Simulador — busca por lote ────────────────────────────────
+async function initSimulador(){
+  const sel = document.getElementById('sim-lot-nome');
+  if(!sel||sel.options.length>1) return;
+  const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+  sel.innerHTML = '<option value="">— Selecione —</option>' +
+    lots.map(r=>`<option value="${r.id}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+}
+
+async function simCarregarLotes(){
+  const lotId = document.getElementById('sim-lot-nome')?.value;
+  const sel   = document.getElementById('sim-lot-cod');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">— Selecione —</option>';
+  if(!lotId) return;
+  const lotes = await dbSelect('lotes',{
+    filter:[['loteamento_id','eq',lotId],['status','eq','Disponível']],
+    order:'quadra',asc:true
+  });
+  const ordenados = ordenarLotes(lotes,{[lotId]:''});
+  sel.innerHTML = '<option value="">— Selecione —</option>' +
+    ordenados.map(r=>`<option value="${r.valor_tabela||0}">${r.quadra}-${(r.numero||'').padStart(2,'0')} · ${r.area_m2||'—'}m² · R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</option>`).join('');
+}
+
+function simPreencherValorLote(){
+  const val = parseFloat(document.getElementById('sim-lot-cod')?.value)||0;
+  if(!val) return;
+  const valEl = document.getElementById('sim-valor');
+  if(valEl){
+    valEl.value = val.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    calcSim();
+  }
+}
+
 function calcSim(){
-  const pv=parseMoney('sim-valor');
+  let pv=parseMoney('sim-valor');
+  const desc = parseFloat((document.getElementById('sim-desconto')?.value||'0').replace(',','.'))||0;
+  if(desc>0 && desc<100) pv = pv*(1-desc/100);
   const entrada=parseMoney('sim-entrada');
   const n=parseInt(document.getElementById('sim-prazo').value)||1;
   const taxaRaw=(document.getElementById('sim-taxa')?.value||'0').replace(',','.');
@@ -4607,7 +4661,12 @@ function renderLeads(){
     const lote = l.lote||'—';
     // UUID precisa de aspas simples no onclick
     const idStr = String(l.id).replace(/'/g,"\\'");
+    const tempInfo = TEMP_CONFIG.find(t=>t.key===l.temperatura);
+    const tempHtml = tempInfo
+      ? `<span title="${tempInfo.label}" style="font-size:14px;cursor:pointer" onclick="setTemperaturaLead('${idStr}','${tempInfo.key==='hot'?'warm':tempInfo.key==='warm'?'cold':'hot'}')"> ${tempInfo.icon}</span>`
+      : `<span title="Definir temperatura" style="font-size:12px;color:var(--text-tertiary);cursor:pointer" onclick="setTemperaturaLead('${idStr}','hot')">·</span>`;
     return `<tr>
+      <td style="text-align:center">${tempHtml}</td>
       <td style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.nome}</td>
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tel}</td>
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.origem||'—'}</td>
@@ -4965,6 +5024,15 @@ function handleImportFile(input){
   const file = input.files[0];
   if(!file) return;
   _importRows = [];
+  // Feedback visual imediato na área de drop
+  const drop = document.getElementById('import-drop');
+  const icon = document.getElementById('import-drop-icon');
+  const text = document.getElementById('import-drop-text');
+  const sub  = document.getElementById('import-drop-sub');
+  if(drop){ drop.style.borderColor='var(--success)'; drop.style.background='var(--success-bg)'; }
+  if(icon) icon.textContent = '✅';
+  if(text){ text.textContent = file.name; text.style.color='var(--success)'; }
+  if(sub)  sub.textContent  = (file.size/1024).toFixed(1)+' KB · processando...';
   const prev  = document.getElementById('import-preview');
   const msg   = document.getElementById('import-msg');
   const table = document.getElementById('import-table');
@@ -5007,7 +5075,8 @@ function handleImportFile(input){
     }
 
     if(prev) prev.style.display='block';
-    if(msg)  msg.textContent=`✓ "${file.name}" — ${_importRows.length} lotes identificados. Prévia (primeiras 3):`;
+    if(msg)  msg.textContent=`✓ ${_importRows.length} lotes identificados. Prévia:`;
+    if(sub)  sub.textContent=`${(file.size/1024).toFixed(1)} KB · ${_importRows.length} linhas prontas para importar`;
 
     // Renderizar prévia
     const preview = _importRows.slice(0,3);
@@ -5733,7 +5802,7 @@ function renderGestaoKanban(){
       <div style="width:14px;height:14px;border-radius:50%;background:${col.color};flex-shrink:0"></div>
       <input value="${col.label}" oninput="KANBAN_COLUNAS[${i}].label=this.value;KANBAN_COLUNAS[${i}].key=this.value"
         style="flex:1;font-size:12px;padding:4px 8px;border-radius:6px;border:0.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-primary)">
-      <input type="color" value="${col.color}" oninput="KANBAN_COLUNAS[${i}].color=this.value;renderGestaoKanban()"
+      <input type="color" value="${col.color}" oninput="KANBAN_COLUNAS[${i}].color=this.value" onchange="atualizarCorKanban(${i},this.value)"
         style="width:28px;height:28px;padding:2px;border-radius:6px;border:0.5px solid var(--border-secondary);cursor:pointer;background:var(--bg-primary)">
       ${KANBAN_COLUNAS.length>1?`<button onclick="excluirColunaKanban(${i})"
         style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:14px;padding:2px 4px" title="Excluir coluna">✕</button>`:''}
@@ -5747,6 +5816,30 @@ function kcDrop(toIdx){
   KANBAN_COLUNAS.splice(toIdx,0,moved);
   kcDragIdx=null;
   renderGestaoKanban();
+}
+
+function atualizarCorKanban(i, color){
+  KANBAN_COLUNAS[i].color = color;
+  // Atualizar apenas o círculo de cor sem re-renderizar o modal inteiro
+  const row = document.getElementById('kcol-'+i);
+  if(row){
+    const circulo = row.querySelector('div[style*="border-radius:50%"]');
+    if(circulo) circulo.style.background = color;
+  }
+}
+
+// ── Temperatura de leads ──────────────────────────────────────
+const TEMP_CONFIG = [
+  {key:'hot',   label:'Quente', icon:'🔥', color:'#E24B4A'},
+  {key:'warm',  label:'Morno',  icon:'🌤', color:'#EF9F27'},
+  {key:'cold',  label:'Frio',   icon:'❄️', color:'#378ADD'},
+];
+
+async function setTemperaturaLead(leadId, temp){
+  await dbUpdate('leads', leadId, {temperatura: temp});
+  const lead = leads.find(l=>String(l.id)===String(leadId));
+  if(lead) lead.temperatura = temp;
+  renderLeads();
 }
 
 function adicionarColunaKanban(){
@@ -7831,13 +7924,17 @@ async function excluirLotesSelecionados(){
 // ── LOTEAMENTOS ──────────────────────────────────────────────
 async function carregarLoteamentos() {
   showLoading('Carregando loteamentos...');
-  const [rows, lotesRows] = await Promise.all([
+  const [rows, lotesRows, obrasRows] = await Promise.all([
     dbSelect('loteamentos', {order:'nome', asc:true}),
-    dbSelect('lotes', {select:'loteamento_id,valor_tabela,status'})
+    dbSelect('lotes', {select:'loteamento_id,valor_tabela,status'}),
+    dbSelect('obras', {select:'loteamento_nome,data_inicio,percentual_fisico,status'})
   ]);
   hideLoading();
   // Calcular VGV e contagem por loteamento
   const vgvMap = {}, countMap = {};
+  // Agrupar obras por loteamento
+  const obrasMap = {};
+  obrasRows.forEach(o=>{ const nom=(o.loteamento_nome||'').toLowerCase(); if(!obrasMap[nom]||o.status==='Em andamento') obrasMap[nom]=o; });
   lotesRows.forEach(l=>{
     const lid = l.loteamento_id;
     if(!vgvMap[lid]){ vgvMap[lid]=0; countMap[lid]=0; }
@@ -7854,13 +7951,19 @@ async function carregarLoteamentos() {
     const nomeSafe = (r.nome||'').replace(/'/g,"\'");
     const qtd = countMap[r.id]||0;
     const vgv = fmtVgv(vgvMap[r.id]||0);
+    const obra = obrasMap[(r.nome||'').toLowerCase()];
+    const dataInicio = obra?.data_inicio ? new Date(obra.data_inicio+'T12:00').toLocaleDateString('pt-BR',{month:'2-digit',year:'2-digit'}) : '—';
+    const pct = obra?.percentual_fisico??null;
+    const pctCor = pct===null?'var(--text-secondary)':pct>=80?'var(--success)':pct>=40?'var(--warning)':'var(--danger)';
+    const pctHtml = pct!==null ? `<span style="font-weight:600;color:${pctCor}">${pct}%</span>` : '—';
     return `<tr class="clickable" onclick="showPage('lotes',null)">
       <td style="font-weight:600;color:var(--accent)">${r.nome}</td>
       <td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">${r.fase||'—'}</span></td>
       <td>${r.cidade||''} / ${r.estado||''}</td>
       <td>${qtd} lote${qtd!==1?'s':''}</td>
       <td>${vgv}</td>
-      <td>${r.data_lancamento||'—'}</td>
+      <td style="font-size:11px;color:var(--text-secondary)">${dataInicio}</td>
+      <td style="text-align:center">${pctHtml}</td>
       <td><span class="badge ${badgeCls[r.status]||'badge-gray'}">${r.status||'Ativo'}</span></td>
       <td style="white-space:nowrap">
         <button class="btn btn-sm" style="font-size:10px" onclick="event.stopPropagation();editarFaseLoteamento(this,'${nomeSafe}')">✏️</button>
@@ -7928,7 +8031,8 @@ async function carregarClientes() {
     <td style="color:var(--text-secondary);font-size:11px">${r.cpf||'—'}</td>
     <td style="color:var(--text-secondary);font-size:11px">${r.celular||'—'}</td>
     <td style="color:var(--text-secondary);font-size:11px">${r.cidade||'—'}</td>
-    <td><span class="badge badge-green">Adimplente</span></td>
+    <td style="color:var(--text-secondary);font-size:11px;text-align:center">${r.estado||'—'}</td>
+    <td><span class="badge badge-green" style="white-space:nowrap">Adimplente</span></td>
     <td>
       <button class="btn btn-sm" style="font-size:10px" onclick="abrirEditarCliente('${idStr}')">✏️</button>
       <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger);margin-left:4px" onclick="excluirCliente('${idStr}','${nomeEsc}')">✕</button>
