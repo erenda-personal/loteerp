@@ -4694,7 +4694,7 @@ async function reenviarConvite(id, email){
   const sbAdmin = getAdminClient();
   if(!sbAdmin){hideLoading();return;}
   const {error} = await sbAdmin.auth.admin.inviteUserByEmail(email,{
-    options:{emailRedirectTo:window.location.origin}
+    options:{emailRedirectTo: window.location.origin + window.location.pathname}
   });
   await dbUpdate('usuarios', id, {status_convite: error?'Erro ao enviar':'Convite enviado'});
   hideLoading();
@@ -4816,16 +4816,37 @@ async function adicionarUsuario(){
 
   const {data:inv, error:invErr} = await sbAdmin.auth.admin.inviteUserByEmail(email, {
     data: { full_name: nome },
-    options: { emailRedirectTo: window.location.origin }
+    options: { emailRedirectTo: window.location.origin + window.location.pathname }
   });
 
-  // Registrar na tabela imediatamente com status "Convite enviado"
+  // Usuário já existe no Auth — buscar UUID real e adicionar à tabela
+  if(invErr && invErr.message.toLowerCase().includes('already been registered')){
+    // Listar usuários e achar pelo e-mail
+    const {data: listData} = await sbAdmin.auth.admin.listUsers();
+    const userExistente = listData?.users?.find(u=>u.email===email);
+    const userId = userExistente?.id || null;
+    const row = {
+      ...(userId ? {id: userId} : {}),
+      email, nome, perfil,
+      status_convite: 'Ativo (já cadastrado)',
+      ativo: true
+    };
+    await dbUpsert('usuarios', row, userId ? 'id' : 'email');
+    hideLoading();
+    document.getElementById('form-novo-usuario').style.display='none';
+    ['nu-nome','nu-email'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    carregarUsuarios();
+    showToast(`✅ Usuário ${nome} adicionado com perfil ${perfil}. Ele já tem acesso com a senha existente.`);
+    return;
+  }
+
+  // Novo usuário — registrar na tabela com status convite
   const userId = inv?.user?.id || null;
   const row = {
     ...(userId ? {id: userId} : {}),
     email, nome, perfil,
     status_convite: invErr ? 'Erro ao enviar' : 'Convite enviado',
-    ativo: false  // false até aceitar o convite
+    ativo: false
   };
   await dbUpsert('usuarios', row, userId ? 'id' : 'email');
 
@@ -4836,6 +4857,7 @@ async function adicionarUsuario(){
   } else {
     document.getElementById('form-novo-usuario').style.display='none';
     ['nu-nome','nu-email'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    carregarUsuarios();
     showToast(`✉️ Convite enviado para ${email}! O usuário receberá o e-mail para criar a senha.`);
   }
   carregarUsuarios();
