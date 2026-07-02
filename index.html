@@ -9183,27 +9183,52 @@ function mostrarLogin(){
 }
 
 async function entrarNoApp(user){
-  const rows = await dbSelect('usuarios',{filter:[['id','eq',user.id]]});
-  const u    = rows[0];
+  let rows = await dbSelect('usuarios',{filter:[['id','eq',user.id]]});
+
+  // Se não encontrou por ID, tentar pelo email (usuário criado direto no Supabase)
+  if(!rows.length){
+    rows = await dbSelect('usuarios',{filter:[['email','eq',user.email]]});
+    if(rows.length){
+      // Atualizar o ID correto no registro existente
+      await dbUpdate('usuarios', rows[0].id, {id: user.id});
+    } else {
+      // Criar registro automaticamente para usuários criados direto no Supabase
+      await dbInsert('usuarios',{
+        id:             user.id,
+        nome:           user.user_metadata?.full_name || user.email.split('@')[0],
+        email:          user.email,
+        perfil:         'Leitura',
+        ativo:          true,
+        status_convite: 'Ativo'
+      });
+      rows = await dbSelect('usuarios',{filter:[['id','eq',user.id]]});
+    }
+  }
+
+  const u = rows[0];
   if(!u || u.ativo===false){
     await sb.auth.signOut();
     mostrarErroLogin('Seu acesso foi revogado. Fale com o administrador.');
     return;
   }
   _usuarioLogado = u;
-  // Atualizar topbar
+
+  // Atualizar topbar com os dados do usuário logado
   const nomeEl = document.querySelector('.topbar-user-name');
   const roleEl = document.querySelector('.topbar-user-role');
   const avEl   = document.querySelector('.topbar-avatar');
   if(nomeEl) nomeEl.textContent = u.nome||user.email;
   if(roleEl) roleEl.textContent = u.perfil||'Usuário';
   if(avEl)   avEl.textContent   = (u.nome||user.email).split(' ').slice(0,2).map(n=>n[0]||'').join('').toUpperCase();
+
   // Registrar acesso
   dbUpdate('usuarios', u.id, {ultimo_acesso: new Date().toISOString()}).catch(()=>{});
+
   // Mostrar app
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app-main').style.display='';
-  // Inicializar
+
+  // Inicializar dados
   if(typeof carregarFiltroLoteamentos==='function') carregarFiltroLoteamentos();
   if(typeof initFromURL==='function') initFromURL();
   else if(typeof initPageDB==='function') initPageDB('loteamentos');
