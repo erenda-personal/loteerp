@@ -566,7 +566,7 @@ tbody tr.clickable{cursor:pointer}
         </div>
         <div class="grid2">
           <div class="card">
-            <div class="card-header"><span class="section-title" id="dash-vendas-lot-titulo">Vendas por loteamento — últimos 6 meses</span></div>
+            <div class="card-header"><span class="section-title" id="dash-vendas-lot-titulo">Vendas por mês — últimos 12 meses</span></div>
             <div class="chart-area" style="padding:8px 0">
               <canvas id="dash-vendas-lot-chart" height="140" style="width:100%"></canvas>
               <div id="dash-vendas-lot-empty" style="display:none;text-align:center;color:var(--text-secondary);font-size:12px;padding:24px 0">Nenhuma venda registrada.</div>
@@ -593,8 +593,8 @@ tbody tr.clickable{cursor:pointer}
                 <div class="legend-item"><div class="legend-dot" style="background:#97C459"></div>Disponível<span class="legend-val" id="dl-disp">0</span></div>
                 <div class="legend-item"><div class="legend-dot" style="background:#378ADD"></div>Vendido<span class="legend-val" id="dl-vend">0</span></div>
                 <div class="legend-item"><div class="legend-dot" style="background:#EF9F27"></div>Reservado<span class="legend-val" id="dl-res">0</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#E24B4A"></div>Inadimplente<span class="legend-val" id="dl-inad">0</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#B4B2A9"></div>Distratado<span class="legend-val" id="dl-dist">0</span></div>
+                <span id="dl-inad" style="display:none">0</span>
+                <span id="dl-dist" style="display:none">0</span>
               </div>
             </div>
           </div>
@@ -775,7 +775,7 @@ tbody tr.clickable{cursor:pointer}
         </div>
         <div class="card">
           <table>
-            <thead><tr><th style="width:150px">Nome</th><th style="width:120px">CPF</th><th style="width:120px">Telefone</th><th style="width:90px">Cidade</th><th style="width:40px">UF</th><th style="width:80px;white-space:nowrap">Status</th><th style="width:70px">Ações</th></tr></thead>
+            <thead><tr><th style="width:150px">Nome</th><th style="width:120px">CPF</th><th style="width:120px">Telefone</th><th style="width:90px">Cidade</th><th style="width:40px">UF</th><th style="width:70px">Ações</th></tr></thead>
             <tbody id="tbody-clientes"></tbody>
           </table>
         </div>
@@ -2621,7 +2621,11 @@ tbody tr.clickable{cursor:pointer}
             <button class="modal-close" onclick="closeModal('modal-import-lotes')">✕</button>
           </div>
           <div style="padding:14px;background:var(--bg-secondary);border-radius:8px;margin-bottom:14px;font-size:12px;color:var(--text-secondary)">
-            O arquivo deve conter as colunas: <strong>quadra, numero, area, valor_tabela, status</strong><br>
+            O arquivo deve conter as colunas: <strong>quadra, numero, area, valor_tabela, status, data_venda</strong><br>
+            <span style="font-size:11px;color:var(--text-secondary)">data_venda: formato dd/mm/aaaa — deixe em branco se o lote não foi vendido</span><br>
+            <a onclick="baixarCSVPadrao()" style="font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline;display:inline-flex;align-items:center;gap:4px;margin-top:4px">
+              ⬇ Baixar arquivo CSV padrão
+            </a>
             Formatos aceitos: <strong>.xlsx, .xls, .csv</strong>
           </div>
           <div class="field" style="margin-bottom:12px">
@@ -3854,6 +3858,23 @@ function resetLogo(){
   showToast('Logo removido.');
 }
 // ── Popular selects do modal de lead com dados reais ─────────
+function baixarCSVPadrao(){
+  const linhas = [
+    'quadra;numero;area;valor_tabela;status;data_venda',
+    'A;01;300,00;85000,00;Disponível;',
+    'A;02;280,50;79000,00;Vendido;15/03/2024',
+    'B;01;320,00;92000,00;Reservado;',
+    'B;02;250,00;72000,00;Disponível;',
+  ];
+  const blob = new Blob(['\uFEFF'+linhas.join('\r\n')], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'modelo_importacao_lotes.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 async function abrirModalImportCSV(){
   openModal('modal-import-lotes');
   const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
@@ -5401,20 +5422,36 @@ function handleImportFile(input){
       area:         headers.findIndex(h=>h==='area'||h==='area_m2'||h==='m2'),
       valor:        headers.findIndex(h=>h.includes('valor')||h.includes('preco')||h.includes('price')),
       status:       headers.findIndex(h=>h==='status'||h==='situacao'),
+      data_venda:   headers.findIndex(h=>h.includes('data_venda')||h.includes('venda')||h==='dt_entrada'||h==='data_entrada'),
       testada:      headers.findIndex(h=>h.includes('testada')),
       profundidade: headers.findIndex(h=>h.includes('prof')),
+    };
+
+    // Função para parsear data BR (dd/mm/aaaa → aaaa-mm-dd)
+    const parseDataBR = str => {
+      if(!str) return null;
+      str = str.trim();
+      if(!str) return null;
+      // Formato dd/mm/aaaa
+      const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+      // Formato aaaa-mm-dd (já correto)
+      if(/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+      return null;
     };
 
     _importRows = [];
     for(let i=1; i<lines.length; i++){
       const cols = lines[i].split(sep).map(c=>c.trim().replace(/^"|"$/g,''));
       if(cols.every(c=>!c)) continue; // pular linhas vazias
+      const dataVenda = idx.data_venda>=0 ? parseDataBR(cols[idx.data_venda]) : null;
       _importRows.push({
         quadra:       idx.quadra>=0      ? (cols[idx.quadra]?.trim()||'') : '',
         numero:       idx.numero>=0      ? cols[idx.numero]||String(i) : String(i),
         area_m2:      idx.area>=0        ? parseFloat((cols[idx.area]||'').replace(/\./g,'').replace(',','.'))||null : null,
         valor_tabela: idx.valor>=0       ? parseFloat(cols[idx.valor].replace(/\./g,'').replace(',','.'))||0 : 0,
         status:       idx.status>=0      ? cols[idx.status]||'Disponível' : 'Disponível',
+        dt_entrada:   dataVenda,
         testada_m:    idx.testada>=0     ? parseFloat((cols[idx.testada]||'').replace(/\./g,'').replace(',','.'))||null : null,
         profundidade_m: idx.profundidade>=0 ? parseFloat((cols[idx.profundidade]||'').replace(/\./g,'').replace(',','.'))||null : null,
       });
@@ -5433,6 +5470,7 @@ function handleImportFile(input){
         <th style="padding:5px 8px;font-size:11px">Área (m²)</th>
         <th style="padding:5px 8px;font-size:11px">Valor (R$)</th>
         <th style="padding:5px 8px;font-size:11px">Status</th>
+        <th style="padding:5px 8px;font-size:11px">Data venda</th>
       </tr></thead>
       <tbody>${preview.map(r=>`<tr>
         <td style="padding:4px 8px;font-size:11px">${r.quadra}</td>
@@ -5440,6 +5478,7 @@ function handleImportFile(input){
         <td style="padding:4px 8px;font-size:11px">${r.area_m2||'—'}</td>
         <td style="padding:4px 8px;font-size:11px">R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</td>
         <td style="padding:4px 8px;font-size:11px">${r.status}</td>
+        <td style="padding:4px 8px;font-size:11px;color:${r.dt_entrada?'var(--success)':'var(--text-tertiary)'}">${r.dt_entrada ? new Date(r.dt_entrada+'T12:00').toLocaleDateString('pt-BR') : '—'}</td>
       </tr>`).join('')}</tbody>`;
   };
   reader.readAsText(file, 'UTF-8');
@@ -6494,21 +6533,57 @@ function renderCalSemana(container){
 function renderKanban(){
   const board=document.getElementById('crm-kanban-board');
   if(!board)return;
-  const fl=document.getElementById('crm-filtro-lot')?.value||'';
-  const filtered=leads.filter(l=>!fl||l.lote.includes(fl));
+  const globalAtivo = typeof globalLots!=='undefined' && !globalLots.has('todos');
+  const filtered=leads.filter(l=>{
+    if(globalAtivo){
+      const slug=typeof slugLoteamento==='function'?slugLoteamento(l.lote||''):'';
+      if(![...globalLots].some(s=>s===slug)) return false;
+    }
+    return true;
+  });
+
+  const hoje = new Date();
+  const diasDesde = dateStr => {
+    if(!dateStr) return null;
+    const d = new Date(dateStr.substring(0,10)+'T12:00');
+    return Math.floor((hoje-d)/(1000*60*60*24));
+  };
+  const TEMP_COR = {hot:'#E24B4A', warm:'#EF9F27', cold:'#378ADD'};
+  const TEMP_LABEL = {hot:'Quente', warm:'Morno', cold:'Frio'};
+
   board.innerHTML=KANBAN_COLUNAS.map(col=>{
     const colLeads=filtered.filter(l=>l.status===col.key);
-    const cards=colLeads.map(l=>`
+    const cards=colLeads.map(l=>{
+      const diasCriado = diasDesde(l.created_at);
+      const tempCor   = TEMP_COR[l.temperatura]||null;
+      const tempLabel = TEMP_LABEL[l.temperatura]||'';
+      const dataCriado = l.created_at ? new Date(l.created_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '—';
+      return `
       <div class="kanban-card" draggable="true"
         ondragstart="dragLeadId='${l.id}';event.dataTransfer.effectAllowed='move'"
         onclick="abrirEditLead('${l.id}')">
-        <div class="kanban-card-name">${l.nome}</div>
-        <div class="kanban-card-sub">${l.lote}</div>
-        <div class="kanban-card-sub" style="margin-bottom:4px">${l.origem}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:2px">
-          ${CRM_ETAPAS.filter(e=>l.etapas[e.key]).map(e=>`<span title="${e.label}" style="font-size:13px">${e.icon}</span>`).join('')}
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
+          <div class="kanban-card-name" style="flex:1;margin-right:6px">${l.nome}</div>
+          ${tempCor ? `<span title="Temperatura: ${tempLabel}"
+            style="width:9px;height:9px;border-radius:50%;background:${tempCor};flex-shrink:0;margin-top:3px;box-shadow:0 0 0 2px ${tempCor}33"></span>` : ''}
         </div>
-      </div>`).join('');
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <div style="font-size:10px;color:var(--text-secondary)">
+            <span style="color:var(--text-tertiary)">Fonte:</span> ${l.origem||'—'}
+          </div>
+          <div style="font-size:10px;color:var(--text-secondary)">
+            <span style="color:var(--text-tertiary)">Responsável:</span> ${l.corretor||'—'}
+          </div>
+          <div style="font-size:10px;color:var(--text-secondary)">
+            <span style="color:var(--text-tertiary)">Loteamento:</span> ${l.lote||'—'}
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:7px;padding-top:6px;border-top:0.5px solid var(--border-tertiary)">
+          <span style="font-size:10px;color:var(--text-tertiary)">📅 ${dataCriado}</span>
+          ${diasCriado!==null ? `<span style="font-size:10px;color:var(--text-tertiary)">${diasCriado}d</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
     return `<div class="kanban-col"
       ondragover="event.preventDefault();this.style.outline='2px dashed var(--accent)'"
       ondragleave="this.style.outline=''"
@@ -6579,6 +6654,82 @@ const dashDados={
 // ── Gráfico: Vendas por loteamento por mês ────────────────────
 let _vendasChart = null;
 
+// ── Busca real de status dos lotes para o dashboard ──────────
+async function carregarStatusLotesDashboard(filtroKey){
+  // Montar filtro de loteamento_id se houver filtro ativo
+  const isAll = !filtroKey || filtroKey==='todos' || globalLots.has('todos');
+  let rows;
+  if(isAll){
+    rows = await dbSelect('lotes',{select:'status'});
+  } else {
+    // Buscar IDs dos loteamentos selecionados
+    const lotRows = await dbSelect('loteamentos',{select:'id,nome'});
+    const ids = lotRows
+      .filter(r=>globalLots.has(slugLoteamento(r.nome)))
+      .map(r=>r.id);
+    if(!ids.length){ rows=[]; }
+    else {
+      // Buscar lotes de cada loteamento selecionado
+      rows=[];
+      for(const id of ids){
+        const r = await dbSelect('lotes',{select:'status',filter:[['loteamento_id','eq',id]]});
+        rows=rows.concat(r);
+      }
+    }
+  }
+
+  // Contar por status
+  const contagem={disp:0,vend:0,res:0,inad:0,dist:0,quit:0};
+  rows.forEach(r=>{
+    const st=r.status||'';
+    if(st==='Disponível')   contagem.disp++;
+    else if(st==='Vendido') contagem.vend++;
+    else if(st==='Reservado') contagem.res++;
+    else if(st==='Inadimplente') contagem.inad++;
+    else if(st==='Distratado')   contagem.dist++;
+    else if(st==='Quitado')      contagem.quit++;
+  });
+
+  const total = rows.length || 1;
+
+  // Atualizar o donut
+  const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  s('dash-donut-total', rows.length);
+
+  const circ=2*Math.PI*42;
+  const segmentos=[
+    {id:'dl-disp', val:contagem.disp, cor:'#97C459'},
+    {id:'dl-vend', val:contagem.vend, cor:'#378ADD'},
+    {id:'dl-res',  val:contagem.res,  cor:'#EF9F27'},
+  ];
+
+  const svg=document.getElementById('dash-donut-svg');
+  if(svg){
+    const circles=svg.querySelectorAll('circle');
+    circles.forEach((c,i)=>{ if(i>0) c.remove(); });
+    let offset=0;
+    segmentos.forEach(seg=>{
+      if(!seg.val) return;
+      const arc=(seg.val/total)*circ;
+      const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      c.setAttribute('cx','55'); c.setAttribute('cy','55'); c.setAttribute('r','42');
+      c.setAttribute('fill','none'); c.setAttribute('stroke',seg.cor);
+      c.setAttribute('stroke-width','20');
+      c.setAttribute('stroke-dasharray',`${arc.toFixed(2)} ${(circ-arc).toFixed(2)}`);
+      c.setAttribute('stroke-dashoffset',(-offset).toFixed(2));
+      c.setAttribute('stroke-linecap','butt');
+      svg.insertBefore(c, svg.querySelector('text'));
+      offset+=arc;
+    });
+  }
+  segmentos.forEach(seg=>s(seg.id, seg.val||0));
+  s('dl-quit', contagem.quit||0);
+
+  // Atualizar título
+  const titulo=document.getElementById('dash-lotes-titulo');
+  if(titulo) titulo.textContent='Status dos lotes — '+(isAll?'Todos':[...globalLots].join(', '));
+}
+
 async function renderGraficoVendasLoteamento(){
   const canvas = document.getElementById('dash-vendas-lot-chart');
   const empty  = document.getElementById('dash-vendas-lot-empty');
@@ -6607,14 +6758,14 @@ async function renderGraficoVendasLoteamento(){
   canvas.style.display='block';
   if(empty) empty.style.display='none';
 
-  // Últimos 6 meses
+  // Últimos 12 meses
   const hoje = new Date();
   const meses = [];
-  for(let i=5;i>=0;i--){
+  for(let i=11;i>=0;i--){
     const d = new Date(hoje.getFullYear(), hoje.getMonth()-i, 1);
     meses.push({
       key: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`,
-      label: d.toLocaleString('pt-BR',{month:'short'}).replace('.',''),
+      label: d.toLocaleString('pt-BR',{month:'short',year:'2-digit'}).replace('.','/'),
     });
   }
 
@@ -6664,6 +6815,8 @@ function atualizarDashboard(){
   const key=lots.includes('todos')||lots.length>1?'todos':lots[0];
   const d=dashDados[key]||dashDados.todos;
   renderGraficoVendasLoteamento();
+  // Buscar contagens reais de lotes do Supabase
+  carregarStatusLotesDashboard(key);
   const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
 
   // KPIs
@@ -6672,51 +6825,7 @@ function atualizarDashboard(){
   s('dash-inad',d.inad);           s('dash-inad-delta',d.inadDelta);
   s('dash-obras-label',d.obrasLabel||'');
 
-  // ---- Donut de status dos lotes ----
-  const titulo=document.getElementById('dash-lotes-titulo');
-  if(titulo) titulo.textContent='Status dos lotes — '+(d.lotesLabel||'Todos');
-
-  const lotes=d.lotes||{disp:0,vend:0,res:0,inad:0,dist:0};
-  const total=d.lotesTotal||Object.values(lotes).reduce((a,b)=>a+(b||0),0)||1;
-  const circ=2*Math.PI*42; // circunferência do círculo r=42
-
-  // Atualizar texto central
-  s('dash-donut-total', total);
-
-  // Recalcular os arcos SVG
-  const segmentos=[
-    {id:'dl-disp', val:lotes.disp||0, cor:'#97C459'},
-    {id:'dl-vend', val:lotes.vend||0, cor:'#378ADD'},
-    {id:'dl-res',  val:lotes.res||0,  cor:'#EF9F27'},
-    {id:'dl-inad', val:lotes.inad||0, cor:'#E24B4A'},
-    {id:'dl-dist', val:lotes.dist||0, cor:'#B4B2A9'},
-  ];
-
-  const svg=document.getElementById('dash-donut-svg');
-  if(svg){
-    // Remover círculos de dados antigos (manter apenas o de fundo, índice 0)
-    const circles=svg.querySelectorAll('circle');
-    circles.forEach((c,i)=>{ if(i>0) c.remove(); });
-
-    let offset=0;
-    segmentos.forEach(seg=>{
-      if(!seg.val) return;
-      const arc=(seg.val/total)*circ;
-      const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
-      c.setAttribute('cx','55'); c.setAttribute('cy','55'); c.setAttribute('r','42');
-      c.setAttribute('fill','none');
-      c.setAttribute('stroke',seg.cor);
-      c.setAttribute('stroke-width','20');
-      c.setAttribute('stroke-dasharray',`${arc.toFixed(2)} ${(circ-arc).toFixed(2)}`);
-      c.setAttribute('stroke-dashoffset', (-offset).toFixed(2));
-      c.setAttribute('stroke-linecap','butt');
-      svg.insertBefore(c, svg.querySelector('text'));
-      offset+=arc;
-    });
-  }
-
-  // Atualizar legendas
-  segmentos.forEach(seg=>s(seg.id, seg.val||0));
+  // ---- Donut atualizado por carregarStatusLotesDashboard() ----
 
   // ---- Barras de obras ----
   const obrasList=document.getElementById('dash-obras-list');
@@ -8378,7 +8487,6 @@ async function carregarClientes() {
     <td style="color:var(--text-secondary);font-size:11px">${r.celular||'—'}</td>
     <td style="color:var(--text-secondary);font-size:11px">${r.cidade||'—'}</td>
     <td style="color:var(--text-secondary);font-size:11px;text-align:center">${r.estado||'—'}</td>
-    <td><span class="badge badge-green" style="white-space:nowrap">Adimplente</span></td>
     <td>
       <button class="btn btn-sm" style="font-size:10px" onclick="abrirEditarCliente('${idStr}')">✏️</button>
       <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger);margin-left:4px" onclick="excluirCliente('${idStr}','${nomeEsc}')">✕</button>
@@ -8796,6 +8904,8 @@ async function carregarLeadsDB() {
       dt_contrato: r.dt_contrato||'',
       dt_entrada:  r.dt_entrada||'',
       doc_url:     r.doc_url||null,
+      temperatura: r.temperatura||null,
+      created_at:  r.created_at||null,
     };
   });
   renderLeads();
@@ -9008,6 +9118,7 @@ async function salvarObraDB() {
 // ── PÁGINA INICIALIZAÇÃO ──────────────────────────────────────
 async function initPageDB(id) {
   try{
+    if(id==='dashboard')    { await carregarFiltroLoteamentos(); atualizarDashboard(); }
     if(id==='loteamentos')  await carregarLoteamentos();
     if(id==='clientes')     await carregarClientes();
     if(id==='lotes')        await carregarLotes();
