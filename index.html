@@ -9663,11 +9663,27 @@ function fazerLogout(){ sb.auth.signOut(); }
   </div>
 
   <div class="pub-card">
+    <div class="pub-label" style="margin-bottom:10px">Buscar por lote (opcional)</div>
+    <div style="margin-bottom:10px">
+      <div class="pub-label">Loteamento</div>
+      <select class="pub-input" id="p-lot-nome" onchange="pubCarregarLotes()">
+        <option value="">— Selecione —</option>
+      </select>
+    </div>
+    <div>
+      <div class="pub-label">Código do lote</div>
+      <select class="pub-input" id="p-lot-cod" onchange="pubPreencherLote()">
+        <option value="">— Selecione —</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="pub-card">
     <div class="pub-label" style="margin-bottom:10px">Parâmetros</div>
     <div style="margin-bottom:10px">
       <div class="pub-label">Valor do imóvel (R$)</div>
       <input class="pub-input" id="p-valor" type="text" value="85.000,00"
-        oninput="this.value=this.value.replace(/[^0-9,\.]/g,'');pubCalc()">
+        oninput="pubCalc()">
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
       <div>
@@ -9696,6 +9712,12 @@ function fazerLogout(){ sb.auth.signOut(); }
       </div>
     </div>
     <div style="margin-bottom:10px">
+      <div class="pub-label">Parcelar entrada em (meses)</div>
+      <input class="pub-input" id="p-ent-parc" type="number"
+        value="1" min="1" max="${simCfg.entradaParcelasMax}"
+        oninput="pubCalc()">
+    </div>
+    <div style="margin-bottom:10px">
       <div class="pub-label">Sistema</div>
       <select class="pub-input" id="p-sis" onchange="pubCalc()">
         <option value="price">Price (parcelas iguais)</option>
@@ -9709,6 +9731,7 @@ function fazerLogout(){ sb.auth.signOut(); }
     <div class="pub-label" style="margin-bottom:10px">Resumo</div>
     <div class="pub-row"><span class="pub-row-label">Valor financiado</span><span class="pub-row-val" id="p-fin">—</span></div>
     <div class="pub-row"><span class="pub-row-label">Parcela mensal</span><span class="pub-row-val destaque" id="p-parc">—</span></div>
+    <div class="pub-row" id="p-ent-parc-row" style="display:none"><span class="pub-row-label">Parcela entrada</span><span class="pub-row-val" id="p-ent-parc-val">—</span></div>
     <div class="pub-row"><span class="pub-row-label">Total pago</span><span class="pub-row-val" id="p-total">—</span></div>
     <div class="pub-row"><span class="pub-row-label">Total de juros</span><span class="pub-row-val" id="p-juros">—</span></div>
   </div>
@@ -9723,15 +9746,60 @@ function fazerLogout(){ sb.auth.signOut(); }
     </div>
   </div>`;
 
-  // Inicializar entrada com % padrão
-  const valorEl = document.getElementById('p-valor');
-  const entEl   = document.getElementById('p-entrada');
-  if(valorEl && entEl){
-    const v = 85000;
-    entEl.value = (v * simCfg.entradaPctDefault/100).toLocaleString('pt-BR',{minimumFractionDigits:2});
-  }
+  // ── Supabase no modo público ──────────────────────────────
+  const pubSb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
-  // Função de cálculo pública
+  // Carregar loteamentos
+  (async () => {
+    const { data } = await pubSb.from('loteamentos').select('id,nome,fase').order('nome');
+    const sel = document.getElementById('p-lot-nome');
+    if(sel && data){
+      sel.innerHTML = '<option value="">— Selecione —</option>' +
+        data.map(r=>`<option value="${r.id}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+    }
+    // Inicializar entrada com % padrão
+    const v = 85000;
+    const entEl = document.getElementById('p-entrada');
+    if(entEl) entEl.value = (v * simCfg.entradaPctDefault/100).toLocaleString('pt-BR',{minimumFractionDigits:2});
+    pubCalc();
+  })();
+
+  // Carregar lotes do loteamento selecionado
+  window.pubCarregarLotes = async function(){
+    const lotId = document.getElementById('p-lot-nome')?.value;
+    const sel   = document.getElementById('p-lot-cod');
+    if(!sel) return;
+    sel.innerHTML = '<option value="">— Selecione —</option>';
+    if(!lotId) return;
+    const { data } = await pubSb.from('lotes')
+      .select('id,quadra,numero,area_m2,valor_tabela')
+      .eq('loteamento_id', lotId)
+      .eq('status','Disponível')
+      .order('quadra').order('numero');
+    if(!data) return;
+    // Ordenar numericamente
+    const ord = [...data].sort((a,b)=>{
+      if(a.quadra!==b.quadra) return (a.quadra||'').localeCompare(b.quadra||'');
+      return (parseInt(a.numero)||0)-(parseInt(b.numero)||0);
+    });
+    sel.innerHTML = '<option value="">— Selecione —</option>' +
+      ord.map(r=>`<option value="${r.valor_tabela||0}"
+        data-area="${r.area_m2||''}">${r.quadra}-${(r.numero||'').padStart(2,'0')} · ${r.area_m2||'—'}m² · R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</option>`).join('');
+  };
+
+  // Preencher valor ao selecionar lote
+  window.pubPreencherLote = function(){
+    const sel = document.getElementById('p-lot-cod');
+    const val = parseFloat(sel?.value)||0;
+    if(!val) return;
+    const valEl = document.getElementById('p-valor');
+    const entEl = document.getElementById('p-entrada');
+    if(valEl) valEl.value = val.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(entEl) entEl.value = (val * simCfg.entradaPctDefault/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    pubCalc();
+  };
+
+  // Função de cálculo
   window.pubCalc = function(){
     const fmt = v => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     const parseMon = id => parseFloat((document.getElementById(id)?.value||'0').replace(/\./g,'').replace(',','.'))||0;
@@ -9742,6 +9810,7 @@ function fazerLogout(){ sb.auth.signOut(); }
     const n    = Math.min(parseInt(document.getElementById('p-prazo')?.value)||1, simCfg.prazoMax);
     const taxa = parseFloat((document.getElementById('p-taxa')?.value||'0').replace(',','.'))/100;
     const sis  = document.getElementById('p-sis')?.value||'price';
+    const nEntPar = parseInt(document.getElementById('p-ent-parc')?.value)||1;
     const fin  = pv - ent;
     if(fin<=0||n<=0||taxa<=0) return;
     let parcelas=[];
@@ -9759,6 +9828,15 @@ function fazerLogout(){ sb.auth.signOut(); }
     document.getElementById('p-fin').textContent   = fmt(fin);
     document.getElementById('p-total').textContent = fmt(total);
     document.getElementById('p-juros').textContent = fmt(total-pv);
+    // Parcela entrada
+    const rowEnt = document.getElementById('p-ent-parc-row');
+    const valEnt = document.getElementById('p-ent-parc-val');
+    if(nEntPar>1 && ent>0){
+      if(rowEnt) rowEnt.style.display='';
+      if(valEnt) valEnt.textContent=`${nEntPar}x ${fmt(ent/nEntPar)}`;
+    } else {
+      if(rowEnt) rowEnt.style.display='none';
+    }
     document.getElementById('p-resultado').style.display='block';
     const cron = document.getElementById('p-cron');
     if(cron) cron.innerHTML = parcelas.map((p,i)=>
@@ -9766,7 +9844,6 @@ function fazerLogout(){ sb.auth.signOut(); }
     ).join('');
     document.getElementById('p-cronograma-wrap').style.display='block';
   };
-  setTimeout(window.pubCalc, 100);
 })();
 
 iniciarApp();
