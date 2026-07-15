@@ -1104,6 +1104,16 @@ tbody tr.clickable{cursor:pointer}
         <div style="background:var(--bg-secondary);border-radius:10px;padding:10px 12px;margin-bottom:10px">
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
             <div class="field" style="margin:0;min-width:130px">
+              <label style="font-size:10px">Situação</label>
+              <select class="filter-select" id="crm-filtro-situacao" onchange="renderLeads()" style="font-size:11px;padding:5px 8px">
+                <option value="">Todas</option>
+                <option value="Em andamento">Em andamento</option>
+                <option value="Pausado">Pausado</option>
+                <option value="Perdido">Perdido</option>
+                <option value="Vendido">Vendido</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0;min-width:130px">
               <label style="font-size:10px">Status</label>
               <select class="filter-select" id="crm-filtro-status" onchange="renderLeads()" style="font-size:11px;padding:5px 8px">
                 <option value="">Todos os status</option>
@@ -1121,6 +1131,16 @@ tbody tr.clickable{cursor:pointer}
               <label style="font-size:10px">Responsável</label>
               <select class="filter-select" id="crm-filtro-corretor" onchange="renderLeads()" style="font-size:11px;padding:5px 8px">
                 <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="field" style="margin:0;min-width:120px">
+              <label style="font-size:10px">Tipo</label>
+              <select class="filter-select" id="crm-filtro-tipo" onchange="renderLeads()" style="font-size:11px;padding:5px 8px">
+                <option value="">Todos os tipos</option>
+                <option value="Cliente final">Cliente final</option>
+                <option value="Construtor">Construtor</option>
+                <option value="Investidor">Investidor</option>
+                <option value="Permuta">Permuta</option>
               </select>
             </div>
             <div class="field" style="margin:0;min-width:120px">
@@ -1168,12 +1188,13 @@ tbody tr.clickable{cursor:pointer}
             <table style="table-layout:fixed">
               <thead><tr>
                 <th style="width:75px">Temp.</th>
-                <th style="width:145px">Nome</th>
-                <th style="width:115px">Telefone</th>
-                <th style="width:75px">Origem</th>
-                <th style="width:115px">Loteamento</th>
-                <th style="width:110px">Corretor</th>
-                <th style="width:105px">Status</th>
+                <th style="width:130px">Nome</th>
+                <th style="width:100px">Telefone</th>
+                <th style="width:70px">Origem</th>
+                <th style="width:110px">Loteamento</th>
+                <th style="width:100px">Corretor</th>
+                <th style="width:90px">Situação</th>
+                <th style="width:95px">Status</th>
                 <th style="width:90px">Ações</th>
               </tr></thead>
               <tbody id="crm-tbody"></tbody>
@@ -1462,6 +1483,33 @@ tbody tr.clickable{cursor:pointer}
 
       <!-- ===== SIMULADOR ===== -->
       <div class="page" id="page-simulador">
+
+        <!-- Banner de compartilhamento -->
+        <div style="background:var(--accent-light);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">📱</span>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--accent-text)">Link para o time de vendas</div>
+              <div style="font-size:11px;color:var(--text-secondary)">Compartilhe para simular condições pelo celular</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input id="sim-link-input" readonly
+              style="font-size:11px;padding:6px 10px;border-radius:6px;border:1px solid var(--accent);
+              background:var(--bg-primary);color:var(--text-secondary);width:260px;font-family:monospace"
+              value="">
+            <button onclick="copiarLinkSimulador()" class="btn btn-sm"
+              style="background:var(--accent);color:#fff;border-color:var(--accent);white-space:nowrap">
+              📋 Copiar link
+            </button>
+            <a id="sim-link-whatsapp" href="#" target="_blank"
+              style="background:#25D366;color:#fff;font-size:11px;font-weight:600;padding:6px 10px;
+              border-radius:6px;text-decoration:none;white-space:nowrap">
+              WhatsApp
+            </a>
+          </div>
+        </div>
+
         <div class="grid2">
           <div class="card" style="padding:16px">
             <div class="detail-label" style="margin-bottom:14px">Parâmetros da simulação</div>
@@ -1509,7 +1557,7 @@ tbody tr.clickable{cursor:pointer}
             <div class="card-header"><span class="section-title">Cronograma simulado</span></div>
             <div style="overflow-y:auto;max-height:400px">
               <table style="table-layout:fixed">
-                <thead><tr><th style="width:40px">Nº</th><th style="width:80px">Parcela</th><th style="width:70px">Juros</th><th style="width:80px">Amort.</th><th style="width:90px">Saldo dev.</th></tr></thead>
+                <thead><tr><th style="width:40px">Nº</th><th style="width:90px">Parcela</th><th style="width:110px">Saldo devedor</th><th style="width:110px">Valor presente</th></tr></thead>
                 <tbody id="sim-tbody"></tbody>
               </table>
             </div>
@@ -2384,9 +2432,17 @@ tbody tr.clickable{cursor:pointer}
             <!-- Linha do tempo — gerada dinamicamente por KANBAN_COLUNAS -->
             <div id="lead-timeline" style="margin-bottom:16px"></div>
 
-            <div class="form-row">
+            <div class="form-row col2">
               <div class="field"><label>Corretor responsável</label>
                 <select id="edit-lead-corretor"><option value="">— Nenhum —</option></select>
+              </div>
+              <div class="field"><label>Situação do lead</label>
+                <select id="edit-lead-situacao">
+                  <option value="Em andamento">🟢 Em andamento</option>
+                  <option value="Pausado">⏸ Pausado</option>
+                  <option value="Perdido">🔴 Perdido</option>
+                  <option value="Vendido">✅ Vendido</option>
+                </select>
               </div>
             </div>
             <div class="form-row"><div class="field"><label>Observação</label><input id="edit-lead-obs" placeholder="Registro desta atualização..."></div></div>
@@ -2944,7 +3000,7 @@ function showPage(id, navEl){
     });
   }
   if(id==='inadimplencia') renderInadimplencia();
-  if(id==='simulador'){ calcSim(); initSimulador(); }
+  if(id==='simulador'){ carregarSimCfg(); calcSim(); initSimulador(); }
   if(id==='configuracoes') renderConfiguracoes();
   if(typeof initPageDB==='function') initPageDB(id);
 
@@ -3269,12 +3325,44 @@ function parseMoney(id){
   return parseFloat(v)||0;
 }
 // ── Simulador — busca por lote ────────────────────────────────
+function copiarLinkSimulador(){
+  const input = document.getElementById('sim-link-input');
+  if(!input) return;
+  input.select();
+  navigator.clipboard.writeText(input.value).then(()=>{
+    showToast('Link copiado! Compartilhe com o time de vendas.');
+  }).catch(()=>{
+    document.execCommand('copy');
+    showToast('Link copiado!');
+  });
+}
+
+function gerarLinkSimulador(){
+  const base = window.location.origin + window.location.pathname;
+  const params = new URLSearchParams({
+    sim:      '1',
+    taxa:     (simCfg.taxaJuros||0.9).toFixed(2),
+    prazoMax: simCfg.prazoMax||120,
+    entPct:   simCfg.entradaPctDefault||10,
+    entMax:   simCfg.entradaParcelasMax||12,
+  });
+  const link = `${base}?${params.toString()}`;
+  const input = document.getElementById('sim-link-input');
+  if(input) input.value = link;
+  const wa = document.getElementById('sim-link-whatsapp');
+  if(wa) wa.href = `https://wa.me/?text=${encodeURIComponent('Simulador Villanova Urbanismo: '+link)}`;
+}
+
 async function initSimulador(){
+  // Sempre regenerar o link com as configs atuais
+  gerarLinkSimulador();
   const sel = document.getElementById('sim-lot-nome');
-  if(!sel||sel.options.length>1) return;
+  if(!sel) return;
+  // Popular loteamentos sempre (pode ter mudado)
   const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
   sel.innerHTML = '<option value="">— Selecione —</option>' +
     lots.map(r=>`<option value="${r.id}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+  gerarLinkSimulador();
 }
 
 async function simCarregarLotes(){
@@ -3295,11 +3383,24 @@ async function simCarregarLotes(){
 function simPreencherValorLote(){
   const val = parseFloat(document.getElementById('sim-lot-cod')?.value)||0;
   if(!val) return;
-  const valEl = document.getElementById('sim-valor');
+  const valEl    = document.getElementById('sim-valor');
+  const entradaEl= document.getElementById('sim-entrada');
+  const taxaEl   = document.getElementById('sim-taxa');
+  const prazoEl  = document.getElementById('sim-prazo');
+  const parcEl   = document.getElementById('sim-entrada-parc');
   if(valEl){
     valEl.value = val.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-    calcSim();
   }
+  // Entrada padrão das configs
+  if(entradaEl && simCfg.entradaPctDefault>0){
+    const entrada = val * (simCfg.entradaPctDefault/100);
+    entradaEl.value = entrada.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  // Taxa e prazo das configs
+  if(taxaEl)  taxaEl.value  = simCfg.taxaJuros.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  if(prazoEl){ prazoEl.max = simCfg.prazoMax; }
+  if(parcEl)  parcEl.max   = simCfg.entradaParcelasMax;
+  calcSim();
 }
 
 function calcSim(){
@@ -3311,6 +3412,16 @@ function calcSim(){
   const taxaRaw=(document.getElementById('sim-taxa')?.value||'0').replace(',','.');
   const taxa=parseFloat(taxaRaw)/100;
   const sistema=document.getElementById('sim-sistema').value;
+
+  // Validar prazo máximo
+  const prazoMax = simCfg.prazoMax||120;
+  const prazoEl = document.getElementById('sim-prazo');
+  if(prazoEl && n > prazoMax){
+    prazoEl.value = prazoMax;
+    showToast(`Prazo máximo permitido: ${prazoMax} meses`,'error');
+    return;
+  }
+
   const fin=pv-entrada;
   if(fin<=0||n<=0||taxa<=0)return;
   let parcelas=[];
@@ -3340,10 +3451,12 @@ function calcSim(){
   } else {
     if(rowEntrada) rowEntrada.style.display='none';
   }
+  // Cronograma com Nº, Parcela, Saldo devedor, Valor presente
   const tbody=document.getElementById('sim-tbody');
   let h='';
   parcelas.forEach((p,i)=>{
-    h+=`<tr><td>${i+1}</td><td>${fmt(p.pmt)}</td><td>${fmt(p.j)}</td><td>${fmt(p.a)}</td><td>${fmt(p.s)}</td></tr>`;
+    const vp = p.pmt / Math.pow(1+taxa, i+1); // valor presente da parcela
+    h+=`<tr><td>${i+1}</td><td>${fmt(p.pmt)}</td><td>${fmt(p.s)}</td><td style="color:var(--text-secondary)">${fmt(vp)}</td></tr>`;
   });
   tbody.innerHTML=h;
 }
@@ -3458,6 +3571,7 @@ function renderConfiguracoes(){
     <div class="cfg-tab" onclick="switchCfgTab(this,'aparencia')" style="padding:8px 18px;cursor:pointer;font-size:12.5px;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px">Aparência</div>
     <div class="cfg-tab" onclick="switchCfgTab(this,'usuarios')" style="padding:8px 18px;cursor:pointer;font-size:12.5px;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px">Usuários e acessos</div>
     <div class="cfg-tab" onclick="switchCfgTab(this,'permissoes')" style="padding:8px 18px;cursor:pointer;font-size:12.5px;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px">Perfis e permissões</div>
+    <div class="cfg-tab" onclick="switchCfgTab(this,'simulador-cfg')" style="padding:8px 18px;cursor:pointer;font-size:12.5px;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px">Simulador</div>
     <div class="cfg-tab" onclick="switchCfgTab(this,'sistema')" style="padding:8px 18px;cursor:pointer;font-size:12.5px;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px">Sistema</div>
   </div>
 
@@ -3626,6 +3740,37 @@ function renderConfiguracoes(){
   </div>
 
   <!-- ABA SISTEMA -->
+  <div id="cfg-simulador-cfg" style="display:none">
+    <div class="form-section">Parâmetros padrão do Simulador</div>
+    <div class="form-row col2">
+      <div class="field">
+        <label>Taxa de juros fixada (% a.m.)</label>
+        <input id="scfg-taxa" type="text" placeholder="0,90" oninput="maskDecimal(this)">
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:3px">Carregada automaticamente no simulador</div>
+      </div>
+      <div class="field">
+        <label>Prazo máximo permitido (meses)</label>
+        <input id="scfg-prazo-max" type="number" min="12" max="360" placeholder="120">
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:3px">Campo prazo não pode exceder este valor</div>
+      </div>
+    </div>
+    <div class="form-row col2">
+      <div class="field">
+        <label>Entrada padrão (%)</label>
+        <input id="scfg-entrada-pct" type="number" min="0" max="100" placeholder="10">
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:3px">Ex: 10 = 10% do valor do lote</div>
+      </div>
+      <div class="field">
+        <label>Máx. parcelas da entrada</label>
+        <input id="scfg-entrada-max-parc" type="number" min="1" max="120" placeholder="12">
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:3px">Limita o campo "Parcelar entrada em"</div>
+      </div>
+    </div>
+    <div style="margin-top:16px">
+      <button class="btn btn-primary" onclick="salvarSimCfg()">💾 Salvar configurações do simulador</button>
+    </div>
+  </div>
+
   <div id="cfg-sistema" style="display:none">
     <!-- Integração Supabase -->
     <div class="card" style="padding:18px;margin-bottom:16px;border:1.5px solid var(--accent-light)">
@@ -3737,12 +3882,13 @@ function switchCfgTab(el,tab){
   el.style.color='var(--text-primary)';
   el.style.borderBottomColor='var(--accent)';
   el.style.fontWeight='600';
-  ['empresa','aparencia','usuarios','permissoes','sistema'].forEach(id=>{
+  ['empresa','aparencia','usuarios','permissoes','simulador-cfg','sistema'].forEach(id=>{
     const el2=document.getElementById('cfg-'+id);
     if(el2)el2.style.display=id===tab?'block':'none';
   });
   if(tab==='usuarios' && typeof carregarUsuarios==='function') carregarUsuarios();
   if(tab==='sistema' && typeof initSistemaTab==='function') initSistemaTab();
+  if(tab==='simulador-cfg') initSimuladorCfgTab();
 }
 
 function setAccent(color){
@@ -3812,6 +3958,49 @@ function salvarEmpresa(){
   dbUpsert('empresa', row, 'id').then(()=>{
     showToast('Dados da empresa salvos!');
   }).catch(()=>showToast('Dados da empresa salvos!'));
+}
+
+// ── Configurações do Simulador ────────────────────────────────
+const SIM_CFG_KEY = 'loteerp_sim_cfg';
+let simCfg = {
+  taxaJuros:       0.90,   // % a.m.
+  prazoMax:        120,    // meses
+  entradaPctDefault: 10,   // %
+  entradaParcelasMax: 12,  // máx parcelas da entrada
+};
+
+function carregarSimCfg(){
+  try{
+    const s = localStorage.getItem(SIM_CFG_KEY);
+    if(s) simCfg = {...simCfg, ...JSON.parse(s)};
+  }catch(e){}
+  // Aplicar no simulador
+  const taxa  = document.getElementById('sim-taxa');
+  const prazo = document.getElementById('sim-prazo');
+  const parc  = document.getElementById('sim-entrada-parc');
+  if(taxa)  taxa.value  = simCfg.taxaJuros.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  if(prazo) prazo.max   = simCfg.prazoMax;
+  if(parc)  parc.max    = simCfg.entradaParcelasMax;
+}
+
+function initSimuladorCfgTab(){
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  sv('scfg-taxa',       simCfg.taxaJuros.toLocaleString('pt-BR',{minimumFractionDigits:2}));
+  sv('scfg-prazo-max',  simCfg.prazoMax);
+  sv('scfg-entrada-pct',simCfg.entradaPctDefault);
+  sv('scfg-entrada-max-parc', simCfg.entradaParcelasMax);
+  const el = document.getElementById('cfg-simulador-content');
+  if(el) el.style.display='block';
+}
+
+function salvarSimCfg(){
+  simCfg.taxaJuros            = parseFloat((document.getElementById('scfg-taxa')?.value||'0.90').replace(',','.'))||0.90;
+  simCfg.prazoMax             = parseInt(document.getElementById('scfg-prazo-max')?.value)||120;
+  simCfg.entradaPctDefault    = parseFloat(document.getElementById('scfg-entrada-pct')?.value)||10;
+  simCfg.entradaParcelasMax   = parseInt(document.getElementById('scfg-entrada-max-parc')?.value)||12;
+  localStorage.setItem(SIM_CFG_KEY, JSON.stringify(simCfg));
+  carregarSimCfg();
+  showToast('Configurações do simulador salvas!');
 }
 
 function resetEmpresa(){renderConfiguracoes();}
@@ -4376,6 +4565,8 @@ function abrirEditLead(id){
   // data/hora visita agora na timeline
   const sel=document.getElementById('edit-lead-status');
   if(sel){ const s=['Novo','Contato feito','Perdido']; sel.value=s.includes(lead.status)?lead.status:'Contato feito'; }
+  const selSit=document.getElementById('edit-lead-situacao');
+  if(selSit) selSit.value=lead.situacao||'Em andamento';
 
   // Popular corretores no select
   dbSelect('corretores',{filter:[['status','eq','Ativo']],order:'nome',asc:true}).then(corts=>{
@@ -4623,19 +4814,22 @@ async function salvarEdicaoLead(){
   const status = lead.status !== statusSelect ? statusSelect : lead.status;
   const dataVis  = null; // removido — data capturada pela timeline
   const horaVis  = null;
-  const corretor = document.getElementById('edit-lead-corretor')?.value||null;
-  const obs      = document.getElementById('edit-lead-obs')?.value||null;
+  const corretor  = document.getElementById('edit-lead-corretor')?.value||null;
+  const situacao  = document.getElementById('edit-lead-situacao')?.value||'Em andamento';
+  const obs       = document.getElementById('edit-lead-obs')?.value||null;
   showLoading('Salvando lead...');
   await dbUpdate('leads', lead.id, {
     status,
     data_visita:   dataVis,
     hora_visita:   horaVis,
     corretor:      corretor,
+    situacao:      situacao,
     observacoes:   obs && !obs.startsWith('[VENDA]') ? obs : lead.obs||null,
     etapas_json:   JSON.stringify(lead.etapas||{}),
   });
   // Atualizar array local
-  lead.status=status; lead.dataVisita=dataVis||lead.dataVisita;
+  lead.status=status; lead.situacao=situacao;
+  lead.dataVisita=dataVis||lead.dataVisita;
   lead.horaVisita=horaVis||lead.horaVisita; lead.corretor=corretor||lead.corretor;
   hideLoading();
   closeModal('modal-edit-lead');
@@ -4983,19 +5177,23 @@ function renderLeads(){
   if(!tbody)return;
 
   const fs   = document.getElementById('crm-filtro-status')?.value||'';
+  const fsit = document.getElementById('crm-filtro-situacao')?.value||'';
   const fo   = document.getElementById('crm-filtro-origem')?.value||'';
   const fc   = document.getElementById('crm-filtro-corretor')?.value||'';
   const ft   = document.getElementById('crm-filtro-temp')?.value||'';
+  const ftipo= document.getElementById('crm-filtro-tipo')?.value||'';
   const fn   = (document.getElementById('crm-filtro-nome')?.value||'').toLowerCase();
   const dIni = document.getElementById('crm-filtro-dt-ini')?.value||'';
   const dFim = document.getElementById('crm-filtro-dt-fim')?.value||'';
   const globalAtivo = typeof globalLots!=='undefined' && !globalLots.has('todos');
 
   const filtered=leads.filter(l=>{
-    if(fs && l.status!==fs) return false;
-    if(fo && l.origem!==fo) return false;
-    if(fc && l.corretor!==fc) return false;
-    if(ft && l.temperatura!==ft) return false;
+    if(fs    && l.status!==fs)       return false;
+    if(fsit  && l.situacao!==fsit)   return false;
+    if(fo    && l.origem!==fo)       return false;
+    if(fc    && l.corretor!==fc)     return false;
+    if(ft    && l.temperatura!==ft)  return false;
+    if(ftipo && l.tipo!==ftipo)      return false;
     if(fn && !l.nome.toLowerCase().includes(fn)) return false;
     if(dIni && l.created_at && l.created_at < dIni) return false;
     if(dFim && l.created_at && l.created_at > dFim+'T23:59') return false;
@@ -5015,6 +5213,13 @@ function renderLeads(){
     const idStr = String(l.id).replace(/'/g,"\\'");
     const tempLabel = TEMP_LABEL[l.temperatura]||'—';
     const tempColor = l.temperatura==='hot'?'color:#E24B4A':l.temperatura==='warm'?'color:#EF9F27':l.temperatura==='cold'?'color:#378ADD':'color:var(--text-tertiary)';
+    const sitCor = {
+      'Em andamento': '#378ADD',
+      'Pausado':      '#EF9F27',
+      'Perdido':      '#E24B4A',
+      'Vendido':      '#3B6D11',
+    }[l.situacao||'Em andamento'] || '#888';
+    const situacao = l.situacao||'Em andamento';
     return `<tr>
       <td style="font-size:11px;font-weight:500;${tempColor};cursor:pointer;white-space:nowrap" onclick="ciclarTemperatura('${idStr}')" title="Clique para alterar">${tempLabel}</td>
       <td style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.nome}</td>
@@ -5022,6 +5227,7 @@ function renderLeads(){
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.origem||'—'}</td>
       <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lote}</td>
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.corretor||'—'}</td>
+      <td><span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:${sitCor}22;color:${sitCor};white-space:nowrap">${situacao}</span></td>
       <td><span class="badge ${bc}" style="font-size:10px">${l.status}</span></td>
       <td style="white-space:nowrap">
         <button class="btn btn-sm" style="font-size:10px" onclick="abrirEditLead('${idStr}')">Editar</button>
@@ -5042,8 +5248,8 @@ function ciclarTemperatura(id){
 }
 
 function limparFiltrosCRM(){
-  ['crm-filtro-status','crm-filtro-origem','crm-filtro-corretor','crm-filtro-temp',
-   'crm-filtro-nome','crm-filtro-dt-ini','crm-filtro-dt-fim'].forEach(id=>{
+  ['crm-filtro-status','crm-filtro-situacao','crm-filtro-origem','crm-filtro-corretor','crm-filtro-temp',
+   'crm-filtro-tipo','crm-filtro-nome','crm-filtro-dt-ini','crm-filtro-dt-fim'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value='';
   });
@@ -8906,6 +9112,8 @@ async function carregarLeadsDB() {
       doc_url:     r.doc_url||null,
       temperatura: r.temperatura||null,
       created_at:  r.created_at||null,
+      situacao:    r.situacao||'Em andamento',
+      tipo:        r.tipo||null,
     };
   });
   renderLeads();
@@ -9403,6 +9611,163 @@ async function enviarRecuperacaoSenha(){
 }
 
 function fazerLogout(){ sb.auth.signOut(); }
+
+// ── Modo simulador público (?sim=1) ──────────────────────────
+(function(){
+  const urlParams = new URLSearchParams(window.location.search);
+  if(urlParams.get('sim') !== '1') return;
+
+  // Carregar configs da URL
+  simCfg.taxaJuros          = parseFloat(urlParams.get('taxa'))||0.9;
+  simCfg.prazoMax           = parseInt(urlParams.get('prazoMax'))||120;
+  simCfg.entradaPctDefault  = parseFloat(urlParams.get('entPct'))||10;
+  simCfg.entradaParcelasMax = parseInt(urlParams.get('entMax'))||12;
+
+  // Mostrar tela de simulador público mobile-first
+  document.body.innerHTML = `
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      background:#f4f5f7;color:#1a1d23;min-height:100vh}
+    .pub-header{background:#185FA5;color:#fff;padding:16px 20px;display:flex;
+      align-items:center;gap:12px}
+    .pub-card{background:#fff;border-radius:12px;padding:16px;margin:12px;
+      box-shadow:0 1px 6px rgba(0,0,0,.08)}
+    .pub-label{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;
+      letter-spacing:.04em;margin-bottom:4px}
+    .pub-input{width:100%;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;
+      font-size:14px;outline:none;background:#fff}
+    .pub-input:focus{border-color:#185FA5}
+    .pub-btn{width:100%;padding:13px;background:#185FA5;color:#fff;border:none;
+      border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:8px}
+    .pub-row{display:flex;justify-content:space-between;align-items:center;
+      padding:8px 0;border-bottom:0.5px solid #f0f0f0;font-size:13px}
+    .pub-row:last-child{border-bottom:none}
+    .pub-row-label{color:#6b7280}
+    .pub-row-val{font-weight:600;color:#1a1d23}
+    .pub-row-val.destaque{color:#185FA5;font-size:15px}
+    .pub-table{width:100%;border-collapse:collapse;font-size:12px}
+    .pub-table th{padding:6px 8px;text-align:left;font-size:11px;color:#6b7280;
+      font-weight:600;border-bottom:1px solid #e5e7eb}
+    .pub-table td{padding:7px 8px;border-bottom:0.5px solid #f3f4f6}
+    .pub-table tr:nth-child(even) td{background:#f9fafb}
+    select.pub-input{appearance:auto}
+  </style>
+  <div class="pub-header">
+    <div style="width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;
+      display:flex;align-items:center;justify-content:center;font-size:18px">🏡</div>
+    <div>
+      <div style="font-size:16px;font-weight:700">Simulador de Financiamento</div>
+      <div style="font-size:12px;opacity:.8">Villanova Urbanismo</div>
+    </div>
+  </div>
+
+  <div class="pub-card">
+    <div class="pub-label" style="margin-bottom:10px">Parâmetros</div>
+    <div style="margin-bottom:10px">
+      <div class="pub-label">Valor do imóvel (R$)</div>
+      <input class="pub-input" id="p-valor" type="text" value="85.000,00"
+        oninput="this.value=this.value.replace(/[^0-9,\.]/g,'');pubCalc()">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <div class="pub-label">Entrada (R$)</div>
+        <input class="pub-input" id="p-entrada" type="text" value=""
+          oninput="pubCalc()">
+      </div>
+      <div>
+        <div class="pub-label">Desconto (%)</div>
+        <input class="pub-input" id="p-desc" type="text" value="0"
+          oninput="pubCalc()">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <div>
+        <div class="pub-label">Prazo (meses)</div>
+        <input class="pub-input" id="p-prazo" type="number"
+          value="${simCfg.prazoMax}" max="${simCfg.prazoMax}" min="6"
+          oninput="pubCalc()">
+      </div>
+      <div>
+        <div class="pub-label">Taxa a.m. (%)</div>
+        <input class="pub-input" id="p-taxa" type="text"
+          value="${simCfg.taxaJuros.toFixed(2).replace('.',',')}"
+          oninput="pubCalc()">
+      </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div class="pub-label">Sistema</div>
+      <select class="pub-input" id="p-sis" onchange="pubCalc()">
+        <option value="price">Price (parcelas iguais)</option>
+        <option value="sac">SAC (amortização constante)</option>
+      </select>
+    </div>
+    <button class="pub-btn" onclick="pubCalc()">Calcular</button>
+  </div>
+
+  <div class="pub-card" id="p-resultado" style="display:none">
+    <div class="pub-label" style="margin-bottom:10px">Resumo</div>
+    <div class="pub-row"><span class="pub-row-label">Valor financiado</span><span class="pub-row-val" id="p-fin">—</span></div>
+    <div class="pub-row"><span class="pub-row-label">Parcela mensal</span><span class="pub-row-val destaque" id="p-parc">—</span></div>
+    <div class="pub-row"><span class="pub-row-label">Total pago</span><span class="pub-row-val" id="p-total">—</span></div>
+    <div class="pub-row"><span class="pub-row-label">Total de juros</span><span class="pub-row-val" id="p-juros">—</span></div>
+  </div>
+
+  <div class="pub-card" id="p-cronograma-wrap" style="display:none">
+    <div class="pub-label" style="margin-bottom:10px">Cronograma</div>
+    <div style="overflow-x:auto">
+      <table class="pub-table">
+        <thead><tr><th>Nº</th><th>Parcela</th><th>Saldo devedor</th><th>Valor presente</th></tr></thead>
+        <tbody id="p-cron"></tbody>
+      </table>
+    </div>
+  </div>`;
+
+  // Inicializar entrada com % padrão
+  const valorEl = document.getElementById('p-valor');
+  const entEl   = document.getElementById('p-entrada');
+  if(valorEl && entEl){
+    const v = 85000;
+    entEl.value = (v * simCfg.entradaPctDefault/100).toLocaleString('pt-BR',{minimumFractionDigits:2});
+  }
+
+  // Função de cálculo pública
+  window.pubCalc = function(){
+    const fmt = v => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const parseMon = id => parseFloat((document.getElementById(id)?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+    let pv   = parseMon('p-valor');
+    const desc = parseMon('p-desc');
+    if(desc>0&&desc<100) pv = pv*(1-desc/100);
+    const ent  = parseMon('p-entrada');
+    const n    = Math.min(parseInt(document.getElementById('p-prazo')?.value)||1, simCfg.prazoMax);
+    const taxa = parseFloat((document.getElementById('p-taxa')?.value||'0').replace(',','.'))/100;
+    const sis  = document.getElementById('p-sis')?.value||'price';
+    const fin  = pv - ent;
+    if(fin<=0||n<=0||taxa<=0) return;
+    let parcelas=[];
+    if(sis==='price'){
+      const pmt=fin*(taxa*Math.pow(1+taxa,n))/(Math.pow(1+taxa,n)-1);
+      let s=fin;
+      for(let k=1;k<=n;k++){const j=s*taxa;const a=pmt-j;s=Math.max(0,s-a);parcelas.push({pmt,s});}
+      document.getElementById('p-parc').textContent=fmt(pmt)+' (fixa)';
+    } else {
+      const a=fin/n;let s=fin;
+      for(let k=1;k<=n;k++){const j=s*taxa;const pmt=a+j;s=Math.max(0,s-a);parcelas.push({pmt,s});}
+      document.getElementById('p-parc').textContent=fmt(parcelas[0].pmt)+' → '+fmt(parcelas[n-1].pmt);
+    }
+    const total=parcelas.reduce((ac,p)=>ac+p.pmt,0)+ent;
+    document.getElementById('p-fin').textContent   = fmt(fin);
+    document.getElementById('p-total').textContent = fmt(total);
+    document.getElementById('p-juros').textContent = fmt(total-pv);
+    document.getElementById('p-resultado').style.display='block';
+    const cron = document.getElementById('p-cron');
+    if(cron) cron.innerHTML = parcelas.map((p,i)=>
+      `<tr><td>${i+1}</td><td>${fmt(p.pmt)}</td><td>${fmt(p.s)}</td><td style="color:#6b7280">${fmt(p.pmt/Math.pow(1+taxa,i+1))}</td></tr>`
+    ).join('');
+    document.getElementById('p-cronograma-wrap').style.display='block';
+  };
+  setTimeout(window.pubCalc, 100);
+})();
 
 iniciarApp();
 </script>
