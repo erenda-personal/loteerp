@@ -3999,12 +3999,38 @@ async function salvarSimCfg(){
   simCfg.entradaPctDefault  = parseFloat(document.getElementById('scfg-entrada-pct')?.value)||10;
   simCfg.entradaParcelasMax = parseInt(document.getElementById('scfg-entrada-max-parc')?.value)||12;
 
-  // Salvar no Supabase (persiste entre dispositivos) e localStorage (cache local)
-  try{ localStorage.setItem(SIM_CFG_KEY, JSON.stringify(simCfg)); }catch(e){}
-  await dbUpdate('empresa','00000000-0000-0000-0000-000000000001',{sim_cfg: JSON.stringify(simCfg)});
+  const payload = JSON.stringify(simCfg);
+
+  // Cache local sempre
+  try{ localStorage.setItem(SIM_CFG_KEY, payload); }catch(e){}
+
+  // Tentar UPDATE primeiro (registro já existe)
+  const {data: upData, error: upError} = await sb
+    .from('empresa')
+    .update({sim_cfg: payload})
+    .eq('id','00000000-0000-0000-0000-000000000001')
+    .select('id,sim_cfg');
+
+  console.log('UPDATE resultado:', upData, upError);
+
+  if(upError){
+    showToast('Erro ao salvar: '+upError.message,'error');
+    return;
+  }
+
+  if(!upData || upData.length===0){
+    // Registro não existia — INSERT
+    const {error: inError} = await sb
+      .from('empresa')
+      .insert({id:'00000000-0000-0000-0000-000000000001', nome:'Villanova Urbanismo', sim_cfg: payload});
+    if(inError){
+      showToast('Erro ao criar registro: '+inError.message,'error');
+      return;
+    }
+  }
 
   carregarSimCfg();
-  showToast('Configurações do simulador salvas!');
+  showToast('✅ Configurações do simulador salvas!');
 }
 
 function resetEmpresa(){renderConfiguracoes();}
