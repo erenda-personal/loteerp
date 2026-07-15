@@ -4004,29 +4004,43 @@ async function salvarSimCfg(){
   // Cache local sempre
   try{ localStorage.setItem(SIM_CFG_KEY, payload); }catch(e){}
 
-  // Tentar UPDATE primeiro (registro já existe)
-  const {data: upData, error: upError} = await sb
-    .from('empresa')
-    .update({sim_cfg: payload})
-    .eq('id','00000000-0000-0000-0000-000000000001')
-    .select('id,sim_cfg');
+  // Tentar salvar em sim_cfg; se não existir, usar kanban_colunas com prefixo __sim__
+  let saved = false;
 
-  console.log('UPDATE resultado:', upData, upError);
-
-  if(upError){
-    showToast('Erro ao salvar: '+upError.message,'error');
-    return;
-  }
-
-  if(!upData || upData.length===0){
-    // Registro não existia — INSERT
-    const {error: inError} = await sb
+  // Tentativa 1: coluna sim_cfg (se já reconhecida pelo schema cache)
+  try{
+    const {data, error} = await sb
       .from('empresa')
-      .insert({id:'00000000-0000-0000-0000-000000000001', nome:'Villanova Urbanismo', sim_cfg: payload});
-    if(inError){
-      showToast('Erro ao criar registro: '+inError.message,'error');
+      .update({sim_cfg: payload})
+      .eq('id','00000000-0000-0000-0000-000000000001')
+      .select('id');
+    if(!error) saved = true;
+  }catch(e){}
+
+  // Tentativa 2: coluna kanban_colunas com prefixo __sim__ (sempre disponível)
+  if(!saved){
+    const {data: kData} = await sb
+      .from('empresa')
+      .select('kanban_colunas')
+      .eq('id','00000000-0000-0000-0000-000000000001')
+      .single();
+
+    // Preservar kanban real e embutir sim_cfg
+    let kanbanVal = kData?.kanban_colunas||'';
+    // Remover qualquer __sim__ anterior
+    kanbanVal = kanbanVal.replace(/\n__sim__.*$/s,'');
+    const combined = kanbanVal + '\n__sim__' + payload;
+
+    const {error: kErr} = await sb
+      .from('empresa')
+      .update({kanban_colunas: combined})
+      .eq('id','00000000-0000-0000-0000-000000000001');
+
+    if(kErr){
+      showToast('Erro ao salvar: '+kErr.message,'error');
       return;
     }
+    saved = true;
   }
 
   carregarSimCfg();
@@ -5016,12 +5030,21 @@ async function carregarConfiguracoesDoBanco(){
   if(emp.logo_url)     cfg.logoImg      = emp.logo_url;
   if(emp.accent_color) cfg.accentColor  = emp.accent_color;
 
-  // Configurações do simulador
+  // Configurações do simulador — tenta sim_cfg, fallback em kanban_colunas
   if(emp.sim_cfg){
     try{
       const sc = JSON.parse(emp.sim_cfg);
       simCfg = {...simCfg, ...sc};
       try{ localStorage.setItem(SIM_CFG_KEY, emp.sim_cfg); }catch(e){}
+    }catch(e){}
+  } else if(emp.kanban_colunas && emp.kanban_colunas.includes('__sim__')){
+    try{
+      const simPart = emp.kanban_colunas.split('\n__sim__')[1];
+      if(simPart){
+        const sc = JSON.parse(simPart);
+        simCfg = {...simCfg, ...sc};
+        try{ localStorage.setItem(SIM_CFG_KEY, simPart); }catch(e){}
+      }
     }catch(e){}
   }
 
@@ -6402,7 +6425,9 @@ async function carregarColunasKanban(){
   try{
     const rows = await dbSelect('empresa',{filter:[['id','eq','00000000-0000-0000-0000-000000000001']]});
     if(rows[0]?.kanban_colunas){
-      const saved = JSON.parse(rows[0].kanban_colunas);
+      // Remover prefixo __sim__ se presente (sim_cfg armazenado como fallback)
+      const raw = rows[0].kanban_colunas.split('\n__sim__')[0];
+      const saved = JSON.parse(raw);
       if(Array.isArray(saved) && saved.length) KANBAN_COLUNAS = saved;
     }
   }catch(e){
