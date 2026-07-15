@@ -3993,12 +3993,16 @@ function initSimuladorCfgTab(){
   if(el) el.style.display='block';
 }
 
-function salvarSimCfg(){
-  simCfg.taxaJuros            = parseFloat((document.getElementById('scfg-taxa')?.value||'0.90').replace(',','.'))||0.90;
-  simCfg.prazoMax             = parseInt(document.getElementById('scfg-prazo-max')?.value)||120;
-  simCfg.entradaPctDefault    = parseFloat(document.getElementById('scfg-entrada-pct')?.value)||10;
-  simCfg.entradaParcelasMax   = parseInt(document.getElementById('scfg-entrada-max-parc')?.value)||12;
-  localStorage.setItem(SIM_CFG_KEY, JSON.stringify(simCfg));
+async function salvarSimCfg(){
+  simCfg.taxaJuros          = parseFloat((document.getElementById('scfg-taxa')?.value||'0.90').replace(',','.'))||0.90;
+  simCfg.prazoMax           = parseInt(document.getElementById('scfg-prazo-max')?.value)||120;
+  simCfg.entradaPctDefault  = parseFloat(document.getElementById('scfg-entrada-pct')?.value)||10;
+  simCfg.entradaParcelasMax = parseInt(document.getElementById('scfg-entrada-max-parc')?.value)||12;
+
+  // Salvar no Supabase (persiste entre dispositivos) e localStorage (cache local)
+  try{ localStorage.setItem(SIM_CFG_KEY, JSON.stringify(simCfg)); }catch(e){}
+  await dbUpdate('empresa','00000000-0000-0000-0000-000000000001',{sim_cfg: JSON.stringify(simCfg)});
+
   carregarSimCfg();
   showToast('Configurações do simulador salvas!');
 }
@@ -4985,6 +4989,15 @@ async function carregarConfiguracoesDoBanco(){
   if(emp.site)         cfg.site         = emp.site;
   if(emp.logo_url)     cfg.logoImg      = emp.logo_url;
   if(emp.accent_color) cfg.accentColor  = emp.accent_color;
+
+  // Configurações do simulador
+  if(emp.sim_cfg){
+    try{
+      const sc = JSON.parse(emp.sim_cfg);
+      simCfg = {...simCfg, ...sc};
+      try{ localStorage.setItem(SIM_CFG_KEY, emp.sim_cfg); }catch(e){}
+    }catch(e){}
+  }
 
   // Service key — guardar em memória (nunca expor no DOM)
   if(emp.service_key){
