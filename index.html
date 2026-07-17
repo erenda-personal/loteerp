@@ -1269,7 +1269,7 @@ tbody tr.clickable{cursor:pointer}
       </div>
 
       <!-- ===== VENDAS ===== -->
-      <div class="page" id="page-vendas" style="display:none">
+      <div class="page" id="page-vendas">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
           <div style="display:flex;gap:8px;align-items:center">
             <input type="text" id="vendas-busca" placeholder="Buscar cliente, contrato ou lote..." oninput="renderVendas()"
@@ -5877,6 +5877,7 @@ function renderLeads(){
 
   tbody.innerHTML=filtered.map(l=>{
     const bc   = STATUS_CRM_BADGE[l.status]||'badge-gray';
+    const statusLabel = (KANBAN_COLUNAS.find(c=>c.key===l.status)?.label) || l.status || '—';
     const tel  = l.tel||'—';
     const lote = l.lote||'—';
     const idStr = String(l.id).replace(/'/g,"\\'");
@@ -5897,7 +5898,7 @@ function renderLeads(){
       <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${lote}</td>
       <td style="color:var(--text-secondary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.corretor||'—'}</td>
       <td><span style="font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600;background:${sitCor}22;color:${sitCor};white-space:nowrap">${situacao}</span></td>
-      <td><span class="badge ${bc}" style="font-size:10px">${l.status}</span></td>
+      <td><span class="badge ${bc}" style="font-size:10px">${statusLabel}</span></td>
       <td style="white-space:nowrap">
         <button class="btn btn-sm" style="font-size:10px" onclick="abrirEditLead('${idStr}')">Editar</button>
         <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger);margin-left:2px" onclick="excluirLead('${idStr}',this.dataset.nome)" data-nome="${l.nome.replace(/"/g,'&quot;')}">✕</button>
