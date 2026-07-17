@@ -4809,8 +4809,25 @@ async function concluirEtapaLead(key){
     // Sincronizar com colunas fixas do banco
     const etapa = getLeadEtapas().find(e=>e.key===key);
     if(etapa?.campo_data){ lead[etapa.campo_data] = dataHoje; lead.etapas_datas[etapa.campo_data] = dataHoje; }
-    // Status = etapa mais avançada concluída
+
+    // ── Preencher automaticamente todas as etapas ANTERIORES não marcadas ──
     const ordem = getLeadEtapas();
+    const idxAtual = ordem.findIndex(e=>e.key===key);
+    for(let i=0; i<idxAtual; i++){
+      const etapaAnterior = ordem[i];
+      if(!lead.etapas[etapaAnterior.key]){
+        lead.etapas[etapaAnterior.key]              = true;
+        lead.etapas[etapaAnterior.key+'_data']      = dataHoje;
+        lead.etapas[etapaAnterior.key+'_hora']      = horaAgora;
+        if(etapaAnterior.campo_data){
+          lead[etapaAnterior.campo_data] = dataHoje;
+          lead.etapas_datas[etapaAnterior.campo_data] = dataHoje;
+        }
+      }
+    }
+
+    // Status = etapa mais avançada concluída
+    lead.status = 'Novo';
     for(let i=ordem.length-1;i>=0;i--){
       if(lead.etapas[ordem[i].key]){ lead.status=ordem[i].kanbanKey; break; }
     }
