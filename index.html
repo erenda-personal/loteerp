@@ -1340,14 +1340,37 @@ tbody tr.clickable{cursor:pointer}
 
         <!-- Abas -->
         <div class="tabs" style="margin-bottom:14px">
-          <div class="tab active" id="inv-tab-visao-geral" onclick="setInvAba('geral')">Visão geral</div>
+          <div class="tab active" id="inv-tab-investidores" onclick="setInvAba('investidores')">Investidores</div>
+          <div class="tab" id="inv-tab-visao-geral" onclick="setInvAba('geral')">Visão geral</div>
           <div class="tab" id="inv-tab-aportes"     onclick="setInvAba('aportes')">Aportes</div>
           <div class="tab" id="inv-tab-dividendos"  onclick="setInvAba('dividendos')">Dividendos</div>
           <div class="tab" id="inv-tab-rentab"      onclick="setInvAba('rentab')">Rentabilidade</div>
         </div>
 
+        <!-- ABA: INVESTIDORES -->
+        <div id="inv-aba-investidores">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+            <button class="btn btn-primary" onclick="openModal('modal-new-investidor')">+ Novo investidor</button>
+          </div>
+          <div class="card">
+            <table style="table-layout:fixed">
+              <thead><tr>
+                <th style="width:180px">Nome</th>
+                <th style="width:130px">CPF / CNPJ</th>
+                <th style="width:70px;text-align:center">Aportes</th>
+                <th style="width:130px;text-align:right">Total aportado</th>
+                <th style="width:130px;text-align:right">Total resgatado</th>
+                <th style="width:130px;text-align:right">Rent. acum. R$</th>
+                <th style="width:90px;text-align:center">Rent. %</th>
+                <th style="width:70px;text-align:center">Ações</th>
+              </tr></thead>
+              <tbody id="tbody-inv-lista"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- ABA: VISÃO GERAL -->
-        <div id="inv-aba-geral">
+        <div id="inv-aba-geral" style="display:none">
           <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
             <button class="btn btn-primary" onclick="openModal('modal-new-investidor')">+ Novo investidor</button>
           </div>
@@ -1407,7 +1430,7 @@ tbody tr.clickable{cursor:pointer}
             <select class="filter-select" id="divid-filtro-inv" onchange="renderDividendos()">
               <option value="">Todos os investidores</option>
             </select>
-            <button class="btn btn-primary" onclick="openModal('modal-new-dividendo')">+ Pagar dividendo</button>
+            <button class="btn btn-primary" onclick="abrirModalNovoDividendo()">+ Pagar dividendo</button>
           </div>
           <div class="card">
             <table style="table-layout:fixed">
@@ -1839,9 +1862,7 @@ tbody tr.clickable{cursor:pointer}
           <div class="form-row col2">
             <div class="field"><label>Loteamento</label>
               <select id="dv-loteamento">
-                <option>Verde Vale · Fase 1</option>
-                <option>Jardins do Sul · Fase 2</option>
-                <option>Nova Esperança · Fase 3</option>
+                <option value="">— Selecione —</option>
               </select>
             </div>
             <div class="field"><label>Tipo</label>
@@ -1876,6 +1897,20 @@ tbody tr.clickable{cursor:pointer}
               <select id="dv-forma"><option>PIX</option><option>TED</option><option>DOC</option><option>Cheque</option></select>
             </div>
             <div class="field"><label>Nº comprovante</label><input id="dv-comprov" placeholder="Protocolo / autenticação"></div>
+          </div>
+          <div class="form-row">
+            <div class="field">
+              <label>Comprovante (PDF ou imagem)</label>
+              <div id="dv-anexo-drop" style="border:2px dashed var(--border-secondary);border-radius:8px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px" onclick="document.getElementById('dv-anexo-file').click()">
+                <span style="font-size:18px">📎</span>
+                <div>
+                  <div id="dv-anexo-label" style="font-size:12px;color:var(--text-secondary)">Clique para anexar comprovante</div>
+                  <div id="dv-anexo-sub" style="font-size:10px;color:var(--text-tertiary)">PDF, JPG, PNG — máx. 5 MB</div>
+                </div>
+              </div>
+              <input type="file" id="dv-anexo-file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleDvAnexo(this)">
+              <div id="dv-anexo-url" style="display:none;font-size:11px;color:var(--success);margin-top:4px"></div>
+            </div>
           </div>
           <div class="modal-footer">
             <button class="btn" onclick="closeModal('modal-new-dividendo')">Cancelar</button>
@@ -1945,9 +1980,7 @@ tbody tr.clickable{cursor:pointer}
           <div class="form-row col2">
             <div class="field"><label>Loteamento</label>
               <select id="edv-loteamento">
-                <option>Verde Vale · Fase 1</option>
-                <option>Jardins do Sul · Fase 2</option>
-                <option>Nova Esperança · Fase 3</option>
+                <option value="">— Selecione —</option>
               </select>
             </div>
             <div class="field"><label>Tipo</label>
@@ -1966,6 +1999,9 @@ tbody tr.clickable{cursor:pointer}
           </div>
           <div class="form-row">
             <div class="field"><label>Nº comprovante</label><input id="edv-comprov" placeholder="Protocolo / autenticação"></div>
+          </div>
+          <div id="edv-comprov-link-row" style="display:none;margin-bottom:10px">
+            <a id="edv-comprov-link" href="#" target="_blank" style="font-size:12px;color:var(--accent)">📎 Ver comprovante anexado</a>
           </div>
           <div class="modal-footer">
             <button class="btn" onclick="closeModal('modal-edit-dividendo')">Cancelar</button>
@@ -7629,6 +7665,7 @@ function renderInvestidores(){
   renderAportes(aportesFiltrados);
   renderDividendos();
   renderRentabilidade();
+  renderInvLista();
 }
 
 function renderTabelaInvestidores(invList, aportList){
@@ -7636,30 +7673,51 @@ function renderTabelaInvestidores(invList, aportList){
   if(!tbody)return;
   const invs   = invList   || investidores;
   const aperts = aportList || aportes;
-  tbody.innerHTML=invs.map(inv=>{
+
+  // Uma linha por aporte (não por investidor)
+  const rows = [];
+  invs.forEach(inv=>{
     const invAportes = aperts.filter(a=>a.investidorId===inv.id);
-    const valorInvestido = invAportes.reduce((s,a)=>s+a.valor,0);
-    const dataMin = invAportes.length ? invAportes.reduce((m,a)=>a.data<m?a.data:m,invAportes[0].data) : null;
-    const divRec = dividendos.filter(d=>d.investidorId===inv.id).reduce((s,d)=>s+d.liquido,0);
-    const totalResgatado = dividendos.filter(d=>d.investidorId===inv.id&&d.tipo==='Resgate').reduce((s,d)=>s+d.liquido,0);
-    const valorAtual = valorInvestido + divRec - totalResgatado;
-    const rentPct = valorInvestido>0 ? ((divRec/valorInvestido)*100) : 0;
-    const lots = [...new Set(invAportes.map(a=>a.loteamento).filter(Boolean))];
-    const lotStr = lots.join(', ')||'—';
+    if(!invAportes.length){
+      // Investidor sem aporte — linha vazia
+      rows.push({inv, aporte:null});
+    } else {
+      invAportes.forEach(a=>rows.push({inv, aporte:a}));
+    }
+  });
+
+  if(!rows.length){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-secondary)">Nenhum investidor cadastrado.</td></tr>';
+    return;
+  }
+
+  const divRec = (invId) => dividendos.filter(d=>d.investidorId===invId).reduce((s,d)=>s+d.liquido,0);
+  const totalResg = (invId) => dividendos.filter(d=>d.investidorId===invId&&d.tipo==='Resgate').reduce((s,d)=>s+d.liquido,0);
+
+  tbody.innerHTML = rows.map(({inv, aporte:a})=>{
+    const valInv   = a ? a.valor : 0;
+    const rent     = a ? divRec(inv.id) : 0;
+    const resg     = a ? totalResg(inv.id) : 0;
+    const valAtual = valInv + rent - resg;
+    const rentPct  = valInv>0 ? (rent/valInv*100) : 0;
+    const dataStr  = a ? new Date(a.data+'T12:00').toLocaleDateString('pt-BR') : '—';
+    const lotStr   = a ? (a.loteamento||'—') : '—';
+
     return `<tr style="cursor:pointer" onclick="abrirResumoInvestidor('${inv.id}')" title="Clique para ver resumo">
       <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
         <div style="font-weight:500;font-size:12px">${inv.nome}</div>
         <div style="font-size:10px;color:var(--text-secondary)">${inv.tipo||''}</div>
       </td>
-      <td style="font-size:11px;color:var(--text-secondary)">${dataMin?new Date(dataMin+'T12:00').toLocaleDateString('pt-BR'):'—'}</td>
-      <td style="text-align:right;font-weight:600;white-space:nowrap">${valorInvestido>0?fmt(valorInvestido):'—'}</td>
-      <td style="text-align:right;font-weight:600;white-space:nowrap;color:${valorAtual>=valorInvestido?'var(--success)':'var(--danger)'}">${valorAtual>0?fmt(valorAtual):'—'}</td>
-      <td style="text-align:center;font-size:12px;font-weight:600;color:${rentPct>0?'var(--success)':'var(--text-secondary)'}">${valorInvestido>0?rentPct.toFixed(2)+'%':'—'}</td>
-      <td style="text-align:right;font-size:12px;color:var(--success);white-space:nowrap">${divRec>0?fmt(divRec):'—'}</td>
-      <td style="font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lotStr}">${lotStr}</td>
+      <td style="font-size:11px;color:var(--text-secondary)">${dataStr}</td>
+      <td style="text-align:right;font-weight:600;white-space:nowrap">${valInv>0?fmt(valInv):'—'}</td>
+      <td style="text-align:right;font-weight:600;white-space:nowrap;color:${valAtual>=valInv?'var(--success)':'var(--danger)'}">${valAtual>0?fmt(valAtual):'—'}</td>
+      <td style="text-align:center;font-size:12px;font-weight:600;color:${rentPct>0?'var(--success)':'var(--text-secondary)'}">${valInv>0?rentPct.toFixed(2)+'%':'—'}</td>
+      <td style="text-align:right;font-size:12px;color:var(--success);white-space:nowrap">${rent>0?fmt(rent):'—'}</td>
+      <td style="font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        ${a ? `<span style="cursor:pointer;text-decoration:underline;text-decoration-style:dotted" onclick="event.stopPropagation();editarLoteamentoAporte(${a.id})" title="Clique para editar loteamento">${lotStr}</span>` : '—'}
+      </td>
       <td style="text-align:center;white-space:nowrap" onclick="event.stopPropagation()">
-        <button class="btn btn-sm" style="font-size:10px;padding:3px 7px" onclick="abrirEditarInvestidor('${inv.id}')" title="Editar">✏️</button>
-        <button class="btn btn-sm" style="font-size:10px;padding:3px 7px;color:var(--danger);border-color:var(--danger)" onclick="excluirInvestidor(${inv.id})" title="Excluir">✕</button>
+        <button class="btn btn-sm" style="font-size:10px;padding:3px 7px" onclick="abrirEditarInvestidor('${inv.id}')" title="Editar investidor">✏️</button>
       </td>
     </tr>`;
   }).join('');
@@ -7727,8 +7785,8 @@ function renderAportes(aportList){
     <td style="text-align:center;font-size:12px;font-weight:600;color:var(--accent)">${a.taxa.toFixed(1)}%</td>
     <td><span class="badge ${statusBadge[a.status]||'badge-gray'}" style="font-size:10px">${a.status}</span></td>
     <td style="text-align:center;white-space:nowrap">
-      <button class="btn btn-sm" style="font-size:10px;padding:3px 7px" onclick="abrirEditarAporte(${a.id})" title="Editar">✏️</button>
-      <button class="btn btn-sm" style="font-size:10px;padding:3px 7px;color:var(--danger);border-color:var(--danger)" onclick="removerAporte(${a.id})" title="Excluir">✕</button>
+      <button class="btn btn-sm" style="font-size:10px;padding:3px 7px" onclick="abrirEditarAporte('${a.id}')" title="Editar">✏️</button>
+      <button class="btn btn-sm" style="font-size:10px;padding:3px 7px;color:var(--danger);border-color:var(--danger)" onclick="removerAporte('${a.id}')" title="Excluir">✕</button>
     </td>
   </tr>`).join('');
   if(!filtered.length)tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--text-secondary);font-size:12px">Nenhum aporte registrado.</td></tr>';
@@ -7862,13 +7920,59 @@ function renderGrafInv(){
 
 // ---- Abas ----
 function setInvAba(aba){
-  ['geral','aportes','dividendos','rentab'].forEach(a=>{
+  ['investidores','geral','aportes','dividendos','rentab'].forEach(a=>{
     const el=document.getElementById('inv-aba-'+a);
     if(el)el.style.display=a===aba?'block':'none';
-    const tab=document.getElementById('inv-tab-'+(a==='geral'?'visao-geral':a==='rentab'?'rentab':a));
+    const tabId='inv-tab-'+(a==='geral'?'visao-geral':a);
+    const tab=document.getElementById(tabId);
     if(tab)tab.classList.toggle('active',a===aba);
   });
-  if(aba==='rentab'){setTimeout(renderGrafInv,60);}
+  if(aba==='rentab') setTimeout(renderGrafInv,60);
+  if(aba==='investidores') renderInvLista();
+}
+
+function renderInvLista(){
+  const tbody = document.getElementById('tbody-inv-lista');
+  if(!tbody) return;
+
+  const globalAtivo = typeof globalLots!=='undefined' && !globalLots.has('todos');
+  const invFiltrados = globalAtivo
+    ? investidores.filter(inv=>{
+        const lots = aportes.filter(a=>a.investidorId===inv.id).map(a=>a.loteamento).filter(Boolean);
+        return lots.some(l=>[...globalLots].some(s=>s===slugLoteamento(l)));
+      })
+    : investidores;
+
+  if(!invFiltrados.length){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-secondary)">Nenhum investidor cadastrado.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = invFiltrados.map(inv=>{
+    const invAportes   = aportes.filter(a=>a.investidorId===inv.id);
+    const totalAportado= invAportes.reduce((s,a)=>s+a.valor,0);
+    const invDivid     = dividendos.filter(d=>d.investidorId===inv.id);
+    const totalResg    = invDivid.filter(d=>d.tipo==='Resgate').reduce((s,d)=>s+d.liquido,0);
+    const rentRS       = invDivid.reduce((s,d)=>s+d.liquido,0);
+    const rentPct      = totalAportado>0 ? (rentRS/totalAportado*100) : 0;
+
+    return `<tr style="cursor:pointer" onclick="abrirResumoInvestidor('${inv.id}')" title="Ver resumo">
+      <td style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        <div>${inv.nome}</div>
+        <div style="font-size:10px;color:var(--text-secondary)">${inv.tipo||''} · ${inv.status}</div>
+      </td>
+      <td style="font-size:11px;color:var(--text-secondary)">${inv.doc||'—'}</td>
+      <td style="text-align:center;font-size:12px;font-weight:600">${invAportes.length}</td>
+      <td style="text-align:right;font-weight:600;white-space:nowrap">${totalAportado>0?fmt(totalAportado):'—'}</td>
+      <td style="text-align:right;font-size:12px;white-space:nowrap;color:var(--text-secondary)">${totalResg>0?fmt(totalResg):'—'}</td>
+      <td style="text-align:right;font-size:12px;font-weight:600;white-space:nowrap;color:${rentRS>0?'var(--success)':'var(--text-secondary)'}">${rentRS>0?fmt(rentRS):'—'}</td>
+      <td style="text-align:center;font-size:12px;font-weight:600;color:${rentPct>0?'var(--success)':rentPct<0?'var(--danger)':'var(--text-secondary)'}">${totalAportado>0?rentPct.toFixed(2)+'%':'—'}</td>
+      <td style="text-align:center;white-space:nowrap" onclick="event.stopPropagation()">
+        <button class="btn btn-sm" style="font-size:10px;padding:3px 7px" onclick="abrirEditarInvestidor('${inv.id}')" title="Editar">✏️</button>
+        <button class="btn btn-sm" style="font-size:10px;padding:3px 7px;color:var(--danger);border-color:var(--danger)" onclick="excluirInvestidor(${inv.id})" title="Excluir">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 // ---- Selects dinâmicos ----
@@ -8002,6 +8106,59 @@ function salvarAporte(){
   showToast('Aporte de '+fmt(valor)+' registrado!');
 }
 
+// ── Dividendos: popular loteamentos e upload comprovante ─────
+
+async function abrirModalNovoDividendo(){
+  openModal('modal-new-dividendo');
+  const sel = document.getElementById('dv-loteamento');
+  if(sel && sel.options.length <= 1){
+    const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+    sel.innerHTML = '<option value="">— Selecione —</option>' +
+      lots.map(r=>`<option value="${r.nome}${r.fase?' · '+r.fase:''}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+  }
+  // Limpar anexo anterior
+  const label = document.getElementById('dv-anexo-label');
+  const urlEl = document.getElementById('dv-anexo-url');
+  const drop  = document.getElementById('dv-anexo-drop');
+  const input = document.getElementById('dv-anexo-file');
+  if(label) label.textContent = 'Clique para anexar comprovante';
+  if(urlEl){ urlEl.style.display='none'; urlEl.textContent=''; }
+  if(drop)  drop.style.borderColor='var(--border-secondary)';
+  if(input) input.value='';
+}
+
+let _dvAnexoUrl = null;
+
+function handleDvAnexo(input){
+  const file = input.files[0];
+  if(!file) return;
+  const label = document.getElementById('dv-anexo-label');
+  const sub   = document.getElementById('dv-anexo-sub');
+  const drop  = document.getElementById('dv-anexo-drop');
+  if(label) label.textContent = '✅ '+file.name;
+  if(sub)   sub.textContent   = (file.size/1024).toFixed(1)+' KB — pronto para enviar';
+  if(drop)  drop.style.borderColor='var(--success)';
+  // Fazer upload ao Supabase Storage
+  _dvAnexoUrl = null;
+  uploadComprovante(file).then(url=>{
+    _dvAnexoUrl = url;
+    const urlEl = document.getElementById('dv-anexo-url');
+    if(urlEl && url){ urlEl.textContent='✅ Comprovante enviado'; urlEl.style.display='block'; }
+  });
+}
+
+async function uploadComprovante(file){
+  try{
+    const ext  = file.name.split('.').pop();
+    const path = `comprovantes/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const {data, error} = await sb.storage.from('investidores').upload(path, file, {upsert:true});
+    if(error){ console.error('Upload erro:', error.message); return null; }
+    const {data:{publicUrl}} = sb.storage.from('investidores').getPublicUrl(path);
+    return publicUrl;
+  }catch(e){ console.error(e); return null; }
+}
+
+
 function salvarDividendo(){
   const invId=parseInt(document.getElementById('dv-investidor')?.value||'0');
   const brutoRaw=document.getElementById('dv-bruto')?.value||'0';
@@ -8027,16 +8184,24 @@ function salvarDividendo(){
   showToast('Dividendo de '+fmt(bruto-ir)+' (líquido) registrado!');
 }
 
-function removerAporte(id){
-  if(!confirm('Remover este aporte?'))return;
-  aportes=aportes.filter(a=>a.id!==id);
+async function removerAporte(id){
+  if(!confirm('Remover este aporte?')) return;
+  showLoading('Removendo...');
+  const {error} = await sb.from('aportes').delete().eq('id', id);
+  hideLoading();
+  if(error){ showToast('Erro: '+error.message,'error'); return; }
+  aportes = aportes.filter(a=>String(a.id)!==String(id));
   renderInvestidores();
   showToast('Aporte removido.','error');
 }
 
-function removerDividendo(id){
-  if(!confirm('Remover este dividendo?'))return;
-  dividendos=dividendos.filter(d=>d.id!==id);
+async function removerDividendo(id){
+  if(!confirm('Remover este dividendo?')) return;
+  showLoading('Removendo...');
+  const {error} = await sb.from('dividendos').delete().eq('id', id);
+  hideLoading();
+  if(error){ showToast('Erro: '+error.message,'error'); return; }
+  dividendos = dividendos.filter(d=>String(d.id)!==String(id));
   renderInvestidores();
   showToast('Dividendo removido.','error');
 }
@@ -8053,8 +8218,52 @@ function excluirInvestidor(id){
 }
 
 let editAporteId=null;
+async function editarLoteamentoAporte(id){
+  const a = aportes.find(x=>String(x.id)===String(id));
+  if(!a) return;
+
+  // Buscar loteamentos do banco
+  const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+  const opts = lots.map(r=>{
+    const v = r.nome+(r.fase?' · '+r.fase:'');
+    return `<option value="${v}" ${v===a.loteamento?'selected':''}>${v}</option>`;
+  }).join('');
+
+  // Mostrar mini-modal via prompt estilizado
+  const modal = document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center';
+  modal.innerHTML=`
+    <div style="background:var(--bg-primary);border-radius:12px;padding:24px;width:360px;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px">Editar loteamento do aporte</div>
+      <div style="font-size:11px;color:var(--text-secondary);margin-bottom:8px">Aporte de ${fmt(a.valor)} em ${new Date(a.data+'T12:00').toLocaleDateString('pt-BR')}</div>
+      <select id="lot-aporte-sel" style="width:100%;padding:9px 10px;border:1px solid var(--border-secondary);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:13px;margin-bottom:16px">
+        <option value="">— Selecione —</option>${opts}
+      </select>
+      <div style="display:flex;gap:8px;justify-content:flex-end">
+        <button id="lot-aporte-cancel" class="btn" style="font-size:12px">Cancelar</button>
+        <button id="lot-aporte-save" class="btn btn-primary" style="font-size:12px">Salvar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  modal.querySelector('#lot-aporte-cancel').onclick = ()=>modal.remove();
+  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
+  modal.querySelector('#lot-aporte-save').onclick = async ()=>{
+    const novoLot = modal.querySelector('#lot-aporte-sel').value;
+    if(!novoLot){ showToast('Selecione um loteamento.','error'); return; }
+    showLoading('Salvando...');
+    const {error} = await sb.from('aportes').update({loteamento: novoLot}).eq('id', id);
+    hideLoading();
+    if(error){ showToast('Erro: '+error.message,'error'); return; }
+    a.loteamento = novoLot;
+    modal.remove();
+    renderInvestidores();
+    showToast('✅ Loteamento atualizado!');
+  };
+}
+
 async function abrirEditarAporte(id){
-  const a=aportes.find(x=>x.id===id);
+  const a=aportes.find(x=>String(x.id)===String(id));
   if(!a)return;
   editAporteId=id;
   // Investidor
@@ -8125,8 +8334,8 @@ async function salvarEdicaoAporte(){
 }
 
 let editDividendoId=null;
-function abrirEditarDividendo(id){
-  const d=dividendos.find(x=>x.id===id);
+async function abrirEditarDividendo(id){
+  const d=dividendos.find(x=>String(x.id)===String(id));
   if(!d)return;
   editDividendoId=id;
   const sel=document.getElementById('edv-investidor');
@@ -8134,18 +8343,32 @@ function abrirEditarDividendo(id){
     sel.innerHTML='<option value="">Selecione</option>'+investidores.map(i=>`<option value="${i.id}">${i.nome}</option>`).join('');
     sel.value=String(d.investidorId);
   }
+  // Popular loteamentos reais do banco
+  const selLot=document.getElementById('edv-loteamento');
+  if(selLot){
+    const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+    selLot.innerHTML='<option value="">— Selecione —</option>'+
+      lots.map(r=>`<option value="${r.nome}${r.fase?' · '+r.fase:''}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+    [...selLot.options].forEach(o=>o.selected=o.value===d.loteamento||o.text===d.loteamento);
+  }
   const sv=(elId,v)=>{const el=document.getElementById(elId);if(el)el.value=v||'';};
-  sv('edv-data',d.data);sv('edv-comprov',d.comprov);
+  sv('edv-data',d.data);sv('edv-comprov',d.comprov||d.comprovante||'');
   const bruEl=document.getElementById('edv-bruto');
   if(bruEl)bruEl.value=d.bruto.toLocaleString('pt-BR',{minimumFractionDigits:2});
   const irEl=document.getElementById('edv-ir');
   if(irEl)irEl.value=d.ir.toLocaleString('pt-BR',{minimumFractionDigits:2});
-  const selLot=document.getElementById('edv-loteamento');
-  if(selLot)[...selLot.options].forEach(o=>o.selected=o.text===d.loteamento||o.value===d.loteamento);
   const selTipo=document.getElementById('edv-tipo');
   if(selTipo)[...selTipo.options].forEach(o=>o.selected=o.value===d.tipo);
   const selF=document.getElementById('edv-forma');
   if(selF)[...selF.options].forEach(o=>o.selected=o.value===d.forma||o.text===d.forma);
+  // Mostrar link do comprovante se existir
+  const compUrl = d.comprovante_url||d.comprov_url||null;
+  const urlRow = document.getElementById('edv-comprov-link-row');
+  if(urlRow){
+    urlRow.style.display = compUrl ? '' : 'none';
+    const link = document.getElementById('edv-comprov-link');
+    if(link && compUrl){ link.href=compUrl; link.textContent='📎 Ver comprovante anexado'; }
+  }
   openModal('modal-edit-dividendo');
 }
 
@@ -9468,7 +9691,9 @@ async function salvarDividendoDB() {
     data_pagamento: data,
     forma:         document.getElementById('dv-forma')?.value||'PIX',
     comprovante:   document.getElementById('dv-comprov')?.value||null,
+    comprovante_url: _dvAnexoUrl||null,
   };
+  _dvAnexoUrl = null; // resetar após uso
   const saved = await dbInsert('dividendos', row);
   hideLoading();
   if(!saved) return;
@@ -9547,7 +9772,7 @@ async function initPageDB(id) {
       await carregarLeadsDB();
     }
     if(id==='corretores')   await carregarCorretoresDB();
-    if(id==='investidores') await carregarInvestidoresDB();
+    if(id==='investidores') { await carregarInvestidoresDB(); setInvAba('investidores'); }
     if(id==='obras')        await carregarObrasDB();
   }catch(e){
     console.error('initPageDB erro em "'+id+'":', e);
