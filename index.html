@@ -1898,9 +1898,7 @@ tbody tr.clickable{cursor:pointer}
           <div class="form-row col2">
             <div class="field"><label>Loteamento / Fase</label>
               <select id="eap-loteamento">
-                <option>Verde Vale · Fase 1</option>
-                <option>Jardins do Sul · Fase 2</option>
-                <option>Nova Esperança · Fase 3</option>
+                <option value="">— Selecione —</option>
               </select>
             </div>
             <div class="field"><label>Tipo</label>
@@ -7608,23 +7606,38 @@ function renderInvestidores(){
   atualizarSelectsInv();
   const kpis=calcKPIsInv();
   const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
-  sv('inv-kpi-capital',fmt(kpis.capitalTotal));
-  sv('inv-kpi-inv-count',`${investidores.filter(i=>i.status==='Ativo').length} investidores ativos`);
-  sv('inv-kpi-divid',fmt(kpis.dividTotal));
-  sv('inv-kpi-rent',kpis.rentMedia.toFixed(2)+'%');
-  sv('inv-kpi-tir',(kpis.tirPort*100).toFixed(2)+'%');
-  sv('inv-kpi-saldo',fmt(kpis.saldoADistrib));
-  renderTabelaInvestidores();
-  renderAportes();
+
+  // Filtro global de loteamento
+  const globalAtivo = typeof globalLots!=='undefined' && !globalLots.has('todos');
+  const invFiltrados = globalAtivo
+    ? investidores.filter(inv=>{
+        const lots=[...new Set(aportes.filter(a=>a.investidorId===inv.id).map(a=>a.loteamento).filter(Boolean))];
+        return lots.some(l=>[...globalLots].some(s=>s===slugLoteamento(l)));
+      })
+    : investidores;
+  const aportesFiltrados = globalAtivo
+    ? aportes.filter(a=>[...globalLots].some(s=>s===slugLoteamento(a.loteamento||'')))
+    : aportes;
+
+  sv('inv-kpi-capital', fmt(aportesFiltrados.reduce((s,a)=>s+a.valor,0)));
+  sv('inv-kpi-inv-count', `${invFiltrados.filter(i=>i.status==='Ativo').length} investidores ativos`);
+  sv('inv-kpi-divid', fmt(kpis.dividTotal));
+  sv('inv-kpi-rent', kpis.rentMedia.toFixed(2)+'%');
+  sv('inv-kpi-tir', (kpis.tirPort*100).toFixed(2)+'%');
+  sv('inv-kpi-saldo', fmt(kpis.saldoADistrib));
+  renderTabelaInvestidores(invFiltrados, aportesFiltrados);
+  renderAportes(aportesFiltrados);
   renderDividendos();
   renderRentabilidade();
 }
 
-function renderTabelaInvestidores(){
+function renderTabelaInvestidores(invList, aportList){
   const tbody=document.getElementById('tbody-investidores');
   if(!tbody)return;
-  tbody.innerHTML=investidores.map(inv=>{
-    const invAportes = aportes.filter(a=>a.investidorId===inv.id);
+  const invs   = invList   || investidores;
+  const aperts = aportList || aportes;
+  tbody.innerHTML=invs.map(inv=>{
+    const invAportes = aperts.filter(a=>a.investidorId===inv.id);
     const valorInvestido = invAportes.reduce((s,a)=>s+a.valor,0);
     const dataMin = invAportes.length ? invAportes.reduce((m,a)=>a.data<m?a.data:m,invAportes[0].data) : null;
     const divRec = dividendos.filter(d=>d.investidorId===inv.id).reduce((s,d)=>s+d.liquido,0);
@@ -7695,14 +7708,15 @@ function abrirResumoInvestidor(id){
 }
 
 
-function renderAportes(){
+function renderAportes(aportList){
   const tbody=document.getElementById('tbody-aportes');
   if(!tbody)return;
   const fi=document.getElementById('aporte-filtro-inv')?.value||'';
   const fl=document.getElementById('aporte-filtro-lot')?.value||'';
   const tipoBadge={'Equity':'badge-red','Mútuo':'badge-amber','CRI':'badge-blue','Debênture':'badge-blue','Direto':'badge-teal'};
   const statusBadge={'Ativo':'badge-green','Encerrado':'badge-gray','Vencido':'badge-red'};
-  const filtered=aportes.filter(a=>(!fi||String(a.investidorId)===fi)&&(!fl||a.loteamento===fl));
+  const base = aportList || aportes;
+  const filtered=base.filter(a=>(!fi||String(a.investidorId)===fi)&&(!fl||a.loteamento===fl));
   tbody.innerHTML=filtered.map(a=>`<tr>
     <td style="font-size:11px;color:var(--text-secondary);white-space:nowrap">${new Date(a.data+'T12:00').toLocaleDateString('pt-BR')}</td>
     <td style="font-weight:500;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.investidorNome}">${a.investidorNome}</td>
@@ -8039,15 +8053,24 @@ function excluirInvestidor(id){
 }
 
 let editAporteId=null;
-function abrirEditarAporte(id){
+async function abrirEditarAporte(id){
   const a=aportes.find(x=>x.id===id);
   if(!a)return;
   editAporteId=id;
-  // Preencher selects de investidor nos modais de edição
+  // Investidor
   const sel=document.getElementById('eap-investidor');
   if(sel){
     sel.innerHTML='<option value="">Selecione</option>'+investidores.map(i=>`<option value="${i.id}">${i.nome}</option>`).join('');
     sel.value=String(a.investidorId);
+  }
+  // Loteamentos reais do banco
+  const selLotEdit=document.getElementById('eap-loteamento');
+  if(selLotEdit){
+    const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+    selLotEdit.innerHTML='<option value="">— Selecione —</option>'+
+      lots.map(r=>`<option value="${r.nome}${r.fase?' · '+r.fase:''}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+    // Pré-selecionar
+    [...selLotEdit.options].forEach(o=>o.selected=o.value===a.loteamento||o.text===a.loteamento);
   }
   const sv=(elId,v)=>{const el=document.getElementById(elId);if(el)el.value=v||'';};
   sv('eap-data',a.data);
@@ -8065,7 +8088,7 @@ function abrirEditarAporte(id){
   openModal('modal-edit-aporte');
 }
 
-function salvarEdicaoAporte(){
+async function salvarEdicaoAporte(){
   const a=aportes.find(x=>x.id===editAporteId);
   if(!a)return;
   const invId=parseInt(document.getElementById('eap-investidor')?.value||'0');
@@ -8082,9 +8105,22 @@ function salvarEdicaoAporte(){
   a.prazo=parseInt(document.getElementById('eap-prazo')?.value)||a.prazo;
   a.vencimento=document.getElementById('eap-vencimento')?.value||a.vencimento;
   a.status=document.getElementById('eap-status')?.value||a.status;
+  // Persistir no Supabase
+  const {error} = await sb.from('aportes').update({
+    investidor_id: a.investidorId,
+    data:          a.data,
+    loteamento:    a.loteamento,
+    tipo:          a.tipo,
+    valor:         a.valor,
+    taxa:          a.taxa,
+    prazo:         a.prazo,
+    vencimento:    a.vencimento||null,
+    status:        a.status,
+  }).eq('id', editAporteId);
+  if(error){ showToast('Erro ao salvar: '+error.message,'error'); return; }
   closeModal('modal-edit-aporte');
   renderInvestidores();
-  showToast('Aporte atualizado!');
+  showToast('✅ Aporte atualizado!');
   editAporteId=null;
 }
 
