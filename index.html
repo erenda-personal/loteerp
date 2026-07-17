@@ -463,7 +463,10 @@ tbody tr.clickable{cursor:pointer}
       <div class="nav-item" onclick="showPage('crm',this)">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="5" cy="8" r="3" stroke="currentColor" stroke-width="1.3"/><circle cx="11" cy="5" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 11c0-1.5 1.5-2.5 3-2.5s3 1 3 2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2 13c0-1.105.895-2 2-2h2a2 2 0 012 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         CRM / Leads
-        
+      </div>
+      <div class="nav-item" onclick="showPage('vendas',this)">
+        <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M2 2h2l2.4 7h5.6l2-5H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="13" r="1" fill="currentColor"/><circle cx="11" cy="13" r="1" fill="currentColor"/></svg>
+        Vendas
       </div>
       <div class="nav-item" onclick="showPage('corretores',this)">
         <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M10 2a3 3 0 11-4 0M2 14s-.5-5 6-5 6 5 6 5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M12 7l1.5 1.5L16 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1261,6 +1264,152 @@ tbody tr.clickable{cursor:pointer}
             <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary)"><div style="width:10px;height:10px;border-radius:2px;background:#97C459"></div>Visita realizada</div>
             <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary)"><div style="width:10px;height:10px;border-radius:2px;background:#EF9F27"></div>Proposta enviada</div>
             <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary)"><div style="width:10px;height:10px;border-radius:2px;background:#3B6D11"></div>Contrato / Entrada</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== VENDAS ===== -->
+      <div class="page" id="page-vendas" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="text" id="vendas-busca" placeholder="Buscar cliente, contrato ou lote..." oninput="renderVendas()"
+              style="padding:7px 12px;border:1px solid var(--border-secondary);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;width:280px">
+          </div>
+          <button class="btn btn-primary" onclick="abrirModalNovaVenda()">+ Nova venda</button>
+        </div>
+
+        <!-- KPIs -->
+        <div class="stat-row" style="grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:14px">
+          <div class="stat-mini"><div class="stat-mini-label">Total de contratos</div><div class="stat-mini-val" id="vd-kpi-contratos">0</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">VGV vendido</div><div class="stat-mini-val" id="vd-kpi-vgv">—</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Parcelas em aberto</div><div class="stat-mini-val" id="vd-kpi-aberto">0</div></div>
+          <div class="stat-mini"><div class="stat-mini-label">Parcelas vencidas</div><div class="stat-mini-val" style="color:var(--danger)" id="vd-kpi-vencidas">0</div></div>
+        </div>
+
+        <div class="card">
+          <table style="table-layout:fixed">
+            <thead><tr>
+              <th style="width:100px">Contrato</th>
+              <th style="width:150px">Cliente</th>
+              <th style="width:130px">Lote(s)</th>
+              <th style="width:110px;text-align:right">Valor venda</th>
+              <th style="width:100px;text-align:right">Entrada</th>
+              <th style="width:100px;text-align:right">Financiado</th>
+              <th style="width:60px;text-align:center">Prazo</th>
+              <th style="width:80px;text-align:right">Taxa</th>
+              <th style="width:100px;text-align:right">Parcela</th>
+              <th style="width:95px">1ª parcela</th>
+              <th style="width:70px;text-align:center">Contrato</th>
+            </tr></thead>
+            <tbody id="tbody-vendas"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal: Nova Venda / Editar Venda -->
+      <div class="modal-overlay" id="modal-venda" onclick="if(event.target===this)closeModal('modal-venda')">
+        <div class="modal-box" style="width:680px;max-height:90vh;overflow-y:auto">
+          <div class="modal-header">
+            <span class="modal-title" id="modal-venda-titulo">Nova venda</span>
+            <button class="modal-close" onclick="closeModal('modal-venda')">✕</button>
+          </div>
+          <input type="hidden" id="vd-id">
+          <div class="form-section">Identificação</div>
+          <div class="form-row col2">
+            <div class="field"><label>ID do contrato *</label><input id="vd-contrato" placeholder="Ex: VV-001"></div>
+            <div class="field"><label>Cliente *</label><input id="vd-cliente" placeholder="Nome do comprador"></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>Lote(s)</label><input id="vd-lotes" placeholder="Ex: C-01, C-02"></div>
+            <div class="field"><label>Loteamento</label>
+              <select id="vd-loteamento"><option value="">— Selecione —</option></select>
+            </div>
+          </div>
+          <div class="form-section">Condições financeiras</div>
+          <div class="form-row col2">
+            <div class="field"><label>Valor de venda (R$) *</label><input id="vd-valor" type="text" placeholder="0,00" oninput="maskMoney(this);calcVdFinanciado()"></div>
+            <div class="field"><label>Valor de entrada (R$)</label><input id="vd-entrada" type="text" placeholder="0,00" oninput="maskMoney(this);calcVdFinanciado()"></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>Valor financiado (R$)</label><input id="vd-financiado" type="text" placeholder="Calculado auto." readonly style="background:var(--bg-secondary);opacity:.8"></div>
+            <div class="field"><label>Prazo (meses)</label><input id="vd-prazo" type="number" min="1" max="360" placeholder="60" oninput="calcVdParcela()"></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>Taxa de juros (% a.m.)</label><input id="vd-taxa" type="text" placeholder="0,90" oninput="maskDecimal(this);calcVdParcela()"></div>
+            <div class="field"><label>Valor da parcela (R$)</label><input id="vd-parcela" type="text" placeholder="Calculado auto." style="background:var(--bg-secondary);opacity:.8" readonly></div>
+          </div>
+          <div class="form-row col2">
+            <div class="field"><label>Data da 1ª parcela</label><input id="vd-dt-primeira" type="date"></div>
+            <div class="field"><label>Sistema</label>
+              <select id="vd-sistema"><option value="price">Price (parcelas iguais)</option><option value="sac">SAC</option></select>
+            </div>
+          </div>
+          <div class="form-section">Contrato</div>
+          <div class="form-row">
+            <div class="field">
+              <label>Arquivo do contrato (PDF)</label>
+              <div id="vd-contrato-drop" onclick="document.getElementById('vd-contrato-file').click()"
+                style="border:2px dashed var(--border-secondary);border-radius:8px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px">
+                <span style="font-size:18px">📄</span>
+                <div>
+                  <div id="vd-contrato-label" style="font-size:12px;color:var(--text-secondary)">Clique para anexar o contrato</div>
+                  <div id="vd-contrato-sub" style="font-size:10px;color:var(--text-tertiary)">PDF — máx. 10 MB</div>
+                </div>
+              </div>
+              <input type="file" id="vd-contrato-file" accept=".pdf" style="display:none" onchange="handleVdContrato(this)">
+              <div id="vd-contrato-link" style="display:none;margin-top:4px">
+                <a id="vd-contrato-url" href="#" target="_blank" style="font-size:11px;color:var(--accent)">📄 Ver contrato atual</a>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn" onclick="closeModal('modal-venda')">Cancelar</button>
+            <button class="btn btn-primary" onclick="salvarVenda()">💾 Salvar contrato</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal: Plano de parcelas -->
+      <div class="modal-overlay" id="modal-parcelas" onclick="if(event.target===this)closeModal('modal-parcelas')">
+        <div class="modal-box" style="width:700px;max-height:90vh;overflow-y:auto">
+          <div class="modal-header">
+            <span class="modal-title" id="modal-parcelas-titulo">Plano de pagamento</span>
+            <button class="modal-close" onclick="closeModal('modal-parcelas')">✕</button>
+          </div>
+          <!-- Resumo do contrato -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+            <div style="background:var(--bg-secondary);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:10px;color:var(--text-tertiary);margin-bottom:2px">Valor venda</div>
+              <div style="font-size:14px;font-weight:700" id="parc-vl-venda">—</div>
+            </div>
+            <div style="background:var(--bg-secondary);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:10px;color:var(--text-tertiary);margin-bottom:2px">Entrada</div>
+              <div style="font-size:14px;font-weight:700" id="parc-vl-entrada">—</div>
+            </div>
+            <div style="background:var(--bg-secondary);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:10px;color:var(--text-tertiary);margin-bottom:2px">Parcela</div>
+              <div style="font-size:14px;font-weight:700;color:var(--accent)" id="parc-vl-parcela">—</div>
+            </div>
+            <div style="background:var(--bg-secondary);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:10px;color:var(--text-tertiary);margin-bottom:2px">Prazo</div>
+              <div style="font-size:14px;font-weight:700" id="parc-prazo">—</div>
+            </div>
+          </div>
+          <table style="table-layout:fixed;width:100%">
+            <thead><tr>
+              <th style="width:50px;text-align:center">Nº</th>
+              <th style="width:110px;text-align:right">Valor</th>
+              <th style="width:90px">Vencimento</th>
+              <th style="width:100px;text-align:center">Status</th>
+              <th style="width:90px">Dt. pagamento</th>
+              <th style="width:110px;text-align:right">Valor pago</th>
+              <th style="width:60px;text-align:center">Ação</th>
+            </tr></thead>
+            <tbody id="tbody-parcelas"></tbody>
+          </table>
+          <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn" onclick="closeModal('modal-parcelas')">Fechar</button>
+            <button class="btn btn-primary" onclick="salvarParcelas()">💾 Salvar alterações</button>
           </div>
         </div>
       </div>
@@ -3067,7 +3216,7 @@ function hideLoading() {
   const el=document.getElementById('sb-loading');
   if(el) el.style.display='none';
 }
-const pageTitles={dashboard:'Dashboard executivo',loteamentos:'Loteamentos',lotes:'Lotes',clientes:'Clientes',contrato_detalhe:'Contrato #1042',contratos:'Contratos','cliente-detalhe':'Maria Aparecida Souza — Ficha','contrato-detalhe':'Contrato #1042 — Detalhes',financeiro:'Financeiro',inadimplencia:'Inadimplência',obras:'Obras',crm:'CRM / Leads',simulador:'Simulador Price / SAC',configuracoes:'Configurações do sistema',corretores:'Corretores',investidores:'Investidores','contas-bancarias':'Contas Bancárias'};
+const pageTitles={dashboard:'Dashboard executivo',loteamentos:'Loteamentos',lotes:'Lotes',clientes:'Clientes',vendas:'Vendas',contrato_detalhe:'Contrato #1042',contratos:'Contratos','cliente-detalhe':'Maria Aparecida Souza — Ficha','contrato-detalhe':'Contrato #1042 — Detalhes',financeiro:'Financeiro',inadimplencia:'Inadimplência',obras:'Obras',crm:'CRM / Leads',simulador:'Simulador Price / SAC',configuracoes:'Configurações do sistema',corretores:'Corretores',investidores:'Investidores','contas-bancarias':'Contas Bancárias'};
 
 function showPage(id, navEl){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -4045,7 +4194,363 @@ function salvarEmpresa(){
   }).catch(()=>showToast('Dados da empresa salvos!'));
 }
 
-// ── Configurações do Simulador ────────────────────────────────
+// ════════════════════════════════════════════════════════════
+// MÓDULO VENDAS
+// ════════════════════════════════════════════════════════════
+
+let vendas    = [];
+let _vendaContratoUrl = null;
+let _parcelaEditId    = null;
+
+// ── Inicialização ─────────────────────────────────────────────
+async function carregarVendasDB(){
+  showLoading('Carregando vendas...');
+  const [vRows, pRows] = await Promise.all([
+    dbSelect('vendas',  {order:'created_at', asc:false}),
+    dbSelect('parcelas',{order:'numero',     asc:true})
+  ]);
+  hideLoading();
+  vendas = vRows.map(r=>({
+    id:          r.id,
+    contrato:    r.contrato,
+    cliente:     r.cliente,
+    lotes:       r.lotes,
+    loteamento:  r.loteamento,
+    valor:       parseFloat(r.valor)||0,
+    entrada:     parseFloat(r.entrada)||0,
+    financiado:  parseFloat(r.financiado)||0,
+    prazo:       parseInt(r.prazo)||0,
+    taxa:        parseFloat(r.taxa)||0,
+    parcela:     parseFloat(r.parcela)||0,
+    sistema:     r.sistema||'price',
+    dt_primeira: r.dt_primeira||'',
+    contrato_url:r.contrato_url||null,
+    parcelas:    pRows.filter(p=>p.venda_id===r.id).map(p=>({
+      id:          p.id,
+      numero:      p.numero,
+      valor:       parseFloat(p.valor)||0,
+      vencimento:  p.vencimento,
+      status:      p.status||'Em aberto',
+      dt_pagamento:p.dt_pagamento||'',
+      valor_pago:  parseFloat(p.valor_pago)||0,
+    }))
+  }));
+  renderVendas();
+}
+
+// ── Render da tabela ──────────────────────────────────────────
+function renderVendas(){
+  const tbody = document.getElementById('tbody-vendas');
+  if(!tbody) return;
+  const busca = (document.getElementById('vendas-busca')?.value||'').toLowerCase();
+  const filt  = busca ? vendas.filter(v=>
+    (v.contrato||'').toLowerCase().includes(busca)||
+    (v.cliente||'').toLowerCase().includes(busca)||
+    (v.lotes||'').toLowerCase().includes(busca)
+  ) : vendas;
+
+  // KPIs
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  sv('vd-kpi-contratos', filt.length);
+  sv('vd-kpi-vgv',       fmt(filt.reduce((s,v)=>s+v.valor,0)));
+  const todasParcelas = filt.flatMap(v=>v.parcelas);
+  sv('vd-kpi-aberto',   todasParcelas.filter(p=>p.status==='Em aberto').length);
+  sv('vd-kpi-vencidas', todasParcelas.filter(p=>p.status==='Vencida').length);
+
+  if(!filt.length){
+    tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--text-secondary)">Nenhuma venda registrada.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filt.map(v=>{
+    const pVencidas = v.parcelas.filter(p=>p.status==='Vencida').length;
+    const pAbertas  = v.parcelas.filter(p=>p.status==='Em aberto').length;
+    const pPagas    = v.parcelas.filter(p=>p.status==='Paga').length;
+    const statusBadge = pVencidas>0 ? `<span class="badge badge-red">${pVencidas} venc.</span>`
+      : pPagas===v.parcelas.length && v.parcelas.length>0 ? `<span class="badge badge-green">Quitado</span>`
+      : `<span class="badge badge-blue">${pAbertas} em aberto</span>`;
+    return `<tr style="cursor:pointer" onclick="abrirParcelas('${v.id}')" title="Ver plano de parcelas">
+      <td style="font-weight:600;font-size:11px;color:var(--accent)">${v.contrato||'—'}</td>
+      <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${v.cliente}</td>
+      <td style="font-size:11px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.lotes||'—'}</td>
+      <td style="text-align:right;font-weight:600;white-space:nowrap">${fmt(v.valor)}</td>
+      <td style="text-align:right;font-size:11px;white-space:nowrap">${v.entrada>0?fmt(v.entrada):'—'}</td>
+      <td style="text-align:right;font-size:11px;white-space:nowrap">${v.financiado>0?fmt(v.financiado):'—'}</td>
+      <td style="text-align:center;font-size:11px">${v.prazo}m</td>
+      <td style="text-align:right;font-size:11px">${v.taxa>0?v.taxa.toFixed(2)+'%':'—'}</td>
+      <td style="text-align:right;font-weight:600;white-space:nowrap;color:var(--accent)">${v.parcela>0?fmt(v.parcela):'—'}</td>
+      <td style="font-size:11px;color:var(--text-secondary)">${v.dt_primeira?new Date(v.dt_primeira+'T12:00').toLocaleDateString('pt-BR'):'—'}</td>
+      <td style="text-align:center">
+        ${v.contrato_url?`<a href="${v.contrato_url}" target="_blank" onclick="event.stopPropagation()" title="Ver contrato" style="color:var(--accent);font-size:14px">📄</a>`:'—'}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Modal nova/editar venda ───────────────────────────────────
+async function abrirModalNovaVenda(vendaId){
+  _vendaContratoUrl = null;
+  const titulo = document.getElementById('modal-venda-titulo');
+  if(titulo) titulo.textContent = vendaId ? 'Editar contrato' : 'Nova venda';
+  document.getElementById('vd-id').value = vendaId||'';
+  // Popular loteamentos
+  const selLot = document.getElementById('vd-loteamento');
+  if(selLot){
+    const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+    selLot.innerHTML='<option value="">— Selecione —</option>'+
+      lots.map(r=>`<option value="${r.id}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+  }
+  // Pré-preencher de simCfg
+  const taxaEl = document.getElementById('vd-taxa');
+  if(taxaEl && !vendaId) taxaEl.value = simCfg.taxaJuros.toFixed(2).replace('.',',');
+
+  if(vendaId){
+    const v = vendas.find(x=>String(x.id)===String(vendaId));
+    if(v){
+      const sv=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
+      sv('vd-contrato', v.contrato); sv('vd-cliente', v.cliente);
+      sv('vd-lotes',    v.lotes);    sv('vd-prazo',   v.prazo);
+      sv('vd-dt-primeira', v.dt_primeira);
+      document.getElementById('vd-valor').value    = v.valor.toLocaleString('pt-BR',{minimumFractionDigits:2});
+      document.getElementById('vd-entrada').value  = v.entrada.toLocaleString('pt-BR',{minimumFractionDigits:2});
+      document.getElementById('vd-taxa').value     = v.taxa.toFixed(2).replace('.',',');
+      if(selLot) selLot.value = v.loteamento||'';
+      calcVdFinanciado();
+      if(v.contrato_url){
+        _vendaContratoUrl = v.contrato_url;
+        const link = document.getElementById('vd-contrato-link');
+        const url  = document.getElementById('vd-contrato-url');
+        if(link) link.style.display='';
+        if(url)  url.href = v.contrato_url;
+      }
+      const selSis = document.getElementById('vd-sistema');
+      if(selSis) selSis.value = v.sistema||'price';
+    }
+  } else {
+    ['vd-contrato','vd-cliente','vd-lotes','vd-prazo','vd-dt-primeira'].forEach(id=>{
+      const el=document.getElementById(id); if(el)el.value='';
+    });
+    document.getElementById('vd-valor').value   = '';
+    document.getElementById('vd-entrada').value = '';
+    const link = document.getElementById('vd-contrato-link');
+    if(link) link.style.display='none';
+    const drop = document.getElementById('vd-contrato-drop');
+    const lbl  = document.getElementById('vd-contrato-label');
+    if(drop) drop.style.borderColor='var(--border-secondary)';
+    if(lbl)  lbl.textContent='Clique para anexar o contrato';
+  }
+  openModal('modal-venda');
+}
+
+function calcVdFinanciado(){
+  const v = parseMoney('vd-valor');
+  const e = parseMoney('vd-entrada');
+  const fin = Math.max(0, v-e);
+  const el = document.getElementById('vd-financiado');
+  if(el) el.value = fin.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  calcVdParcela();
+}
+
+function calcVdParcela(){
+  const fin  = parseFloat((document.getElementById('vd-financiado')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const n    = parseInt(document.getElementById('vd-prazo')?.value)||0;
+  const taxa = parseFloat((document.getElementById('vd-taxa')?.value||'0').replace(',','.'))/100;
+  const el   = document.getElementById('vd-parcela');
+  if(!el||fin<=0||n<=0||taxa<=0){ if(el)el.value=''; return; }
+  const pmt  = fin*(taxa*Math.pow(1+taxa,n))/(Math.pow(1+taxa,n)-1);
+  el.value = pmt.toLocaleString('pt-BR',{minimumFractionDigits:2});
+}
+
+async function handleVdContrato(input){
+  const file = input.files[0];
+  if(!file) return;
+  const lbl  = document.getElementById('vd-contrato-label');
+  const sub  = document.getElementById('vd-contrato-sub');
+  const drop = document.getElementById('vd-contrato-drop');
+  if(lbl)  lbl.textContent = '⏳ Enviando '+file.name+'...';
+  if(drop) drop.style.borderColor='var(--accent)';
+  try{
+    const ext  = file.name.split('.').pop();
+    const path = `contratos/${Date.now()}.${ext}`;
+    const {error} = await sb.storage.from('vendas').upload(path,file,{upsert:true});
+    if(error) throw error;
+    const {data:{publicUrl}} = sb.storage.from('vendas').getPublicUrl(path);
+    _vendaContratoUrl = publicUrl;
+    if(lbl)  lbl.textContent = '✅ '+file.name;
+    if(sub)  sub.textContent = (file.size/1024).toFixed(1)+' KB';
+    if(drop) drop.style.borderColor='var(--success)';
+    const link = document.getElementById('vd-contrato-link');
+    const url  = document.getElementById('vd-contrato-url');
+    if(link) link.style.display='';
+    if(url)  url.href = publicUrl;
+  }catch(e){
+    showToast('Erro no upload: '+e.message,'error');
+    if(lbl) lbl.textContent='Erro ao enviar — tente novamente';
+  }
+}
+
+async function salvarVenda(){
+  const id       = document.getElementById('vd-id')?.value||null;
+  const contrato = document.getElementById('vd-contrato')?.value?.trim();
+  const cliente  = document.getElementById('vd-cliente')?.value?.trim();
+  if(!contrato){ showToast('Informe o ID do contrato.','error'); return; }
+  if(!cliente)  { showToast('Informe o cliente.','error');       return; }
+  const valor    = parseMoney('vd-valor');
+  const entrada  = parseMoney('vd-entrada');
+  const fin      = Math.max(0, valor-entrada);
+  const prazo    = parseInt(document.getElementById('vd-prazo')?.value)||0;
+  const taxa     = parseFloat((document.getElementById('vd-taxa')?.value||'0').replace(',','.'))||0;
+  const parcela  = parseFloat((document.getElementById('vd-parcela')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const row = {
+    contrato, cliente,
+    lotes:        document.getElementById('vd-lotes')?.value?.trim()||null,
+    loteamento:   document.getElementById('vd-loteamento')?.value||null,
+    valor, entrada, financiado: fin, prazo, taxa, parcela,
+    sistema:      document.getElementById('vd-sistema')?.value||'price',
+    dt_primeira:  document.getElementById('vd-dt-primeira')?.value||null,
+    contrato_url: _vendaContratoUrl||null,
+  };
+  showLoading('Salvando contrato...');
+  let savedId = id;
+  if(id){
+    await dbUpdate('vendas', id, row);
+  } else {
+    const saved = await dbInsert('vendas', row);
+    if(!saved){ hideLoading(); return; }
+    savedId = saved.id;
+    // Gerar plano de parcelas automaticamente
+    if(prazo>0 && parcela>0 && row.dt_primeira){
+      await gerarParcelas(savedId, row);
+    }
+  }
+  hideLoading();
+  _vendaContratoUrl = null;
+  closeModal('modal-venda');
+  carregarVendasDB();
+  showToast(`✅ Contrato ${contrato} salvo!`);
+}
+
+async function gerarParcelas(vendaId, v){
+  const dtBase  = new Date(v.dt_primeira+'T12:00');
+  const fin     = v.financiado;
+  const n       = v.prazo;
+  const taxa    = v.taxa/100;
+  const hoje    = new Date(); hoje.setHours(0,0,0,0);
+  const rows    = [];
+  if(v.sistema==='price'){
+    const pmt = fin*(taxa*Math.pow(1+taxa,n))/(Math.pow(1+taxa,n)-1);
+    for(let k=0;k<n;k++){
+      const dt = new Date(dtBase); dt.setMonth(dt.getMonth()+k);
+      const venc = dt.toISOString().split('T')[0];
+      rows.push({venda_id:vendaId, numero:k+1, valor:Math.round(pmt*100)/100,
+        vencimento:venc, status: dt<hoje?'Vencida':'Em aberto',
+        dt_pagamento:null, valor_pago:0});
+    }
+  } else {
+    const a = fin/n;
+    let s   = fin;
+    for(let k=0;k<n;k++){
+      const j   = s*taxa;
+      const pmt = a+j; s=Math.max(0,s-a);
+      const dt  = new Date(dtBase); dt.setMonth(dt.getMonth()+k);
+      const venc= dt.toISOString().split('T')[0];
+      rows.push({venda_id:vendaId, numero:k+1, valor:Math.round(pmt*100)/100,
+        vencimento:venc, status: dt<hoje?'Vencida':'Em aberto',
+        dt_pagamento:null, valor_pago:0});
+    }
+  }
+  // Inserir em batch
+  for(let i=0;i<rows.length;i+=50){
+    await sb.from('parcelas').insert(rows.slice(i,i+50));
+  }
+}
+
+// ── Modal plano de parcelas ───────────────────────────────────
+let _parcelasVendaId = null;
+let _parcelasEditadas = [];
+
+function abrirParcelas(vendaId){
+  const v = vendas.find(x=>String(x.id)===String(vendaId));
+  if(!v) return;
+  _parcelasVendaId  = vendaId;
+  _parcelasEditadas = v.parcelas.map(p=>({...p}));
+  const titulo = document.getElementById('modal-parcelas-titulo');
+  if(titulo) titulo.textContent = `Contrato ${v.contrato} — ${v.cliente}`;
+  const sv=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
+  sv('parc-vl-venda',  fmt(v.valor));
+  sv('parc-vl-entrada',fmt(v.entrada));
+  sv('parc-vl-parcela',fmt(v.parcela));
+  sv('parc-prazo',     v.prazo+'x');
+  renderParcelas();
+  openModal('modal-parcelas');
+}
+
+function renderParcelas(){
+  const tbody = document.getElementById('tbody-parcelas');
+  if(!tbody) return;
+  const statusCor = {'Em aberto':'badge-blue','Paga':'badge-green','Vencida':'badge-red'};
+  tbody.innerHTML = _parcelasEditadas.map((p,idx)=>`<tr>
+    <td style="text-align:center;font-weight:600">${p.numero}</td>
+    <td style="text-align:right;font-weight:600;white-space:nowrap">${fmt(p.valor)}</td>
+    <td style="font-size:11px">${p.vencimento?new Date(p.vencimento+'T12:00').toLocaleDateString('pt-BR'):'—'}</td>
+    <td style="text-align:center">
+      <select style="font-size:10px;padding:2px 4px;border:1px solid var(--border-secondary);border-radius:4px;background:var(--bg-primary)"
+        onchange="_parcelasEditadas[${idx}].status=this.value;renderParcelas()">
+        ${['Em aberto','Paga','Vencida'].map(s=>`<option value="${s}" ${s===p.status?'selected':''}>${s}</option>`).join('')}
+      </select>
+    </td>
+    <td><input type="date" value="${p.dt_pagamento||''}" style="font-size:10px;padding:3px;border:1px solid var(--border-secondary);border-radius:4px;width:100%"
+      onchange="_parcelasEditadas[${idx}].dt_pagamento=this.value"></td>
+    <td><input type="text" value="${p.valor_pago>0?p.valor_pago.toLocaleString('pt-BR',{minimumFractionDigits:2}):''}"
+      placeholder="0,00" style="font-size:10px;padding:3px;border:1px solid var(--border-secondary);border-radius:4px;width:100%;text-align:right"
+      oninput="maskMoney(this);_parcelasEditadas[${idx}].valor_pago=parseFloat(this.value.replace(/\\./g,'').replace(',','.'))||0"></td>
+    <td style="text-align:center">
+      <span class="badge ${statusCor[p.status]||'badge-gray'}" style="font-size:9px">${p.status}</span>
+    </td>
+  </tr>`).join('');
+}
+
+async function salvarParcelas(){
+  showLoading('Salvando parcelas...');
+  for(const p of _parcelasEditadas){
+    await dbUpdate('parcelas', p.id, {
+      status:       p.status,
+      dt_pagamento: p.dt_pagamento||null,
+      valor_pago:   p.valor_pago||0,
+    });
+  }
+  // Atualizar em memória
+  const v = vendas.find(x=>String(x.id)===String(_parcelasVendaId));
+  if(v) v.parcelas = _parcelasEditadas.map(p=>({...p}));
+  hideLoading();
+  closeModal('modal-parcelas');
+  renderVendas();
+  showToast('✅ Parcelas atualizadas!');
+}
+
+// ── Integração com CRM: criar venda ao marcar "Lote vendido" ──
+async function criarVendaDeKanban(lead){
+  // Verificar se já existe venda para este lead
+  const existente = vendas.find(v=>(v.lotes||'').includes(lead.lote||'') && v.cliente===lead.nome);
+  if(existente) return;
+  const novaVenda = {
+    contrato:    'VD-'+String(Date.now()).slice(-5),
+    cliente:     lead.nome||'',
+    lotes:       lead.lote||'',
+    loteamento:  null,
+    valor:       0, entrada:0, financiado:0,
+    prazo:       0, taxa:0, parcela:0,
+    sistema:     'price',
+    dt_primeira: null,
+    contrato_url:null,
+  };
+  const saved = await dbInsert('vendas', novaVenda);
+  if(saved){
+    vendas.unshift({...novaVenda, id:saved.id, parcelas:[]});
+    showToast(`📋 Venda criada para ${lead.nome}. Complete os dados em Vendas.`);
+  }
+}
+
+
 const SIM_CFG_KEY = 'loteerp_sim_cfg';
 let simCfg = {
   taxaJuros:       0.90,   // % a.m.
@@ -6979,8 +7484,13 @@ function onKanbanDrop(event,novoStatus){
     if(novoStatus==='Contrato assinado')lead.etapas.contrato=true;
     if(novoStatus==='Entrada paga'){lead.etapas.contrato=true;lead.etapas.entrada=true;}
     if(novoStatus==='Visita realizada')lead.etapas.visitou=true;
+    persistirEtapas(lead);
     renderKanban();atualizarKpisCRM();
-    if(old!==novoStatus)showToast(lead.nome+' → '+novoStatus);
+    if(old!==novoStatus) showToast(lead.nome+' → '+novoStatus);
+    // Criar venda ao mover para coluna de venda
+    if(novoStatus==='Lote vendido'||novoStatus?.toLowerCase().includes('vendido')){
+      if(typeof criarVendaDeKanban==='function') criarVendaDeKanban(lead);
+    }
   }
   dragLeadId=null;
 }
@@ -9773,7 +10283,7 @@ async function initPageDB(id) {
     }
     if(id==='corretores')   await carregarCorretoresDB();
     if(id==='investidores') { await carregarInvestidoresDB(); setInvAba('investidores'); }
-    if(id==='obras')        await carregarObrasDB();
+    if(id==='vendas')       await carregarVendasDB();
   }catch(e){
     console.error('initPageDB erro em "'+id+'":', e);
     hideLoading(); // garantir que o loading nunca trava
