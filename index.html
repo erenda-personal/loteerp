@@ -4313,6 +4313,8 @@ async function abrirModalNovaVenda(vendaId){
     selCli.innerHTML='<option value="">— Selecione o cliente —</option>'+
       clis.map(c=>`<option value="${c.id}" data-nome="${c.nome}">${c.nome}${c.cpf?' · '+c.cpf:''}</option>`).join('');
   }
+  // Popular loteamentos
+  const selLot = document.getElementById('vd-loteamento');
   if(selLot){
     const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
     selLot.innerHTML='<option value="">— Selecione —</option>'+
