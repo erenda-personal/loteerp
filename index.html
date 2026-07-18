@@ -4232,7 +4232,7 @@ async function carregarVendasDB(){
     sistema:     r.sistema||'price',
     dt_primeira: r.dt_primeira||'',
     contrato_url:r.contrato_url||null,
-    parcelas:    pRows.filter(p=>p.venda_id===r.id).map(p=>({
+    parcelas:    pRows.filter(p=>String(p.venda_id)===String(r.id)).map(p=>({
       id:          p.id,
       numero:      p.numero,
       valor:       parseFloat(p.valor)||0,
@@ -4533,38 +4533,44 @@ async function salvarVenda(){
 }
 
 async function gerarParcelas(vendaId, v){
-  const dtBase  = new Date(v.dt_primeira+'T12:00');
-  const fin     = v.financiado;
-  const n       = v.prazo;
-  const taxa    = v.taxa/100;
-  const hoje    = new Date(); hoje.setHours(0,0,0,0);
-  const rows    = [];
+  const dtBase = new Date(v.dt_primeira+'T12:00');
+  const fin    = v.financiado;
+  const n      = v.prazo;
+  const taxa   = v.taxa/100;
+  const hoje   = new Date(); hoje.setHours(0,0,0,0);
+  const rows   = [];
+
   if(v.sistema==='price'){
     const pmt = fin*(taxa*Math.pow(1+taxa,n))/(Math.pow(1+taxa,n)-1);
+    let s = fin;
     for(let k=0;k<n;k++){
-      const dt = new Date(dtBase); dt.setMonth(dt.getMonth()+k);
-      const venc = dt.toISOString().split('T')[0];
+      const j=s*taxa; const a=pmt-j; s=Math.max(0,s-a);
+      const dt=new Date(dtBase); dt.setMonth(dt.getMonth()+k);
       rows.push({venda_id:vendaId, numero:k+1, valor:Math.round(pmt*100)/100,
-        vencimento:venc, status: dt<hoje?'Vencida':'Em aberto',
-        dt_pagamento:null, valor_pago:0});
+        vencimento:dt.toISOString().split('T')[0],
+        status:dt<hoje?'Vencida':'Em aberto', dt_pagamento:null, valor_pago:0});
     }
   } else {
-    const a = fin/n;
-    let s   = fin;
+    const a=fin/n; let s=fin;
     for(let k=0;k<n;k++){
-      const j   = s*taxa;
-      const pmt = a+j; s=Math.max(0,s-a);
-      const dt  = new Date(dtBase); dt.setMonth(dt.getMonth()+k);
-      const venc= dt.toISOString().split('T')[0];
+      const j=s*taxa; const pmt=a+j; s=Math.max(0,s-a);
+      const dt=new Date(dtBase); dt.setMonth(dt.getMonth()+k);
       rows.push({venda_id:vendaId, numero:k+1, valor:Math.round(pmt*100)/100,
-        vencimento:venc, status: dt<hoje?'Vencida':'Em aberto',
-        dt_pagamento:null, valor_pago:0});
+        vencimento:dt.toISOString().split('T')[0],
+        status:dt<hoje?'Vencida':'Em aberto', dt_pagamento:null, valor_pago:0});
     }
   }
-  // Inserir em batch
+
+  // Inserir em lotes de 50
   for(let i=0;i<rows.length;i+=50){
-    await sb.from('parcelas').insert(rows.slice(i,i+50));
+    const {error} = await sb.from('parcelas').insert(rows.slice(i,i+50));
+    if(error){
+      console.error('Erro ao gerar parcelas:', error.message);
+      showToast('Erro ao gerar parcelas: '+error.message,'error');
+      return;
+    }
   }
+  console.log(`✅ ${rows.length} parcelas geradas para venda ${vendaId}`);
 }
 
 // ── Modal plano de parcelas ───────────────────────────────────
