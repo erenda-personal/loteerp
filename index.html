@@ -3252,7 +3252,7 @@ function showPage(id, navEl){
   // ── History API: atualizar URL sem recarregar ──────────────
   const path = id==='dashboard' ? '/' : '/'+id;
   if(window.location.pathname !== path){
-    history.pushState({page: id}, pageTitles[id]||id, path);
+    try{ history.pushState({page: id}, pageTitles[id]||id, path); }catch(e){}
   }
   document.title = (pageTitles[id]||id) + ' — LoteERP';
 }
@@ -4586,78 +4586,64 @@ async function salvarVenda(){
 }
 
 async function gerarParcelas(vendaId, v){
+  if(!vendaId||!v.dt_primeira||!v.prazo||!v.taxa||!v.financiado) return;
   const dtBase = new Date(v.dt_primeira+'T12:00');
-  const fin    = v.financiado;
-  const n      = v.prazo;
-  const taxa   = v.taxa/100;
-  const hoje   = new Date(); hoje.setHours(0,0,0,0);
-  const rows   = [];
+  const fin = parseFloat(v.financiado)||0;
+  const n   = parseInt(v.prazo)||0;
+  const taxa= parseFloat(v.taxa)/100;
+  const hoje= new Date(); hoje.setHours(0,0,0,0);
+  if(fin<=0||n<=0||taxa<=0) return;
 
-  if(v.sistema==='price'){
-    const pmt = fin*(taxa*Math.pow(1+taxa,n))/(Math.pow(1+taxa,n)-1);
-    let s = fin;
-    for(let k=0;k<n;k++){
-      const j=s*taxa; const a=pmt-j; s=Math.max(0,s-a);
-      const dt=new Date(dtBase); dt.setMonth(dt.getMonth()+k);
-      rows.push({venda_id:vendaId, numero:k+1, valor:Math.round(pmt*100)/100,
-        vencimento:dt.toISOString().split('T')[0],
-        status:dt<hoje?'Vencida':'Em aberto', dt_pagamento:null, valor_pago:0});
-    }
-  } else {
+  const rows = [];
+  if(v.sistema==='sac'){
     const a=fin/n; let s=fin;
     for(let k=0;k<n;k++){
-      const j=s*taxa; const pmt=a+j; s=Math.max(0,s-a);
-      const dt=new Date(dtBase); dt.setMonth(dt.getMonth()+k);
-      rows.push({venda_id:vendaId, numero:k+1, valor:Math.round(pmt*100)/100,
+      const j=s*taxa; const pmt=Math.round((a+j)*100)/100; s=Math.max(0,s-a);
+      const dt=new Date(dtBase.getFullYear(),dtBase.getMonth()+k,dtBase.getDate());
+      rows.push({venda_id:vendaId,numero:k+1,valor:pmt,
         vencimento:dt.toISOString().split('T')[0],
-        status:dt<hoje?'Vencida':'Em aberto', dt_pagamento:null, valor_pago:0});
+        status:dt<hoje?'Vencida':'Em aberto',dt_pagamento:null,valor_pago:0});
+    }
+  } else {
+    const pmt=Math.round(fin*(taxa*Math.pow(1+taxa,n))/(Math.pow(1+taxa,n)-1)*100)/100;
+    for(let k=0;k<n;k++){
+      const dt=new Date(dtBase.getFullYear(),dtBase.getMonth()+k,dtBase.getDate());
+      rows.push({venda_id:vendaId,numero:k+1,valor:pmt,
+        vencimento:dt.toISOString().split('T')[0],
+        status:dt<hoje?'Vencida':'Em aberto',dt_pagamento:null,valor_pago:0});
     }
   }
 
-  // Inserir em lotes de 50
   for(let i=0;i<rows.length;i+=50){
-    const {error} = await sb.from('parcelas').insert(rows.slice(i,i+50));
-    if(error){
-      console.error('Erro ao gerar parcelas:', error.message);
-      showToast('Erro ao gerar parcelas: '+error.message,'error');
-      return;
-    }
+    const {error}=await sb.from('parcelas').insert(rows.slice(i,i+50));
+    if(error){ console.error('gerarParcelas erro:',error.message); return; }
   }
-  console.log(`✅ ${rows.length} parcelas geradas para venda ${vendaId}`);
+  console.log('✅',rows.length,'parcelas geradas para venda',vendaId);
 }
 
-// ── Modal plano de parcelas ───────────────────────────────────
-let _parcelasVendaId = null;
-let _parcelasEditadas = [];
+let _parcelasVendaId=null, _parcelasEditadas=[];
 
 async function abrirParcelas(vendaId){
-  const v = vendas.find(x=>String(x.id)===String(vendaId));
+  const v=vendas.find(x=>String(x.id)===String(vendaId));
   if(!v) return;
-  _parcelasVendaId = vendaId;
+  _parcelasVendaId=vendaId;
+  _parcelasEditadas=[];
 
-  // Buscar parcelas direto do banco filtrando por venda_id
   showLoading('Carregando parcelas...');
-  const pRows = await dbSelect('parcelas',{
-    filter:[['venda_id','eq',String(vendaId)]],
-    order:'numero', asc:true
-  });
+  try{
+    const pRows=await dbSelect('parcelas',{filter:[['venda_id','eq',String(vendaId)]],order:'numero',asc:true});
+    _parcelasEditadas=pRows.map(p=>({
+      id:p.id, numero:p.numero, valor:parseFloat(p.valor)||0,
+      vencimento:p.vencimento||'', status:p.status||'Em aberto',
+      dt_pagamento:p.dt_pagamento||'', valor_pago:parseFloat(p.valor_pago)||0,
+    }));
+  }catch(e){ console.error(e); }
   hideLoading();
-  console.log('Parcelas carregadas para venda', vendaId, ':', pRows.length);
 
-  _parcelasEditadas = pRows.map(p=>({
-    id:          p.id,
-    numero:      p.numero,
-    valor:       parseFloat(p.valor)||0,
-    vencimento:  p.vencimento,
-    status:      p.status||'Em aberto',
-    dt_pagamento:p.dt_pagamento||'',
-    valor_pago:  parseFloat(p.valor_pago)||0,
-  }));
-
-  const titulo = document.getElementById('modal-parcelas-titulo');
-  if(titulo) titulo.textContent = `Contrato ${v.contrato} — ${v.cliente}`;
+  const titulo=document.getElementById('modal-parcelas-titulo');
+  if(titulo) titulo.textContent=`Contrato ${v.contrato} — ${v.cliente}`;
   const sv=(id,val)=>{const el=document.getElementById(id);if(el)el.textContent=val;};
-  sv('parc-vl-venda',  fmt(v.valor));
+  sv('parc-vl-venda', fmt(v.valor));
   sv('parc-vl-entrada',fmt(v.entrada));
   sv('parc-vl-parcela',fmt(v.parcela));
   sv('parc-prazo',     v.prazo+'x');
@@ -4665,136 +4651,51 @@ async function abrirParcelas(vendaId){
   openModal('modal-parcelas');
 }
 
-function renderParcelas(){
-  const tbody = document.getElementById('tbody-parcelas');
-  if(!tbody) return;
-
-  if(!_parcelasEditadas.length){
-    const v = vendas.find(x=>String(x.id)===String(_parcelasVendaId));
-    tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-secondary)">
-      Nenhuma parcela gerada ainda.
-      ${v&&v.prazo>0&&v.dt_primeira?`<br><br><button class="btn btn-primary" onclick="regenerarParcelas('${v.id}')">⚡ Gerar ${v.prazo} parcelas agora</button>`:''}
-    </td></tr>`;
-    return;
-  }
-
-  const hoje = new Date(); hoje.setHours(0,0,0,0);
-  const statusCor = {'Em aberto':'#378ADD','Paga':'#3B6D11','Vencida':'#E24B4A'};
-  const statusBg  = {'Em aberto':'#EBF4FF','Paga':'#EAF3DE','Vencida':'#FEE2E2'};
-
-  tbody.innerHTML = _parcelasEditadas.map((p,idx)=>{
-    const venc = p.vencimento ? new Date(p.vencimento+'T12:00') : null;
-    // Auto-detectar vencida se data passou e ainda em aberto
-    if(p.status==='Em aberto' && venc && venc < hoje) p.status='Vencida';
-
-    const statusCls = statusCor[p.status]||'#888';
-    const statusBackground = statusBg[p.status]||'#f5f5f5';
-    const isPaga = p.status==='Paga';
-
-    return `<tr style="background:${isPaga?'#f9fff9':''}">
-      <td style="text-align:center;font-weight:600;color:var(--text-secondary)">${p.numero}</td>
-      <td style="text-align:right;font-weight:600;white-space:nowrap">${fmt(p.valor)}</td>
-      <td style="font-size:11px;color:${venc&&venc<hoje&&!isPaga?'var(--danger)':'var(--text-secondary)'};font-weight:${venc&&venc<hoje&&!isPaga?'600':'400'}">
-        ${venc?venc.toLocaleDateString('pt-BR'):'—'}
-      </td>
-      <td style="text-align:center">
-        <span style="font-size:10px;padding:2px 8px;border-radius:12px;font-weight:600;background:${statusBackground};color:${statusCls}">
-          ${p.status}
-        </span>
-      </td>
-      <td>
-        <input type="date" value="${p.dt_pagamento||''}"
-          style="font-size:10px;padding:3px 5px;border:1px solid var(--border-secondary);border-radius:5px;width:100%;background:var(--bg-primary);color:var(--text-primary)"
-          onchange="
-            _parcelasEditadas[${idx}].dt_pagamento=this.value;
-            if(this.value && !_parcelasEditadas[${idx}].valor_pago){
-              _parcelasEditadas[${idx}].valor_pago=_parcelasEditadas[${idx}].valor;
-            }
-            if(this.value) _parcelasEditadas[${idx}].status='Paga';
-            else if(!_parcelasEditadas[${idx}].valor_pago) _parcelasEditadas[${idx}].status='Em aberto';
-            renderParcelas();
-          ">
-      </td>
-      <td>
-        <input type="text" value="${isPaga||p.valor_pago>0?p.valor_pago.toLocaleString('pt-BR',{minimumFractionDigits:2}):''}"
-          placeholder="${fmt(p.valor)}"
-          style="font-size:10px;padding:3px 5px;border:1px solid var(--border-secondary);border-radius:5px;width:100%;text-align:right;background:var(--bg-primary);color:var(--text-primary)"
-          oninput="maskMoney(this);_parcelasEditadas[${idx}].valor_pago=parseFloat(this.value.replace(/\\./g,'').replace(',','.'))||0">
-      </td>
-      <td style="text-align:center">
-        ${!isPaga
-          ? `<button class="btn btn-sm" style="font-size:9px;padding:2px 6px;background:var(--success);color:#fff;border-color:var(--success)"
-              onclick="marcarParcela(${idx},'Paga')" title="Marcar como paga">✓ Pagar</button>`
-          : `<button class="btn btn-sm" style="font-size:9px;padding:2px 6px;color:var(--text-secondary)"
-              onclick="marcarParcela(${idx},'Em aberto')" title="Desfazer pagamento">↩ Desfazer</button>`
-        }
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-async function excluirVenda(id, contrato){
-  if(!confirm(`Excluir o contrato "${contrato}"?\n\nTodas as parcelas serão removidas.`)) return;
-  showLoading('Excluindo...');
-  await sb.from('parcelas').delete().eq('venda_id', id);
-  await sb.from('vendas').delete().eq('id', id);
-  hideLoading();
-  vendas = vendas.filter(v=>String(v.id)!==String(id));
-  renderVendas();
-  showToast(`Contrato ${contrato} excluído.`,'error');
-}
-
-
 function marcarParcela(idx, status){
-  const p = _parcelasEditadas[idx];
-  if(!p) return;
-  p.status = status;
+  const p=_parcelasEditadas[idx]; if(!p) return;
+  p.status=status;
   if(status==='Paga'){
-    if(!p.dt_pagamento) p.dt_pagamento = new Date().toISOString().split('T')[0];
-    if(!p.valor_pago)   p.valor_pago   = p.valor;
-  } else {
-    p.dt_pagamento = '';
-    p.valor_pago   = 0;
-  }
+    if(!p.dt_pagamento) p.dt_pagamento=new Date().toISOString().split('T')[0];
+    if(!p.valor_pago)   p.valor_pago=p.valor;
+  } else { p.dt_pagamento=''; p.valor_pago=0; }
   renderParcelas();
 }
 
-
-  showLoading('Gerando parcelas...');
-  // Deletar parcelas existentes desta venda antes de recriar
 async function regenerarParcelas(vendaId){
-  await sb.from('parcelas').delete().eq('venda_id', vendaId);
-  await gerarParcelas(vendaId, {
-    dt_primeira: v.dt_primeira,
-    financiado:  v.financiado,
-    prazo:       v.prazo,
-    taxa:        v.taxa,
-    sistema:     v.sistema||'price',
-  });
+  const v=vendas.find(x=>String(x.id)===String(vendaId)); if(!v) return;
+  showLoading('Gerando parcelas...');
+  try{
+    await sb.from('parcelas').delete().eq('venda_id',vendaId);
+    const rowParc={...v};
+    if(!rowParc.dt_primeira){
+      const d=new Date(); d.setMonth(d.getMonth()+1); d.setDate(1);
+      rowParc.dt_primeira=d.toISOString().split('T')[0];
+    }
+    await gerarParcelas(vendaId,rowParc);
+    await carregarVendasDB();
+    abrirParcelas(vendaId);
+    showToast('✅ '+v.prazo+' parcelas geradas!');
+  }catch(e){ showToast('Erro: '+e.message,'error'); }
   hideLoading();
-  // Recarregar e reabrir
-  await carregarVendasDB();
-  abrirParcelas(vendaId);
-  showToast(`✅ ${v.prazo} parcelas geradas!`);
 }
 
-
 async function salvarParcelas(){
-  showLoading('Salvando parcelas...');
-  for(const p of _parcelasEditadas){
-    await dbUpdate('parcelas', p.id, {
-      status:       p.status,
-      dt_pagamento: p.dt_pagamento||null,
-      valor_pago:   p.valor_pago||0,
-    });
-  }
-  // Atualizar em memória
-  const v = vendas.find(x=>String(x.id)===String(_parcelasVendaId));
-  if(v) v.parcelas = _parcelasEditadas.map(p=>({...p}));
+  showLoading('Salvando...');
+  try{
+    for(const p of _parcelasEditadas){
+      await sb.from('parcelas').update({
+        status:       p.status,
+        dt_pagamento: p.dt_pagamento||null,
+        valor_pago:   p.valor_pago||0,
+      }).eq('id',p.id);
+    }
+    const v=vendas.find(x=>String(x.id)===String(_parcelasVendaId));
+    if(v) v.parcelas=[..._parcelasEditadas];
+    closeModal('modal-parcelas');
+    renderVendas();
+    showToast('✅ Parcelas salvas!');
+  }catch(e){ showToast('Erro: '+e.message,'error'); }
   hideLoading();
-  closeModal('modal-parcelas');
-  renderVendas();
-  showToast('✅ Parcelas atualizadas!');
 }
 
 // ── Integração com CRM: criar venda ao marcar "Lote vendido" ──
