@@ -4631,8 +4631,14 @@ async function abrirParcelas(vendaId){
 
   showLoading('Carregando parcelas...');
   try{
-    const pRows=await dbSelect('parcelas',{filter:[['venda_id','eq',String(vendaId)]],order:'numero',asc:true});
-    _parcelasEditadas=pRows.map(p=>({
+    const {data:pRows, error} = await sb
+      .from('parcelas')
+      .select('*')
+      .eq('venda_id', vendaId)
+      .order('numero', {ascending:true});
+    if(error) throw error;
+    console.log('Parcelas encontradas:', pRows?.length, 'para venda_id:', vendaId);
+    _parcelasEditadas=(pRows||[]).map(p=>({
       id:p.id, numero:p.numero, valor:parseFloat(p.valor)||0,
       vencimento:p.vencimento||'', status:p.status||'Em aberto',
       dt_pagamento:p.dt_pagamento||'', valor_pago:parseFloat(p.valor_pago)||0,
