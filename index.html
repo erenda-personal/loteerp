@@ -5365,7 +5365,7 @@ const ETAPA_DATA_MAP = {
 function getLeadEtapas(){
   // Gera etapas a partir das colunas do kanban, excluindo "Novo", "Perdido" e "Contato feito"
   // que são estados, não marcos comerciais
-  const excluir = new Set(['Novo','Perdido','Contato feito']);
+  const excluir = new Set(['Novo','Perdido']);
   return KANBAN_COLUNAS
     .filter(c=>!excluir.has(c.key))
     .map((col,i)=>{
@@ -5523,6 +5523,14 @@ async function concluirEtapaLead(key){
     lead.status = 'Novo';
     for(let i=ordem2.length-1;i>=0;i--){
       if(lead.etapas[ordem2[i].key]){ lead.status=ordem2[i].kanbanKey; break; }
+    }
+  }
+
+  // Se marcou "Lote vendido", criar venda automaticamente
+  if(!feito){
+    const etapaAtual = getLeadEtapas().find(e=>e.key===key);
+    if(etapaAtual?.kanbanKey==='Lote vendido' && typeof criarVendaDeKanban==='function'){
+      criarVendaDeKanban(lead);
     }
   }
 
@@ -7109,6 +7117,7 @@ let KANBAN_COLUNAS=[
   {key:'Proposta enviada',  label:'Proposta enviada',  color:'#EF9F27'},
   {key:'Contrato assinado', label:'Contrato assinado', color:'#3B6D11'},
   {key:'Entrada paga',      label:'Entrada paga',      color:'#0F6E56'},
+  {key:'Lote vendido',      label:'Lote vendido',      color:'#7C3AED'},
   {key:'Perdido',           label:'Perdido',           color:'#A32D2D'},
 ];
 
