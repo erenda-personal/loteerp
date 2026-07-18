@@ -4220,9 +4220,15 @@ async function carregarVendasDB(){
   const vRows = await dbSelect('vendas', {order:'created_at', asc:false});
   const pRows = await dbSelect('parcelas', {order:'numero', asc:true, select:'id,venda_id,numero,valor,vencimento,status,dt_pagamento,valor_pago'});
   hideLoading();
-  console.log('Vendas:', vRows.length, 'Parcelas:', pRows.length);
-  if(pRows.length) console.log('Exemplo parcela:', pRows[0]);
-  if(vRows.length) console.log('Exemplo venda id:', vRows[0].id, typeof vRows[0].id);
+
+  // Construir mapa de parcelas por venda_id
+  const parcMap = {};
+  pRows.forEach(p=>{
+    const key = String(p.venda_id);
+    if(!parcMap[key]) parcMap[key]=[];
+    parcMap[key].push(p);
+  });
+  console.log('Vendas:', vRows.length, 'Parcelas:', pRows.length, 'ParcMap keys:', Object.keys(parcMap));
   vendas = vRows.map(r=>({
     id:          r.id,
     contrato:    r.contrato,
@@ -4238,7 +4244,7 @@ async function carregarVendasDB(){
     sistema:     r.sistema||'price',
     dt_primeira: r.dt_primeira||'',
     contrato_url:r.contrato_url||null,
-    parcelas:    pRows.filter(p=>String(p.venda_id)===String(r.id)).map(p=>({
+    parcelas: (parcMap[String(r.id)]||[]).map(p=>({
       id:          p.id,
       numero:      p.numero,
       valor:       parseFloat(p.valor)||0,
