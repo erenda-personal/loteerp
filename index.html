@@ -4384,7 +4384,7 @@ async function vdCarregarLotes(selecionarLoteId, selecionarLabel){
   document.getElementById('vd-lote-id').value='';
   if(!lotId) return;
   const lotes = await dbSelect('lotes',{
-    filter:[['loteamento_id','eq',lotId],['status','eq','Disponível']],
+    filter:[['loteamento_id','eq',lotId]],
     order:'quadra', asc:true
   });
   const ord = [...lotes].sort((a,b)=>{
@@ -4392,10 +4392,15 @@ async function vdCarregarLotes(selecionarLoteId, selecionarLabel){
     return (parseInt(a.numero)||0)-(parseInt(b.numero)||0);
   });
   sel.innerHTML='<option value="">— Selecione —</option>'+
-    ord.map(r=>`<option value="${r.id}"
-      data-valor="${r.valor_tabela||0}"
-      data-cod="${r.quadra}-${(r.numero||'').padStart(2,'0')}"
-    >${r.quadra}-${(r.numero||'').padStart(2,'0')} · ${r.area_m2||'—'}m² · R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</option>`).join('');
+    ord.map(r=>{
+      const cod = `${r.quadra}-${(r.numero||'').padStart(2,'0')}`;
+      const status = r.status!=='Disponível' ? ` [${r.status}]` : '';
+      const disabled = r.status==='Vendido' ? 'disabled style="color:var(--text-tertiary)"' : '';
+      return `<option value="${r.id}" ${disabled}
+        data-valor="${r.valor_tabela||0}"
+        data-cod="${cod}"
+      >${cod} · ${r.area_m2||'—'}m² · R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}${status}</option>`;
+    }).join('');
   // Pré-selecionar se editando
   if(selecionarLoteId){
     [...sel.options].forEach(o=>o.selected=o.value===String(selecionarLoteId));
