@@ -10551,15 +10551,13 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 applyTheme();
-</script>
-
-<script>
 // ═══════════════════════════════════════════════════════════
 // AUTENTICAÇÃO
 // ═══════════════════════════════════════════════════════════
 let _usuarioLogado = null;
 
 async function iniciarApp(){
+  try{
   // ── Detectar token de convite/recuperação na URL ──────────
   const hash = window.location.hash;
   const params = new URLSearchParams(hash.replace('#',''));
@@ -10592,6 +10590,10 @@ async function iniciarApp(){
     if(event==='SIGNED_IN'  && session) await entrarNoApp(session.user);
     if(event==='SIGNED_OUT')            mostrarLogin();
   });
+  } catch(e){
+    console.error('ERRO em iniciarApp:', e);
+    document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;font-family:sans-serif"><h2>Erro: '+e.message+'</h2><button onclick="location.reload()">Recarregar</button></div>';
+  }
 }
 
 function mostrarTelaSenha(email){
