@@ -4712,8 +4712,6 @@ async function excluirVenda(id, contrato){
 }
 
 
-  const v = vendas.find(x=>String(x.id)===String(vendaId));
-  if(!v) return;
 async function regenerarParcelas(vendaId){
   showLoading('Gerando parcelas...');
   // Deletar parcelas existentes desta venda antes de recriar
