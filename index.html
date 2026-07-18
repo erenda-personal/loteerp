@@ -4376,8 +4376,8 @@ function vdSelecionarCliente(sel){
 }
 
 
-  const lotId = document.getElementById('vd-loteamento')?.value;
 async function vdCarregarLotes(selecionarLoteId, selecionarLabel){
+  const lotId = document.getElementById('vd-loteamento')?.value;
   const sel   = document.getElementById('vd-lotes');
   if(!sel) return;
   sel.innerHTML='<option value="">— Selecione —</option>';
