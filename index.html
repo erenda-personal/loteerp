@@ -4470,7 +4470,19 @@ async function salvarVenda(){
   const fin      = Math.max(0, valor-entrada);
   const prazo    = parseInt(document.getElementById('vd-prazo')?.value)||0;
   const taxa     = parseFloat((document.getElementById('vd-taxa')?.value||'0').replace(',','.'))||0;
-  const parcela  = parseFloat((document.getElementById('vd-parcela')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+
+  // Recalcular parcela diretamente (não depender do campo readonly)
+  let parcela = 0;
+  if(fin>0 && prazo>0 && taxa>0){
+    const t = taxa/100;
+    const sis = document.getElementById('vd-sistema')?.value||'price';
+    if(sis==='price'){
+      parcela = fin*(t*Math.pow(1+t,prazo))/(Math.pow(1+t,prazo)-1);
+    } else {
+      parcela = fin/prazo + fin*t; // SAC: primeira parcela
+    }
+    parcela = Math.round(parcela*100)/100;
+  }
 
   const row = {
     contrato, cliente,
