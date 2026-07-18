@@ -4496,16 +4496,30 @@ async function salvarVenda(){
     contrato_url: _vendaContratoUrl||null,
   };
 
+  // Remover campos nulos que possam causar erro de tipo no Supabase
+  const rowLimpo = Object.fromEntries(
+    Object.entries(row).filter(([,v])=>v!==null&&v!==undefined&&v!=='')
+  );
+
   showLoading('Salvando contrato...');
   let savedId = id;
   if(id){
-    await dbUpdate('vendas', id, row);
+    await dbUpdate('vendas', id, rowLimpo);
   } else {
-    const saved = await dbInsert('vendas', row);
+    const saved = await dbInsert('vendas', rowLimpo);
     if(!saved){ hideLoading(); return; }
     savedId = saved.id;
-    if(prazo>0 && parcela>0 && row.dt_primeira){
-      await gerarParcelas(savedId, row);
+    // Gerar parcelas: prazo e taxa são obrigatórios; data_primeira usa hoje se não informada
+    if(prazo>0 && taxa>0 && fin>0){
+      const rowParc = {...row};
+      if(!rowParc.dt_primeira){
+        // Usar o primeiro dia do próximo mês como padrão
+        const hoje = new Date();
+        hoje.setMonth(hoje.getMonth()+1);
+        hoje.setDate(1);
+        rowParc.dt_primeira = hoje.toISOString().split('T')[0];
+      }
+      await gerarParcelas(savedId, rowParc);
     }
   }
 
@@ -4596,6 +4610,16 @@ function abrirParcelas(vendaId){
 function renderParcelas(){
   const tbody = document.getElementById('tbody-parcelas');
   if(!tbody) return;
+
+  if(!_parcelasEditadas.length){
+    // Mostrar opção de gerar parcelas
+    const v = vendas.find(x=>String(x.id)===String(_parcelasVendaId));
+    tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--text-secondary)">
+      Nenhuma parcela gerada ainda.
+      ${v&&v.prazo>0&&v.dt_primeira?`<br><br><button class="btn btn-primary" onclick="regenerarParcelas('${v.id}')">⚡ Gerar ${v.prazo} parcelas agora</button>`:''}
+    </td></tr>`;
+    return;
+  }
   const statusCor = {'Em aberto':'badge-blue','Paga':'badge-green','Vencida':'badge-red'};
   tbody.innerHTML = _parcelasEditadas.map((p,idx)=>`<tr>
     <td style="text-align:center;font-weight:600">${p.numero}</td>
@@ -4617,6 +4641,27 @@ function renderParcelas(){
     </td>
   </tr>`).join('');
 }
+
+async function regenerarParcelas(vendaId){
+  const v = vendas.find(x=>String(x.id)===String(vendaId));
+  if(!v) return;
+  showLoading('Gerando parcelas...');
+  // Deletar parcelas existentes desta venda antes de recriar
+  await sb.from('parcelas').delete().eq('venda_id', vendaId);
+  await gerarParcelas(vendaId, {
+    dt_primeira: v.dt_primeira,
+    financiado:  v.financiado,
+    prazo:       v.prazo,
+    taxa:        v.taxa,
+    sistema:     v.sistema||'price',
+  });
+  hideLoading();
+  // Recarregar e reabrir
+  await carregarVendasDB();
+  abrirParcelas(vendaId);
+  showToast(`✅ ${v.prazo} parcelas geradas!`);
+}
+
 
 async function salvarParcelas(){
   showLoading('Salvando parcelas...');
