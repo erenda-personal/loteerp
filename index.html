@@ -1317,7 +1317,12 @@ tbody tr.clickable{cursor:pointer}
           <div class="form-section">Identificação</div>
           <div class="form-row col2">
             <div class="field"><label>ID do contrato *</label><input id="vd-contrato" placeholder="Ex: VV-001"></div>
-            <div class="field"><label>Cliente *</label><input id="vd-cliente" placeholder="Nome do comprador"></div>
+            <div class="field"><label>Cliente *</label>
+              <select id="vd-cliente-id" onchange="vdSelecionarCliente(this)">
+                <option value="">— Selecione o cliente —</option>
+              </select>
+              <input type="hidden" id="vd-cliente">
+            </div>
           </div>
           <div class="form-row col2">
             <div class="field"><label>Loteamento *</label>
@@ -4212,11 +4217,12 @@ let _parcelaEditId    = null;
 // ── Inicialização ─────────────────────────────────────────────
 async function carregarVendasDB(){
   showLoading('Carregando vendas...');
-  const [vRows, pRows] = await Promise.all([
-    dbSelect('vendas',  {order:'created_at', asc:false}),
-    dbSelect('parcelas',{order:'numero',     asc:true})
-  ]);
+  const vRows = await dbSelect('vendas', {order:'created_at', asc:false});
+  const pRows = await dbSelect('parcelas', {order:'numero', asc:true, select:'id,venda_id,numero,valor,vencimento,status,dt_pagamento,valor_pago'});
   hideLoading();
+  console.log('Vendas:', vRows.length, 'Parcelas:', pRows.length);
+  if(pRows.length) console.log('Exemplo parcela:', pRows[0]);
+  if(vRows.length) console.log('Exemplo venda id:', vRows[0].id, typeof vRows[0].id);
   vendas = vRows.map(r=>({
     id:          r.id,
     contrato:    r.contrato,
@@ -4300,8 +4306,13 @@ async function abrirModalNovaVenda(vendaId){
   if(titulo) titulo.textContent = vendaId ? 'Editar contrato' : 'Nova venda';
   document.getElementById('vd-id').value = vendaId||'';
 
-  // Popular loteamentos
-  const selLot = document.getElementById('vd-loteamento');
+  // Popular clientes
+  const selCli = document.getElementById('vd-cliente-id');
+  if(selCli){
+    const clis = await dbSelect('clientes',{order:'nome',asc:true,select:'id,nome,cpf'});
+    selCli.innerHTML='<option value="">— Selecione o cliente —</option>'+
+      clis.map(c=>`<option value="${c.id}" data-nome="${c.nome}">${c.nome}${c.cpf?' · '+c.cpf:''}</option>`).join('');
+  }
   if(selLot){
     const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
     selLot.innerHTML='<option value="">— Selecione —</option>'+
@@ -4356,8 +4367,15 @@ async function abrirModalNovaVenda(vendaId){
   openModal('modal-venda');
 }
 
-async function vdCarregarLotes(selecionarLoteId, selecionarLabel){
+function vdSelecionarCliente(sel){
+  const opt = sel.options[sel.selectedIndex];
+  const el  = document.getElementById('vd-cliente');
+  if(el) el.value = opt?.dataset?.nome || opt?.text || '';
+}
+
+
   const lotId = document.getElementById('vd-loteamento')?.value;
+async function vdCarregarLotes(selecionarLoteId, selecionarLabel){
   const sel   = document.getElementById('vd-lotes');
   if(!sel) return;
   sel.innerHTML='<option value="">— Selecione —</option>';
@@ -4452,9 +4470,13 @@ async function handleVdContrato(input){
 async function salvarVenda(){
   const id       = document.getElementById('vd-id')?.value||null;
   const contrato = document.getElementById('vd-contrato')?.value?.trim();
-  const cliente  = document.getElementById('vd-cliente')?.value?.trim();
+  // Cliente vem do select (nome no hidden) ou do campo direto
+  const selCli   = document.getElementById('vd-cliente-id');
+  const clienteId= selCli?.value||null;
+  const cliente  = document.getElementById('vd-cliente')?.value?.trim() ||
+                   selCli?.options[selCli.selectedIndex]?.dataset?.nome || '';
   if(!contrato){ showToast('Informe o ID do contrato.','error'); return; }
-  if(!cliente)  { showToast('Informe o cliente.','error');       return; }
+  if(!cliente)  { showToast('Selecione o cliente.','error');       return; }
 
   // Loteamento e lote do dropdown
   const selLot     = document.getElementById('vd-loteamento');
@@ -4486,6 +4508,7 @@ async function salvarVenda(){
 
   const row = {
     contrato, cliente,
+    cliente_id:   clienteId||null,
     lotes:        loteCod||null,
     loteamento:   loteamento||null,
     loteamento_id:loteamentoId||null,
@@ -4509,16 +4532,17 @@ async function salvarVenda(){
     const saved = await dbInsert('vendas', rowLimpo);
     if(!saved){ hideLoading(); return; }
     savedId = saved.id;
-    // Gerar parcelas: prazo e taxa são obrigatórios; data_primeira usa hoje se não informada
+    console.log('Venda criada com id:', savedId, typeof savedId);
+    // Gerar parcelas
     if(prazo>0 && taxa>0 && fin>0){
       const rowParc = {...row};
       if(!rowParc.dt_primeira){
-        // Usar o primeiro dia do próximo mês como padrão
         const hoje = new Date();
         hoje.setMonth(hoje.getMonth()+1);
         hoje.setDate(1);
         rowParc.dt_primeira = hoje.toISOString().split('T')[0];
       }
+      rowParc.financiado = fin;
       await gerarParcelas(savedId, rowParc);
     }
   }
@@ -5087,6 +5111,7 @@ async function salvarLeadDB(){
   showLoading('Salvando lead...');
   const row = {
     nome,
+    cliente_id:  clienteId||null,
     telefone:    document.getElementById('nl2-tel')?.value?.trim()||null,
     email:       document.getElementById('nl2-email')?.value?.trim()||null,
     origem:      document.getElementById('nl2-origem')?.value||null,
