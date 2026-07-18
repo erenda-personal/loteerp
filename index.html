@@ -4527,8 +4527,9 @@ async function salvarVenda(){
   };
 
   // Remover campos nulos que possam causar erro de tipo no Supabase
+  const camposUUID = new Set(['cliente_id','lote_id','loteamento_id']);
   const rowLimpo = Object.fromEntries(
-    Object.entries(row).filter(([,v])=>v!==null&&v!==undefined&&v!=='')
+    Object.entries(row).filter(([k,v])=>v!==null&&v!==undefined&&v!==''&&!camposUUID.has(k))
   );
 
   showLoading('Salvando contrato...');
