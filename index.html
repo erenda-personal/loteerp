@@ -4657,6 +4657,55 @@ async function abrirParcelas(vendaId){
   openModal('modal-parcelas');
 }
 
+function renderParcelas(){
+  const tbody = document.getElementById('tbody-parcelas');
+  if(!tbody) return;
+  if(!_parcelasEditadas.length){
+    const v = vendas.find(x=>String(x.id)===String(_parcelasVendaId));
+    tbody.innerHTML=`<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-secondary)">
+      Nenhuma parcela gerada ainda.
+      ${v&&v.prazo>0?`<br><br><button class="btn btn-primary" onclick="regenerarParcelas('${v.id}')">⚡ Gerar ${v.prazo} parcelas agora</button>`:''}
+    </td></tr>`;
+    return;
+  }
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const corStatus = {'Em aberto':'#378ADD','Paga':'#3B6D11','Vencida':'#E24B4A'};
+  const bgStatus  = {'Em aberto':'#EBF4FF','Paga':'#EAF3DE','Vencida':'#FEE2E2'};
+  tbody.innerHTML = _parcelasEditadas.map((p,idx)=>{
+    const venc = p.vencimento ? new Date(p.vencimento+'T12:00') : null;
+    if(p.status==='Em aberto' && venc && venc < hoje) p.status='Vencida';
+    const isPaga = p.status==='Paga';
+    const cor = corStatus[p.status]||'#888';
+    const bg  = bgStatus[p.status]||'#f5f5f5';
+    return `<tr style="background:${isPaga?'rgba(59,109,17,.04)':''}">
+      <td style="text-align:center;font-weight:600;color:var(--text-secondary)">${p.numero}</td>
+      <td style="text-align:right;font-weight:600;white-space:nowrap">${fmt(p.valor)}</td>
+      <td style="font-size:11px;color:${venc&&venc<hoje&&!isPaga?'var(--danger)':'var(--text-secondary)'};font-weight:${venc&&venc<hoje&&!isPaga?'600':'400'}">
+        ${venc?venc.toLocaleDateString('pt-BR'):'—'}
+      </td>
+      <td style="text-align:center">
+        <span style="font-size:10px;padding:2px 8px;border-radius:12px;font-weight:600;background:${bg};color:${cor}">${p.status}</span>
+      </td>
+      <td>
+        <input type="date" value="${p.dt_pagamento||''}"
+          style="font-size:10px;padding:3px 5px;border:1px solid var(--border-secondary);border-radius:5px;width:100%;background:var(--bg-primary);color:var(--text-primary)"
+          onchange="_parcelasEditadas[${idx}].dt_pagamento=this.value;if(this.value){_parcelasEditadas[${idx}].status='Paga';if(!_parcelasEditadas[${idx}].valor_pago)_parcelasEditadas[${idx}].valor_pago=_parcelasEditadas[${idx}].valor;}else{_parcelasEditadas[${idx}].status='Em aberto';}renderParcelas()">
+      </td>
+      <td>
+        <input type="text" value="${isPaga||p.valor_pago>0?p.valor_pago.toLocaleString('pt-BR',{minimumFractionDigits:2}):''}"
+          placeholder="${fmt(p.valor)}"
+          style="font-size:10px;padding:3px 5px;border:1px solid var(--border-secondary);border-radius:5px;width:100%;text-align:right;background:var(--bg-primary);color:var(--text-primary)"
+          oninput="maskMoney(this);_parcelasEditadas[${idx}].valor_pago=parseFloat(this.value.replace(/\\./g,'').replace(',','.'))||0">
+      </td>
+      <td style="text-align:center">
+        ${!isPaga
+          ? `<button class="btn btn-sm" style="font-size:9px;padding:2px 6px;background:var(--success);color:#fff;border-color:var(--success)" onclick="marcarParcela(${idx},'Paga')">✓ Pagar</button>`
+          : `<button class="btn btn-sm" style="font-size:9px;padding:2px 6px" onclick="marcarParcela(${idx},'Em aberto')">↩</button>`}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
 function marcarParcela(idx, status){
   const p=_parcelasEditadas[idx]; if(!p) return;
   p.status=status;
@@ -6188,10 +6237,10 @@ function buildParcelas(){
       multa:0, forma:k<=12?'PIX':null, atrasado:false
     });
   }
-  renderParcelas();
+  renderParcelasContrato();
 }
 
-function renderParcelas(){
+function renderParcelasContrato(){
   const body=document.getElementById('parcelas-tbody');
   if(!body)return;
   const pagas=parcelasDados.filter(p=>p.pago).length;
@@ -6266,7 +6315,7 @@ function confirmarPagamentoParcela(){
   p.forma=document.getElementById('pagar-forma')?.value||'PIX';
   p.multa=parseFloat(multaRaw.replace(/\./g,'').replace(',','.'))||0;
   closeModal('modal-pagar-parcela');
-  renderParcelas();
+  renderParcelasContrato();
   // Refletir na inadimplência: remover da lista se todas pagas do contrato
   const emAtraso=parcelasDados.filter(px=>!px.pago&&px.dvenc<new Date()).length;
   if(emAtraso===0){
