@@ -1320,11 +1320,18 @@ tbody tr.clickable{cursor:pointer}
             <div class="field"><label>Cliente *</label><input id="vd-cliente" placeholder="Nome do comprador"></div>
           </div>
           <div class="form-row col2">
-            <div class="field"><label>Lote(s)</label><input id="vd-lotes" placeholder="Ex: C-01, C-02"></div>
-            <div class="field"><label>Loteamento</label>
-              <select id="vd-loteamento"><option value="">— Selecione —</option></select>
+            <div class="field"><label>Loteamento *</label>
+              <select id="vd-loteamento" onchange="vdCarregarLotes()">
+                <option value="">— Selecione —</option>
+              </select>
+            </div>
+            <div class="field"><label>Lote *</label>
+              <select id="vd-lotes" onchange="vdPreencherValorLote()">
+                <option value="">— Selecione o loteamento primeiro —</option>
+              </select>
             </div>
           </div>
+          <input type="hidden" id="vd-lote-id"><!-- ID do lote selecionado -->
           <div class="form-section">Condições financeiras</div>
           <div class="form-row col2">
             <div class="field"><label>Valor de venda (R$) *</label><input id="vd-valor" type="text" placeholder="0,00" oninput="maskMoney(this);calcVdFinanciado()"></div>
@@ -4292,14 +4299,20 @@ async function abrirModalNovaVenda(vendaId){
   const titulo = document.getElementById('modal-venda-titulo');
   if(titulo) titulo.textContent = vendaId ? 'Editar contrato' : 'Nova venda';
   document.getElementById('vd-id').value = vendaId||'';
+
   // Popular loteamentos
   const selLot = document.getElementById('vd-loteamento');
   if(selLot){
     const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
     selLot.innerHTML='<option value="">— Selecione —</option>'+
-      lots.map(r=>`<option value="${r.id}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
+      lots.map(r=>`<option value="${r.id}" data-nome="${r.nome}${r.fase?' · '+r.fase:''}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
   }
-  // Pré-preencher de simCfg
+  // Resetar lotes
+  const selLote = document.getElementById('vd-lotes');
+  if(selLote) selLote.innerHTML='<option value="">— Selecione o loteamento primeiro —</option>';
+  document.getElementById('vd-lote-id').value='';
+
+  // Taxa das configs
   const taxaEl = document.getElementById('vd-taxa');
   if(taxaEl && !vendaId) taxaEl.value = simCfg.taxaJuros.toFixed(2).replace('.',',');
 
@@ -4307,38 +4320,86 @@ async function abrirModalNovaVenda(vendaId){
     const v = vendas.find(x=>String(x.id)===String(vendaId));
     if(v){
       const sv=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
-      sv('vd-contrato', v.contrato); sv('vd-cliente', v.cliente);
-      sv('vd-lotes',    v.lotes);    sv('vd-prazo',   v.prazo);
-      sv('vd-dt-primeira', v.dt_primeira);
-      document.getElementById('vd-valor').value    = v.valor.toLocaleString('pt-BR',{minimumFractionDigits:2});
-      document.getElementById('vd-entrada').value  = v.entrada.toLocaleString('pt-BR',{minimumFractionDigits:2});
-      document.getElementById('vd-taxa').value     = v.taxa.toFixed(2).replace('.',',');
-      if(selLot) selLot.value = v.loteamento||'';
+      sv('vd-contrato',   v.contrato);
+      sv('vd-cliente',    v.cliente);
+      sv('vd-prazo',      v.prazo);
+      sv('vd-dt-primeira',v.dt_primeira);
+      document.getElementById('vd-valor').value  = v.valor.toLocaleString('pt-BR',{minimumFractionDigits:2});
+      document.getElementById('vd-entrada').value= v.entrada.toLocaleString('pt-BR',{minimumFractionDigits:2});
+      document.getElementById('vd-taxa').value   = v.taxa.toFixed(2).replace('.',',');
+      if(selLot && v.loteamento_id){ selLot.value = v.loteamento_id; await vdCarregarLotes(v.lote_id, v.lotes); }
+      const selSis = document.getElementById('vd-sistema');
+      if(selSis) selSis.value = v.sistema||'price';
       calcVdFinanciado();
       if(v.contrato_url){
         _vendaContratoUrl = v.contrato_url;
-        const link = document.getElementById('vd-contrato-link');
-        const url  = document.getElementById('vd-contrato-url');
+        const link=document.getElementById('vd-contrato-link');
+        const url =document.getElementById('vd-contrato-url');
         if(link) link.style.display='';
-        if(url)  url.href = v.contrato_url;
+        if(url)  url.href=v.contrato_url;
       }
-      const selSis = document.getElementById('vd-sistema');
-      if(selSis) selSis.value = v.sistema||'price';
     }
   } else {
-    ['vd-contrato','vd-cliente','vd-lotes','vd-prazo','vd-dt-primeira'].forEach(id=>{
+    ['vd-contrato','vd-cliente','vd-prazo','vd-dt-primeira'].forEach(id=>{
       const el=document.getElementById(id); if(el)el.value='';
     });
-    document.getElementById('vd-valor').value   = '';
-    document.getElementById('vd-entrada').value = '';
-    const link = document.getElementById('vd-contrato-link');
+    ['vd-valor','vd-entrada'].forEach(id=>{
+      const el=document.getElementById(id); if(el)el.value='';
+    });
+    const link=document.getElementById('vd-contrato-link');
     if(link) link.style.display='none';
-    const drop = document.getElementById('vd-contrato-drop');
-    const lbl  = document.getElementById('vd-contrato-label');
+    const drop=document.getElementById('vd-contrato-drop');
+    const lbl =document.getElementById('vd-contrato-label');
     if(drop) drop.style.borderColor='var(--border-secondary)';
     if(lbl)  lbl.textContent='Clique para anexar o contrato';
   }
   openModal('modal-venda');
+}
+
+async function vdCarregarLotes(selecionarLoteId, selecionarLabel){
+  const lotId = document.getElementById('vd-loteamento')?.value;
+  const sel   = document.getElementById('vd-lotes');
+  if(!sel) return;
+  sel.innerHTML='<option value="">— Selecione —</option>';
+  document.getElementById('vd-lote-id').value='';
+  if(!lotId) return;
+  const lotes = await dbSelect('lotes',{
+    filter:[['loteamento_id','eq',lotId],['status','eq','Disponível']],
+    order:'quadra', asc:true
+  });
+  const ord = [...lotes].sort((a,b)=>{
+    if(a.quadra!==b.quadra) return (a.quadra||'').localeCompare(b.quadra||'');
+    return (parseInt(a.numero)||0)-(parseInt(b.numero)||0);
+  });
+  sel.innerHTML='<option value="">— Selecione —</option>'+
+    ord.map(r=>`<option value="${r.id}"
+      data-valor="${r.valor_tabela||0}"
+      data-cod="${r.quadra}-${(r.numero||'').padStart(2,'0')}"
+    >${r.quadra}-${(r.numero||'').padStart(2,'0')} · ${r.area_m2||'—'}m² · R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</option>`).join('');
+  // Pré-selecionar se editando
+  if(selecionarLoteId){
+    [...sel.options].forEach(o=>o.selected=o.value===String(selecionarLoteId));
+    vdPreencherValorLote();
+  } else if(selecionarLabel){
+    [...sel.options].forEach(o=>o.selected=o.dataset.cod===selecionarLabel||o.text.startsWith(selecionarLabel));
+  }
+}
+
+function vdPreencherValorLote(){
+  const sel  = document.getElementById('vd-lotes');
+  const opt  = sel?.options[sel.selectedIndex];
+  if(!opt || !opt.value) return;
+  document.getElementById('vd-lote-id').value = opt.value;
+  const valor = parseFloat(opt.dataset.valor)||0;
+  if(valor>0){
+    const valEl = document.getElementById('vd-valor');
+    if(valEl) valEl.value = valor.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    // Entrada padrão das configs
+    const entEl = document.getElementById('vd-entrada');
+    if(entEl && simCfg.entradaPctDefault>0)
+      entEl.value = (valor*simCfg.entradaPctDefault/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    calcVdFinanciado();
+  }
 }
 
 function calcVdFinanciado(){
@@ -4394,21 +4455,35 @@ async function salvarVenda(){
   const cliente  = document.getElementById('vd-cliente')?.value?.trim();
   if(!contrato){ showToast('Informe o ID do contrato.','error'); return; }
   if(!cliente)  { showToast('Informe o cliente.','error');       return; }
+
+  // Loteamento e lote do dropdown
+  const selLot     = document.getElementById('vd-loteamento');
+  const selLote    = document.getElementById('vd-lotes');
+  const loteId     = document.getElementById('vd-lote-id')?.value||null;
+  const lotOpt     = selLote?.options[selLote.selectedIndex];
+  const loteCod    = lotOpt?.dataset?.cod || selLote?.value || '';
+  const loteamento = selLot?.options[selLot.selectedIndex]?.dataset?.nome || selLot?.value || '';
+  const loteamentoId = selLot?.value||null;
+
   const valor    = parseMoney('vd-valor');
   const entrada  = parseMoney('vd-entrada');
   const fin      = Math.max(0, valor-entrada);
   const prazo    = parseInt(document.getElementById('vd-prazo')?.value)||0;
   const taxa     = parseFloat((document.getElementById('vd-taxa')?.value||'0').replace(',','.'))||0;
   const parcela  = parseFloat((document.getElementById('vd-parcela')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+
   const row = {
     contrato, cliente,
-    lotes:        document.getElementById('vd-lotes')?.value?.trim()||null,
-    loteamento:   document.getElementById('vd-loteamento')?.value||null,
+    lotes:        loteCod||null,
+    loteamento:   loteamento||null,
+    loteamento_id:loteamentoId||null,
+    lote_id:      loteId||null,
     valor, entrada, financiado: fin, prazo, taxa, parcela,
     sistema:      document.getElementById('vd-sistema')?.value||'price',
     dt_primeira:  document.getElementById('vd-dt-primeira')?.value||null,
     contrato_url: _vendaContratoUrl||null,
   };
+
   showLoading('Salvando contrato...');
   let savedId = id;
   if(id){
@@ -4417,15 +4492,31 @@ async function salvarVenda(){
     const saved = await dbInsert('vendas', row);
     if(!saved){ hideLoading(); return; }
     savedId = saved.id;
-    // Gerar plano de parcelas automaticamente
     if(prazo>0 && parcela>0 && row.dt_primeira){
       await gerarParcelas(savedId, row);
     }
   }
+
+  // ── Atualizar lote no banco: status Vendido, data_venda, cliente ──
+  if(loteId){
+    const dtPrimeira = row.dt_primeira;
+    await sb.from('lotes').update({
+      status:     'Vendido',
+      dt_entrada: dtPrimeira||null,
+      cliente_nome: cliente,
+    }).eq('id', loteId);
+    // Atualizar em memória se carregarLotes já rodou
+    showToast('✅ Lote marcado como Vendido!');
+  }
+
   hideLoading();
   _vendaContratoUrl = null;
   closeModal('modal-venda');
-  carregarVendasDB();
+  await carregarVendasDB();
+  // Recarregar lotes se estiver na página de lotes
+  if(document.getElementById('page-lotes')?.classList.contains('active')){
+    carregarLotes();
+  }
   showToast(`✅ Contrato ${contrato} salvo!`);
 }
 
