@@ -629,7 +629,93 @@ tbody tr.clickable{cursor:pointer}
             <tbody id="tbody-loteamentos"></tbody>
           </table>
         </div>
-        <div style="font-size:11px;color:var(--text-secondary)">Clique em um loteamento para ver o mapa de lotes.</div>
+        <div style="font-size:11px;color:var(--text-secondary)">Clique em um loteamento para ver detalhes, lotes, mapa e obras.</div>
+      </div>
+
+      <!-- Modal: Detalhe do Loteamento (4 abas) -->
+      <div class="modal-overlay" id="modal-det-loteamento" onclick="if(event.target===this)closeModal('modal-det-loteamento')">
+        <div class="modal-box" style="width:860px;max-height:92vh;overflow-y:auto">
+          <div class="modal-header">
+            <span class="modal-title" id="det-lot-titulo">Loteamento</span>
+            <button class="modal-close" onclick="closeModal('modal-det-loteamento')">✕</button>
+          </div>
+
+          <!-- Abas -->
+          <div class="tabs" style="margin-bottom:16px">
+            <div class="tab active" id="ltab-info"   onclick="setLotAba('info')">Informações</div>
+            <div class="tab"        id="ltab-lotes"  onclick="setLotAba('lotes')">Lotes</div>
+            <div class="tab"        id="ltab-mapa"   onclick="setLotAba('mapa')">Mapa</div>
+            <div class="tab"        id="ltab-obra"   onclick="setLotAba('obra')">Obra</div>
+          </div>
+
+          <!-- ABA: Informações -->
+          <div id="laba-info">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="field"><label>Nome fantasia</label><input id="det-lot-nome" readonly style="background:var(--bg-secondary)"></div>
+              <div class="field"><label>Fase</label><input id="det-lot-fase" readonly style="background:var(--bg-secondary)"></div>
+              <div class="field"><label>Razão social</label><input id="det-lot-razao" readonly style="background:var(--bg-secondary)"></div>
+              <div class="field"><label>CNPJ</label><input id="det-lot-cnpj" readonly style="background:var(--bg-secondary)"></div>
+              <div class="field"><label>Endereço</label><input id="det-lot-end" readonly style="background:var(--bg-secondary)"></div>
+              <div class="field"><label>Cidade / Estado</label><input id="det-lot-cidade" readonly style="background:var(--bg-secondary)"></div>
+              <div class="field"><label>Área total (m²)</label><input id="det-lot-area" readonly style="background:var(--bg-secondary)"></div>
+              <div class="field"><label>Área verde (m²)</label><input id="det-lot-area-verde" readonly style="background:var(--bg-secondary)"></div>
+              <div class="field"><label>Qtd. de lotes</label><input id="det-lot-qtd" readonly style="background:var(--bg-secondary)"></div>
+              <div class="field"><label>Conta bancária</label><input id="det-lot-conta" readonly style="background:var(--bg-secondary)"></div>
+            </div>
+            <div style="margin-top:12px;display:flex;justify-content:flex-end">
+              <button class="btn btn-primary" onclick="closeModal('modal-det-loteamento');abrirEditarLoteamento(window._detLotId)">✏️ Editar informações</button>
+            </div>
+          </div>
+
+          <!-- ABA: Lotes -->
+          <div id="laba-lotes" style="display:none">
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap" id="det-lotes-kpis"></div>
+            <table style="table-layout:fixed;width:100%">
+              <thead><tr>
+                <th style="width:80px">Quadra</th>
+                <th style="width:70px">Número</th>
+                <th style="width:75px;text-align:right">Área m²</th>
+                <th style="width:110px;text-align:right">Valor</th>
+                <th style="width:90px;text-align:center">Status</th>
+                <th style="width:140px">Cliente</th>
+                <th style="width:90px">Data venda</th>
+              </tr></thead>
+              <tbody id="det-lotes-tbody"></tbody>
+            </table>
+          </div>
+
+          <!-- ABA: Mapa -->
+          <div id="laba-mapa" style="display:none">
+            <div style="background:var(--bg-secondary);border-radius:10px;padding:16px;margin-bottom:12px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--text-secondary)">IMAGEM DO MAPA / PLANTA</div>
+              <div id="det-mapa-preview" style="text-align:center;padding:20px">
+                <div id="det-mapa-img-wrap" style="display:none">
+                  <img id="det-mapa-img" src="" style="max-width:100%;max-height:500px;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.12)">
+                </div>
+                <div id="det-mapa-vazio" style="color:var(--text-secondary);padding:40px 0">
+                  <div style="font-size:36px;margin-bottom:8px">🗺️</div>
+                  <div style="margin-bottom:12px">Nenhuma planta enviada ainda.</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+                <button class="btn btn-primary" onclick="document.getElementById('det-mapa-file').click()">📎 Enviar planta / mapa</button>
+                <input type="file" id="det-mapa-file" accept="image/*,.pdf" style="display:none" onchange="uploadMapaLoteamento(this)">
+                <button class="btn" id="det-mapa-btn-ver" style="display:none" onclick="window.open(document.getElementById('det-mapa-img').src,'_blank')">🔗 Abrir em nova aba</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ABA: Obra -->
+          <div id="laba-obra" style="display:none">
+            <div id="det-obra-content">
+              <div style="color:var(--text-secondary);text-align:center;padding:20px">Carregando cronograma...</div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="btn" onclick="closeModal('modal-det-loteamento')">Fechar</button>
+          </div>
+        </div>
       </div>
 
       <!-- ===== LOTES ===== -->
@@ -9960,7 +10046,7 @@ async function carregarLoteamentos() {
     const pct = obra?.percentual_fisico??null;
     const pctCor = pct===null?'var(--text-secondary)':pct>=80?'var(--success)':pct>=40?'var(--warning)':'var(--danger)';
     const pctHtml = pct!==null ? `<span style="font-weight:600;color:${pctCor}">${pct}%</span>` : '—';
-    return `<tr class="clickable" onclick="showPage('lotes',null)">
+    return `<tr class="clickable" onclick="abrirDetalheLoteamento('${r.id}')">
       <td style="font-weight:600;color:var(--accent)">${r.nome}</td>
       <td><span style="font-size:11px;background:var(--accent-light);color:var(--accent-text);padding:2px 7px;border-radius:4px;font-weight:600">${r.fase||'—'}</span></td>
       <td>${r.cidade||''} / ${r.estado||''}</td>
@@ -9977,7 +10063,153 @@ async function carregarLoteamentos() {
   }).join('');
 }
 
-async function salvarLoteamentoDB() {
+// ════════════════════════════════════════════════════════════
+// DETALHE DO LOTEAMENTO (4 abas)
+// ════════════════════════════════════════════════════════════
+let _detLotId = null;
+
+async function abrirDetalheLoteamento(lotId){
+  _detLotId = lotId;
+  window._detLotId = lotId;
+  showLoading('Carregando loteamento...');
+
+  // Buscar dados do loteamento
+  const {data:lots} = await sb.from('loteamentos').select('*').eq('id',lotId).single();
+  hideLoading();
+  if(!lots) return;
+
+  // Preencher aba Informações
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  document.getElementById('det-lot-titulo').textContent = lots.nome+(lots.fase?' · '+lots.fase:'');
+  sv('det-lot-nome',       lots.nome);
+  sv('det-lot-fase',       lots.fase);
+  sv('det-lot-razao',      lots.razao_social);
+  sv('det-lot-cnpj',       lots.cnpj);
+  sv('det-lot-end',        lots.endereco);
+  sv('det-lot-cidade',     (lots.cidade||'')+(lots.estado?' / '+lots.estado:''));
+  sv('det-lot-area',       lots.area_total ? lots.area_total+'m²' : '');
+  sv('det-lot-area-verde', lots.area_verde ? lots.area_verde+'m²' : '');
+  sv('det-lot-qtd',        lots.qtd_lotes || '');
+  sv('det-lot-conta',      lots.conta_bancaria || '');
+
+  // Mapa
+  const imgEl  = document.getElementById('det-mapa-img');
+  const wrap   = document.getElementById('det-mapa-img-wrap');
+  const vazio  = document.getElementById('det-mapa-vazio');
+  const btnVer = document.getElementById('det-mapa-btn-ver');
+  if(lots.mapa_url){
+    if(imgEl) imgEl.src = lots.mapa_url;
+    if(wrap)  wrap.style.display='block';
+    if(vazio) vazio.style.display='none';
+    if(btnVer)btnVer.style.display='';
+  } else {
+    if(wrap)  wrap.style.display='none';
+    if(vazio) vazio.style.display='block';
+    if(btnVer)btnVer.style.display='none';
+  }
+
+  setLotAba('info');
+  openModal('modal-det-loteamento');
+}
+
+function setLotAba(aba){
+  ['info','lotes','mapa','obra'].forEach(a=>{
+    const tab=document.getElementById('ltab-'+a);
+    const content=document.getElementById('laba-'+a);
+    if(tab) tab.classList.toggle('active',a===aba);
+    if(content) content.style.display=a===aba?'':'none';
+  });
+  if(aba==='lotes') carregarLotesDetalhe(_detLotId);
+  if(aba==='obra')  carregarObraDetalhe(_detLotId);
+}
+
+async function carregarLotesDetalhe(lotId){
+  const tbody = document.getElementById('det-lotes-tbody');
+  if(!tbody) return;
+  tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text-secondary)">Carregando...</td></tr>';
+  const {data:lotes} = await sb.from('lotes').select('*').eq('loteamento_id',lotId).order('quadra').order('numero');
+  if(!lotes?.length){ tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text-secondary)">Nenhum lote cadastrado.</td></tr>'; return; }
+
+  // KPIs
+  const disp=lotes.filter(l=>l.status==='Disponível').length;
+  const vend=lotes.filter(l=>l.status==='Vendido').length;
+  const res =lotes.filter(l=>l.status==='Reservado').length;
+  const kpis=document.getElementById('det-lotes-kpis');
+  if(kpis) kpis.innerHTML=`
+    <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#EAF3DE;border:1.5px solid #97C459"></div><div><div class="lote-kpi-label">Disponíveis</div><div class="lote-kpi-val" style="color:var(--success)">${disp}</div></div></div>
+    <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#E6F1FB;border:1.5px solid #378ADD"></div><div><div class="lote-kpi-label">Vendidos</div><div class="lote-kpi-val" style="color:var(--accent)">${vend}</div></div></div>
+    <div class="lote-kpi-box"><div class="lote-kpi-dot" style="background:#FAEEDA;border:1.5px solid #EF9F27"></div><div><div class="lote-kpi-label">Reservados</div><div class="lote-kpi-val" style="color:var(--warning)">${res}</div></div></div>
+    <div class="lote-kpi-box" style="background:var(--bg-secondary)"><div class="lote-kpi-dot"></div><div><div class="lote-kpi-label">Total</div><div class="lote-kpi-val">${lotes.length}</div></div></div>`;
+
+  const stCor={'Disponível':'#3B6D11','Vendido':'#185FA5','Reservado':'#EF9F27','Quitado':'#7C3AED','Inadimplente':'#E24B4A'};
+  tbody.innerHTML=lotes.map(l=>{
+    const cor=stCor[l.status]||'#888';
+    return `<tr>
+      <td>${l.quadra||'—'}</td>
+      <td>${l.numero||'—'}</td>
+      <td style="text-align:right">${l.area_m2?l.area_m2+'m²':'—'}</td>
+      <td style="text-align:right;font-weight:600">${l.valor_tabela?fmt(l.valor_tabela):'—'}</td>
+      <td style="text-align:center"><span style="font-size:10px;padding:2px 8px;border-radius:12px;font-weight:600;background:${cor}22;color:${cor}">${l.status||'—'}</span></td>
+      <td style="font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.cliente_nome||'—'}</td>
+      <td style="font-size:11px;color:var(--text-secondary)">${l.dt_entrada?new Date(l.dt_entrada+'T12:00').toLocaleDateString('pt-BR'):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function carregarObraDetalhe(lotId){
+  const content = document.getElementById('det-obra-content');
+  if(!content) return;
+  const {data:lots} = await sb.from('loteamentos').select('nome').eq('id',lotId).single();
+  const {data:obras} = await sb.from('obras').select('*').eq('loteamento_nome',lots?.nome||'').order('data_inicio',{ascending:true});
+  if(!obras?.length){
+    content.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-secondary)"><div style="font-size:32px;margin-bottom:8px">🏗️</div><div>Nenhuma obra cadastrada para este loteamento.</div><button class="btn btn-primary" style="margin-top:12px" onclick="closeModal(\'modal-det-loteamento\');showPage(\'obras\',null)">Ir para Obras</button></div>';
+    return;
+  }
+  const stCor={'Planejado':'#EF9F27','Em andamento':'#185FA5','Concluído':'#3B6D11','Pausado':'#888'};
+  content.innerHTML=obras.map(o=>{
+    const pct=o.percentual_fisico||0;
+    const cor=stCor[o.status]||'#888';
+    return `<div style="background:var(--bg-secondary);border-radius:10px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div><div style="font-weight:600;font-size:13px">${o.nome||o.descricao||'Obra'}</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:2px">${o.data_inicio?'Início: '+new Date(o.data_inicio+'T12:00').toLocaleDateString('pt-BR'):''} ${o.data_fim?' · Prev: '+new Date(o.data_fim+'T12:00').toLocaleDateString('pt-BR'):''}</div></div>
+        <span style="font-size:11px;padding:2px 10px;border-radius:12px;font-weight:600;background:${cor}22;color:${cor}">${o.status||'—'}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:1;background:var(--border-secondary);border-radius:4px;height:8px;overflow:hidden">
+          <div style="width:${pct}%;background:${pct>=80?'var(--success)':pct>=40?'var(--accent)':'var(--warning)'};height:100%;border-radius:4px;transition:width .3s"></div>
+        </div>
+        <div style="font-weight:700;font-size:13px;color:${pct>=80?'var(--success)':pct>=40?'var(--accent)':'var(--warning)'};min-width:40px;text-align:right">${pct}%</div>
+      </div>
+      ${o.observacoes?`<div style="margin-top:8px;font-size:11px;color:var(--text-secondary)">${o.observacoes}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function uploadMapaLoteamento(input){
+  const file=input.files[0]; if(!file) return;
+  showLoading('Enviando mapa...');
+  try{
+    const ext=file.name.split('.').pop();
+    const path=`mapas/${_detLotId}_${Date.now()}.${ext}`;
+    const {error}=await sb.storage.from('loteamentos').upload(path,file,{upsert:true});
+    if(error) throw error;
+    const {data:{publicUrl}}=sb.storage.from('loteamentos').getPublicUrl(path);
+    await sb.from('loteamentos').update({mapa_url:publicUrl}).eq('id',_detLotId);
+    const imgEl=document.getElementById('det-mapa-img');
+    const wrap=document.getElementById('det-mapa-img-wrap');
+    const vazio=document.getElementById('det-mapa-vazio');
+    const btnVer=document.getElementById('det-mapa-btn-ver');
+    if(imgEl) imgEl.src=publicUrl;
+    if(wrap)  wrap.style.display='block';
+    if(vazio) vazio.style.display='none';
+    if(btnVer)btnVer.style.display='';
+    showToast('✅ Mapa enviado com sucesso!');
+  }catch(e){showToast('Erro no upload: '+e.message,'error');}
+  hideLoading();
+}
+
+
   const nome = document.getElementById('nl-nome')?.value?.trim();
   if(!nome){showToast('Informe o nome.','error');return;}
   showLoading('Salvando loteamento...');
@@ -9998,6 +10230,8 @@ async function salvarLoteamentoDB() {
     tipo_conta: document.getElementById('nl-tipo-conta')?.value||null,
     pix:        document.getElementById('nl-pix')?.value||null,
   };
+async function salvarLoteamentoDB(){
+  showLoading('Salvando loteamento...');
   const saved = await dbInsert('loteamentos', row);
   hideLoading();
   if(!saved) return;
