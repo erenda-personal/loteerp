@@ -663,7 +663,7 @@ tbody tr.clickable{cursor:pointer}
               <div class="field"><label>Conta bancária</label><input id="det-lot-conta" readonly style="background:var(--bg-secondary)"></div>
             </div>
             <div style="margin-top:12px;display:flex;justify-content:flex-end">
-              <button class="btn btn-primary" onclick="closeModal('modal-det-loteamento');abrirEditarLoteamento(window._detLotId)">✏️ Editar informações</button>
+              <button class="btn btn-primary" onclick="closeModal('modal-det-loteamento');abrirEditarLoteamento(window._detLotNome)">✏️ Editar informações</button>
             </div>
           </div>
 
@@ -10077,6 +10077,7 @@ async function abrirDetalheLoteamento(lotId){
   const {data:lots} = await sb.from('loteamentos').select('*').eq('id',lotId).single();
   hideLoading();
   if(!lots) return;
+  window._detLotNome = lots.nome||'';
 
   // Preencher aba Informações
   const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
