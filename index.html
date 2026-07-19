@@ -10256,6 +10256,7 @@ async function salvarDetalheLoteamento(){
 }
 
 
+async function salvarLoteamentoDB(){
   const nome = document.getElementById('nl-nome')?.value?.trim();
   if(!nome){showToast('Informe o nome.','error');return;}
   showLoading('Salvando loteamento...');
@@ -10276,7 +10277,6 @@ async function salvarDetalheLoteamento(){
     tipo_conta: document.getElementById('nl-tipo-conta')?.value||null,
     pix:        document.getElementById('nl-pix')?.value||null,
   };
-async function salvarLoteamentoDB(){
   const saved = await dbInsert('loteamentos', row);
   hideLoading();
   if(!saved) return;
