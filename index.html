@@ -10210,6 +10210,7 @@ async function uploadMapaLoteamento(input){
 }
 
 
+async function salvarLoteamentoDB(){
   const nome = document.getElementById('nl-nome')?.value?.trim();
   if(!nome){showToast('Informe o nome.','error');return;}
   showLoading('Salvando loteamento...');
@@ -10230,8 +10231,6 @@ async function uploadMapaLoteamento(input){
     tipo_conta: document.getElementById('nl-tipo-conta')?.value||null,
     pix:        document.getElementById('nl-pix')?.value||null,
   };
-async function salvarLoteamentoDB(){
-  showLoading('Salvando loteamento...');
   const saved = await dbInsert('loteamentos', row);
   hideLoading();
   if(!saved) return;
