@@ -651,19 +651,22 @@ tbody tr.clickable{cursor:pointer}
           <!-- ABA: Informações -->
           <div id="laba-info">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div class="field"><label>Nome fantasia</label><input id="det-lot-nome" readonly style="background:var(--bg-secondary)"></div>
-              <div class="field"><label>Fase</label><input id="det-lot-fase" readonly style="background:var(--bg-secondary)"></div>
-              <div class="field"><label>Razão social</label><input id="det-lot-razao" readonly style="background:var(--bg-secondary)"></div>
-              <div class="field"><label>CNPJ</label><input id="det-lot-cnpj" readonly style="background:var(--bg-secondary)"></div>
-              <div class="field"><label>Endereço</label><input id="det-lot-end" readonly style="background:var(--bg-secondary)"></div>
-              <div class="field"><label>Cidade / Estado</label><input id="det-lot-cidade" readonly style="background:var(--bg-secondary)"></div>
-              <div class="field"><label>Área total (m²)</label><input id="det-lot-area" readonly style="background:var(--bg-secondary)"></div>
-              <div class="field"><label>Área verde (m²)</label><input id="det-lot-area-verde" readonly style="background:var(--bg-secondary)"></div>
-              <div class="field"><label>Qtd. de lotes</label><input id="det-lot-qtd" readonly style="background:var(--bg-secondary)"></div>
-              <div class="field"><label>Conta bancária</label><input id="det-lot-conta" readonly style="background:var(--bg-secondary)"></div>
+              <div class="field"><label>Nome fantasia *</label><input id="det-lot-nome" placeholder="Nome do loteamento"></div>
+              <div class="field"><label>Fase</label><input id="det-lot-fase" placeholder="Ex: Fase 1"></div>
+              <div class="field"><label>Razão social</label><input id="det-lot-razao" placeholder="Razão social da empresa"></div>
+              <div class="field"><label>CNPJ</label><input id="det-lot-cnpj" placeholder="00.000.000/0000-00"></div>
+              <div class="field"><label>Endereço</label><input id="det-lot-end" placeholder="Rua, número, bairro"></div>
+              <div class="field"><label>Cidade / Estado</label><input id="det-lot-cidade" placeholder="Ex: Arcoverde / PE"></div>
+              <div class="field"><label>Área total (m²)</label><input id="det-lot-area" type="number" placeholder="0" min="0"></div>
+              <div class="field"><label>Área verde (m²)</label><input id="det-lot-area-verde" type="number" placeholder="0" min="0"></div>
+              <div class="field"><label>Qtd. de lotes</label><input id="det-lot-qtd" type="number" placeholder="0" min="0"></div>
+              <div class="field"><label>Conta bancária</label><input id="det-lot-conta" placeholder="Banco · Agência · Conta"></div>
+            </div>
+            <div class="field" style="margin-top:4px"><label>Observações</label>
+              <textarea id="det-lot-obs" rows="2" placeholder="Informações adicionais..." style="width:100%;padding:8px 10px;border:1px solid var(--border-secondary);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;resize:vertical;font-family:var(--font)"></textarea>
             </div>
             <div style="margin-top:12px;display:flex;justify-content:flex-end">
-              <button class="btn btn-primary" onclick="closeModal('modal-det-loteamento');abrirEditarLoteamento(window._detLotNome)">✏️ Editar informações</button>
+              <button class="btn btn-primary" onclick="salvarDetalheLoteamento()">💾 Salvar informações</button>
             </div>
           </div>
 
@@ -10088,10 +10091,11 @@ async function abrirDetalheLoteamento(lotId){
   sv('det-lot-cnpj',       lots.cnpj);
   sv('det-lot-end',        lots.endereco);
   sv('det-lot-cidade',     (lots.cidade||'')+(lots.estado?' / '+lots.estado:''));
-  sv('det-lot-area',       lots.area_total ? lots.area_total+'m²' : '');
-  sv('det-lot-area-verde', lots.area_verde ? lots.area_verde+'m²' : '');
-  sv('det-lot-qtd',        lots.qtd_lotes || '');
-  sv('det-lot-conta',      lots.conta_bancaria || '');
+  sv('det-lot-area',       lots.area_total||'');
+  sv('det-lot-area-verde', lots.area_verde||'');
+  sv('det-lot-qtd',        lots.qtd_lotes||lots.total_lotes||'');
+  sv('det-lot-conta',      lots.conta_bancaria||'');
+  sv('det-lot-obs',        lots.observacoes||'');
 
   // Mapa
   const imgEl  = document.getElementById('det-mapa-img');
@@ -10211,7 +10215,47 @@ async function uploadMapaLoteamento(input){
 }
 
 
-async function salvarLoteamentoDB(){
+async function salvarDetalheLoteamento(){
+  const nome = document.getElementById('det-lot-nome')?.value?.trim();
+  if(!nome){ showToast('Nome é obrigatório.','error'); return; }
+
+  // Parsear cidade/estado do campo combinado "Cidade / Estado"
+  const cidadeEstado = document.getElementById('det-lot-cidade')?.value||'';
+  const partes = cidadeEstado.split('/').map(s=>s.trim());
+  const cidade = partes[0]||'';
+  const estado = partes[1]||'';
+
+  const row = {
+    nome,
+    fase:           document.getElementById('det-lot-fase')?.value?.trim()||null,
+    razao_social:   document.getElementById('det-lot-razao')?.value?.trim()||null,
+    cnpj:           document.getElementById('det-lot-cnpj')?.value?.trim()||null,
+    endereco:       document.getElementById('det-lot-end')?.value?.trim()||null,
+    cidade,
+    estado,
+    area_total:     parseFloat(document.getElementById('det-lot-area')?.value)||null,
+    area_verde:     parseFloat(document.getElementById('det-lot-area-verde')?.value)||null,
+    qtd_lotes:      parseInt(document.getElementById('det-lot-qtd')?.value)||null,
+    conta_bancaria: document.getElementById('det-lot-conta')?.value?.trim()||null,
+    observacoes:    document.getElementById('det-lot-obs')?.value?.trim()||null,
+  };
+
+  showLoading('Salvando...');
+  const {error} = await sb.from('loteamentos').update(row).eq('id', _detLotId);
+  hideLoading();
+
+  if(error){ showToast('Erro: '+error.message,'error'); return; }
+
+  // Atualizar título
+  document.getElementById('det-lot-titulo').textContent = nome+(row.fase?' · '+row.fase:'');
+  window._detLotNome = nome;
+
+  // Recarregar tabela de loteamentos
+  carregarLoteamentos();
+  showToast('✅ Loteamento atualizado!');
+}
+
+
   const nome = document.getElementById('nl-nome')?.value?.trim();
   if(!nome){showToast('Informe o nome.','error');return;}
   showLoading('Salvando loteamento...');
@@ -10232,6 +10276,7 @@ async function salvarLoteamentoDB(){
     tipo_conta: document.getElementById('nl-tipo-conta')?.value||null,
     pix:        document.getElementById('nl-pix')?.value||null,
   };
+async function salvarLoteamentoDB(){
   const saved = await dbInsert('loteamentos', row);
   hideLoading();
   if(!saved) return;
