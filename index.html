@@ -11001,7 +11001,17 @@ applyTheme();
 // ═══════════════════════════════════════════════════════════
 let _usuarioLogado = null;
 
+window.onerror=function(msg,src,line,col,err){
+  if(document.body&&!document.body.innerHTML.includes('Erro ao carregar')){
+    document.body.style.cssText='display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;font-family:sans-serif;background:#f4f5f7;padding:20px;text-align:center';
+    document.body.innerHTML='<div style="max-width:500px"><div style="font-size:48px;margin-bottom:16px">⚠️</div><h2 style="color:#1a1d23;margin-bottom:8px">Erro ao carregar</h2><p style="color:#6b7280;font-size:13px;margin-bottom:4px">'+msg+'</p><p style="color:#9ca3af;font-size:11px;margin-bottom:16px">Linha '+line+' · Coluna '+col+'</p><button onclick="location.reload()" style="padding:10px 24px;background:#185FA5;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">↺ Recarregar</button></div>';
+  }
+  return false;
+};
+window.onunhandledrejection=function(e){ console.error('Promise rejeitada:',e.reason); };
+
 async function iniciarApp(){
+
   try{
   // ── Detectar token de convite/recuperação na URL ──────────
   const hash = window.location.hash;
