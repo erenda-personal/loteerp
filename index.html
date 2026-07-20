@@ -754,6 +754,15 @@ tbody tr.clickable{cursor:pointer}
                       </div>
                       <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Taxa de administração da obra / construtora</div>
                     </div>
+                    <div class="field" style="margin:0">
+                      <label>Fee de Gestão (%)</label>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <input id="neg-fee-gestao" type="number" min="0" max="100" step="0.1" placeholder="0,0" style="width:140px;text-align:right" oninput="calcNegValores()">
+                        <span style="font-size:12px;color:var(--text-secondary)">% do VGV</span>
+                        <span id="neg-fee-gestao-rs" style="font-size:12px;font-weight:600;color:var(--accent);margin-left:8px">—</span>
+                      </div>
+                      <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Taxa de administração de cobrança das parcelas</div>
+                    </div>
                   </div>
                 </div>
                 <div id="neg-resumo" style="display:none;background:var(--bg-secondary);border-radius:10px;padding:14px">
@@ -10139,12 +10148,13 @@ function setLotAba(aba){
 
 async function carregarNegociacao(lotId){
   if(!lotId) return;
-  const {data:lot} = await sb.from('loteamentos').select('permuta_pct,fee_vendas_pct,fee_obras_pct').eq('id',lotId).single();
+  const {data:lot} = await sb.from('loteamentos').select('permuta_pct,fee_vendas_pct,fee_obras_pct,fee_gestao_pct').eq('id',lotId).single();
   if(!lot) return;
   const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v!=null?v:'';};
   sv('neg-permuta',    lot.permuta_pct);
   sv('neg-fee-vendas', lot.fee_vendas_pct);
   sv('neg-fee-obras',  lot.fee_obras_pct);
+  sv('neg-fee-gestao', lot.fee_gestao_pct);
   calcNegValores();
 }
 
@@ -10152,21 +10162,16 @@ function calcNegValores(){
   const permuta  = parseFloat(document.getElementById('neg-permuta')?.value)||0;
   const feVendas = parseFloat(document.getElementById('neg-fee-vendas')?.value)||0;
   const feObras  = parseFloat(document.getElementById('neg-fee-obras')?.value)||0;
-  const total    = permuta + feVendas + feObras;
-
-  // Buscar VGV do loteamento atual (via tabela visível)
-  const vgvEl = document.querySelector('#tbody-loteamentos tr.clickable td:nth-child(5)');
-  // VGV aproximado via lotes carregados
-  const vgv = window._detLotVgv || 0;
-
-  const fmtPct = v => v>0 ? v.toFixed(1)+'%' : '—';
-  const fmtRs  = v => vgv>0 ? fmt(vgv*v/100) : '—';
-
+  const feGestao = parseFloat(document.getElementById('neg-fee-gestao')?.value)||0;
+  const total    = permuta + feVendas + feObras + feGestao;
+  const vgv      = window._detLotVgv || 0;
+  const fmtPct   = v => v>0 ? v.toFixed(1)+'%' : '—';
+  const fmtRs    = v => vgv>0 ? fmt(vgv*v/100) : '—';
   const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
   sv('neg-permuta-rs',    fmtRs(permuta));
   sv('neg-fee-vendas-rs', fmtRs(feVendas));
   sv('neg-fee-obras-rs',  fmtRs(feObras));
-
+  sv('neg-fee-gestao-rs', fmtRs(feGestao));
   const resumo = document.getElementById('neg-resumo');
   if(resumo) resumo.style.display = total>0?'':'none';
   sv('neg-total-pct',  fmtPct(total));
@@ -10178,15 +10183,15 @@ async function salvarNegociacao(){
   const permuta  = parseFloat(document.getElementById('neg-permuta')?.value)||null;
   const feVendas = parseFloat(document.getElementById('neg-fee-vendas')?.value)||null;
   const feObras  = parseFloat(document.getElementById('neg-fee-obras')?.value)||null;
-
+  const feGestao = parseFloat(document.getElementById('neg-fee-gestao')?.value)||null;
   showLoading('Salvando...');
   const {error} = await sb.from('loteamentos').update({
     permuta_pct:    permuta,
     fee_vendas_pct: feVendas,
     fee_obras_pct:  feObras,
+    fee_gestao_pct: feGestao,
   }).eq('id', _detLotId);
   hideLoading();
-
   if(error){ showToast('Erro: '+error.message,'error'); return; }
   showToast('✅ Negociação salva!');
 }
