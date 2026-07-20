@@ -690,22 +690,40 @@ tbody tr.clickable{cursor:pointer}
 
           <!-- ABA: Mapa -->
           <div id="laba-mapa" style="display:none">
-            <div style="background:var(--bg-secondary);border-radius:10px;padding:16px;margin-bottom:12px">
-              <div style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--text-secondary)">IMAGEM DO MAPA / PLANTA</div>
-              <div id="det-mapa-preview" style="text-align:center;padding:20px">
-                <div id="det-mapa-img-wrap" style="display:none">
-                  <img id="det-mapa-img" src="" style="max-width:100%;max-height:500px;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.12)">
-                </div>
-                <div id="det-mapa-vazio" style="color:var(--text-secondary);padding:40px 0">
-                  <div style="font-size:36px;margin-bottom:8px">🗺️</div>
-                  <div style="margin-bottom:12px">Nenhuma planta enviada ainda.</div>
-                </div>
+            <!-- Controles do mapa -->
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+              <div id="det-mapa-legenda" style="display:flex;gap:10px;font-size:11px;flex:1">
+                <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#4CAF50;display:inline-block"></span>Disponível</span>
+                <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#2196F3;display:inline-block"></span>Vendido</span>
+                <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#FF9800;display:inline-block"></span>Reservado</span>
+                <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#9E9E9E;display:inline-block"></span>Sem dados</span>
               </div>
-              <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-                <button class="btn btn-primary" onclick="document.getElementById('det-mapa-file').click()">📎 Enviar planta / mapa</button>
-                <input type="file" id="det-mapa-file" accept="image/*,.pdf" style="display:none" onchange="uploadMapaLoteamento(this)">
-                <button class="btn" id="det-mapa-btn-ver" style="display:none" onclick="window.open(document.getElementById('det-mapa-img').src,'_blank')">🔗 Abrir em nova aba</button>
+              <button class="btn btn-sm" onclick="document.getElementById('det-geojson-file').click()" style="font-size:11px;white-space:nowrap">📁 Carregar GeoJSON</button>
+              <input type="file" id="det-geojson-file" accept=".geojson,.json" style="display:none" onchange="carregarGeoJSONMapa(this)">
+              <button class="btn btn-sm" id="btn-mapa-fit" onclick="fitMapaLotes()" style="font-size:11px;display:none">⊞ Ajustar</button>
+            </div>
+
+            <!-- Canvas do mapa -->
+            <div id="det-mapa-wrap" style="position:relative;border:1px solid var(--border-secondary);border-radius:10px;overflow:hidden;background:#f8f9fa;min-height:420px">
+              <!-- Estado vazio -->
+              <div id="det-mapa-vazio" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:420px;color:var(--text-secondary)">
+                <div style="font-size:48px;margin-bottom:12px">🗺️</div>
+                <div style="font-weight:600;margin-bottom:6px">Nenhuma planta cadastrada</div>
+                <div style="font-size:12px;margin-bottom:16px;text-align:center">Carregue o arquivo GeoJSON exportado do QGIS<br>para visualizar os lotes interativamente</div>
+                <button class="btn btn-primary" onclick="document.getElementById('det-geojson-file').click()">📁 Carregar GeoJSON dos lotes</button>
               </div>
+              <!-- SVG do mapa -->
+              <svg id="det-mapa-svg" style="display:none;width:100%;cursor:grab" viewBox="0 0 800 500">
+                <g id="det-mapa-g"></g>
+              </svg>
+            </div>
+
+            <!-- Tooltip do lote -->
+            <div id="det-mapa-tooltip" style="display:none;position:fixed;background:#1a1d23;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;pointer-events:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3);min-width:160px">
+              <div id="tt-quadra" style="font-weight:700;font-size:13px;margin-bottom:4px"></div>
+              <div id="tt-area" style="color:#aaa;margin-bottom:4px"></div>
+              <div id="tt-status" style="font-weight:600"></div>
+              <div id="tt-cliente" style="color:#aaa;font-size:11px;margin-top:2px"></div>
             </div>
           </div>
 
@@ -1429,7 +1447,13 @@ tbody tr.clickable{cursor:pointer}
             <input type="text" id="vendas-busca" placeholder="Buscar cliente, contrato ou lote..." oninput="renderVendas()"
               style="padding:7px 12px;border:1px solid var(--border-secondary);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;width:280px">
           </div>
-          <button class="btn btn-primary" onclick="abrirModalNovaVenda()">+ Nova venda</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="abrirModalImportVendas()" style="display:flex;align-items:center;gap:6px">
+              <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 11v1.5A1.5 1.5 0 003.5 14h9a1.5 1.5 0 001.5-1.5V11" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+              Importar vendas
+            </button>
+            <button class="btn btn-primary" onclick="abrirModalNovaVenda()">+ Nova venda</button>
+          </div>
         </div>
 
         <!-- KPIs -->
@@ -1456,6 +1480,80 @@ tbody tr.clickable{cursor:pointer}
               </tr></thead>
             <tbody id="tbody-vendas"></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- Modal: Importar Vendas em Massa -->
+      <div class="modal-overlay" id="modal-import-vendas" onclick="if(event.target===this)closeModal('modal-import-vendas')">
+        <div class="modal-box" style="width:900px;max-height:92vh;overflow-y:auto">
+          <div class="modal-header">
+            <span class="modal-title">Importar vendas em massa</span>
+            <button class="modal-close" onclick="closeModal('modal-import-vendas')">✕</button>
+          </div>
+
+          <!-- Step 1: Upload -->
+          <div id="import-step-upload">
+            <div style="background:var(--bg-secondary);border-radius:10px;padding:16px;margin-bottom:14px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:8px">Colunas obrigatórias (na ordem):</div>
+              <div style="font-size:11px;color:var(--text-secondary);line-height:1.8;font-family:monospace;background:var(--bg-primary);padding:10px;border-radius:6px">
+                Cliente · CPF do Cliente · Loteamento · Quadra · Número · Área (m²) · Valor de Venda · Data da Venda · Valor de Entrada · Prazo (meses) · Taxa de Juros (% a.m.) · Valor da Parcela · Data 1º Vencimento
+              </div>
+              <div style="font-size:11px;color:var(--text-secondary);margin-top:8px">
+                • Separe com <strong>vírgula (,)</strong> ou <strong>ponto e vírgula (;)</strong><br>
+                • Múltiplos lotes na mesma venda: separe quadra, número e área com <strong>|</strong> (ex: <code>A|B</code>, <code>01|02</code>)<br>
+                • Datas no formato <strong>DD/MM/AAAA</strong><br>
+                • Valores sem R$ (ex: <code>85000</code> ou <code>85.000,00</code>)
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-bottom:14px">
+              <button class="btn btn-sm" onclick="baixarModeloCSV()" style="font-size:11px">📥 Baixar modelo CSV</button>
+            </div>
+
+            <!-- Drop zone -->
+            <div id="import-drop" onclick="document.getElementById('import-file').click()"
+              style="border:2px dashed var(--border-secondary);border-radius:10px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s"
+              ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+              ondragleave="this.style.borderColor='var(--border-secondary)'"
+              ondrop="event.preventDefault();this.style.borderColor='var(--border-secondary)';handleImportDrop(event)">
+              <div style="font-size:32px;margin-bottom:8px">📂</div>
+              <div style="font-size:13px;font-weight:600;margin-bottom:4px">Clique ou arraste o arquivo CSV</div>
+              <div style="font-size:11px;color:var(--text-secondary)">Arquivo .csv ou .txt</div>
+            </div>
+            <input type="file" id="import-file" accept=".csv,.txt" style="display:none" onchange="handleImportFile(this)">
+
+            <!-- Ou colar dados -->
+            <div style="margin-top:14px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--text-secondary)">— ou cole os dados diretamente —</div>
+              <textarea id="import-texto" rows="6" placeholder="Cole aqui o conteúdo do CSV..."
+                style="width:100%;padding:10px;border:1px solid var(--border-secondary);border-radius:8px;font-family:monospace;font-size:11px;background:var(--bg-primary);color:var(--text-primary);resize:vertical"></textarea>
+              <button class="btn btn-primary" onclick="processarImport()" style="margin-top:8px">→ Processar dados</button>
+            </div>
+          </div>
+
+          <!-- Step 2: Preview -->
+          <div id="import-step-preview" style="display:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div>
+                <span id="import-preview-ok" style="font-size:12px;font-weight:600;color:var(--success)"></span>
+                <span id="import-preview-err" style="font-size:12px;font-weight:600;color:var(--danger);margin-left:10px"></span>
+              </div>
+              <button class="btn btn-sm" onclick="voltarImportUpload()">← Corrigir arquivo</button>
+            </div>
+            <div style="overflow-x:auto;max-height:380px;overflow-y:auto;border:1px solid var(--border-secondary);border-radius:8px">
+              <table style="width:100%;min-width:900px;font-size:11px;border-collapse:collapse">
+                <thead style="position:sticky;top:0;background:var(--bg-secondary)">
+                  <tr id="import-thead"></tr>
+                </thead>
+                <tbody id="import-tbody"></tbody>
+              </table>
+            </div>
+            <div style="margin-top:14px;display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn" onclick="voltarImportUpload()">Cancelar</button>
+              <button class="btn btn-primary" id="btn-confirmar-import" onclick="confirmarImport()">✅ Importar vendas válidas</button>
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -5021,6 +5119,399 @@ async function criarVendaDeKanban(lead){
 }
 
 
+// ════════════════════════════════════════════════════════════
+// MAPA INTERATIVO DE LOTES (GeoJSON → SVG)
+// ════════════════════════════════════════════════════════════
+let _mapaGeoJSON = null;
+let _mapaLotes   = [];
+let _mapaViewBox = {minX:0,minY:0,w:800,h:500};
+let _mapaZoom    = 1;
+let _mapaPan     = {x:0,y:0};
+let _mapaIsDrag  = false;
+let _mapaDragStart = {x:0,y:0,px:0,py:0};
+
+const MAPA_CORES = {
+  'Disponível':  '#4CAF50',
+  'Vendido':     '#2196F3',
+  'Reservado':   '#FF9800',
+  'Inadimplente':'#E53935',
+  'Quitado':     '#9C27B0',
+  '_default':    '#9E9E9E',
+};
+
+function carregarGeoJSONMapa(input){
+  const file = input.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try{
+      _mapaGeoJSON = JSON.parse(e.target.result);
+      // Buscar lotes do Supabase para cruzar status
+      const lotesDB = await dbSelect('lotes',{
+        filter:[['loteamento_id','eq',_detLotId]],
+        select:'quadra,numero,status,area_m2,valor_tabela,cliente_nome'
+      });
+      _mapaLotes = lotesDB;
+      renderMapaInterativo();
+      // Salvar GeoJSON no Supabase para reusar
+      await sb.from('loteamentos').update({geojson_lotes: e.target.result}).eq('id',_detLotId);
+      showToast('✅ Mapa carregado com '+_mapaGeoJSON.features.length+' lotes!');
+    }catch(err){ showToast('Erro ao carregar GeoJSON: '+err.message,'error'); }
+  };
+  reader.readAsText(file);
+}
+
+async function carregarMapaDoSupabase(lotId){
+  const {data} = await sb.from('loteamentos').select('geojson_lotes').eq('id',lotId).single();
+  if(!data?.geojson_lotes) return false;
+  try{
+    _mapaGeoJSON = JSON.parse(data.geojson_lotes);
+    const lotesDB = await dbSelect('lotes',{filter:[['loteamento_id','eq',lotId]],select:'quadra,numero,status,area_m2,valor_tabela,cliente_nome'});
+    _mapaLotes = lotesDB;
+    renderMapaInterativo();
+    return true;
+  }catch(e){ return false; }
+}
+
+function renderMapaInterativo(){
+  if(!_mapaGeoJSON) return;
+  const features = _mapaGeoJSON.features.filter(f => f.geometry?.coordinates?.length);
+  if(!features.length){ showToast('GeoJSON sem polígonos válidos.','error'); return; }
+
+  // Calcular bounding box
+  let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+  features.forEach(f => {
+    f.geometry.coordinates.forEach(poly =>
+      poly.forEach(ring =>
+        ring.forEach(([x,y]) => {
+          if(x<minX)minX=x; if(x>maxX)maxX=x;
+          if(y<minY)minY=y; if(y>maxY)maxY=y;
+        })
+      )
+    );
+  });
+
+  const W=800, H=520, PAD=20;
+  const rangeX = maxX-minX, rangeY = maxY-minY;
+  const scaleX = (W-PAD*2)/rangeX;
+  const scaleY = (H-PAD*2)/rangeY;
+  const scale  = Math.min(scaleX, scaleY);
+  const offX   = PAD + ((W-PAD*2) - rangeX*scale)/2;
+  const offY   = PAD + ((H-PAD*2) - rangeY*scale)/2;
+
+  // GeoJSON: Y cresce para cima, SVG: Y cresce para baixo → inverter Y
+  const toSVG = ([lon,lat]) => [
+    offX + (lon - minX) * scale,
+    H - offY - (lat - minY) * scale
+  ];
+
+  // Criar mapa de status por código do lote
+  const statusMap = {};
+  _mapaLotes.forEach(l => {
+    const key = `${l.quadra}-${String(l.numero).padStart(2,'0')}`;
+    statusMap[key] = l;
+  });
+
+  // Gerar SVG
+  const svg = document.getElementById('det-mapa-svg');
+  const g   = document.getElementById('det-mapa-g');
+  if(!svg||!g) return;
+
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  
+  let svgContent = '';
+  features.forEach((feat, idx) => {
+    const props = feat.properties || {};
+    const loteCod = props.quadra ? `${props.quadra}-${String(props.numero).padStart(2,'0')}` : null;
+    const loteInfo = loteCod ? statusMap[loteCod] : null;
+    const status = loteInfo?.status || '_default';
+    const cor = MAPA_CORES[status] || MAPA_CORES['_default'];
+    
+    feat.geometry.coordinates.forEach(poly => {
+      poly.forEach(ring => {
+        const pts = ring.map(coord => toSVG(coord).join(',')).join(' ');
+        const tooltipData = JSON.stringify({
+          cod: loteCod || `Lote ${idx+1}`,
+          area: loteInfo?.area_m2 ? loteInfo.area_m2+'m²' : '',
+          status: status === '_default' ? 'Sem dados' : status,
+          cliente: loteInfo?.cliente_nome || '',
+          valor: loteInfo?.valor_tabela ? loteInfo.valor_tabela : 0,
+        }).replace(/"/g,'&quot;');
+        
+        svgContent += `<polygon 
+          points="${pts}" 
+          fill="${cor}" fill-opacity="0.7"
+          stroke="#fff" stroke-width="0.5"
+          data-info="${tooltipData}"
+          style="cursor:pointer;transition:fill-opacity .15s"
+          onmouseover="this.style.fillOpacity='1';mapaShowTooltip(event,this)"
+          onmouseout="this.style.fillOpacity='0.7';mapaHideTooltip()"
+          onclick="mapaClickLote(this)"
+        />`;
+      });
+    });
+  });
+
+  g.innerHTML = svgContent;
+  document.getElementById('det-mapa-vazio').style.display='none';
+  svg.style.display='block';
+  document.getElementById('btn-mapa-fit').style.display='';
+
+  // Drag to pan
+  svg.onmousedown = e => { _mapaIsDrag=true; _mapaDragStart={x:e.clientX,y:e.clientY}; svg.style.cursor='grabbing'; };
+  svg.onmouseup   = () => { _mapaIsDrag=false; svg.style.cursor='grab'; };
+  svg.onmouseleave= () => { _mapaIsDrag=false; svg.style.cursor='grab'; };
+  svg.onmousemove = e => {
+    if(!_mapaIsDrag) return;
+    const dx = e.clientX-_mapaDragStart.x, dy = e.clientY-_mapaDragStart.y;
+    _mapaDragStart = {x:e.clientX,y:e.clientY};
+    const vb = svg.viewBox.baseVal;
+    vb.x -= dx*(vb.width/svg.clientWidth);
+    vb.y -= dy*(vb.height/svg.clientHeight);
+  };
+  svg.onwheel = e => {
+    e.preventDefault();
+    const factor = e.deltaY > 0 ? 1.1 : 0.9;
+    const vb = svg.viewBox.baseVal;
+    const mx = (e.offsetX/svg.clientWidth)*vb.width+vb.x;
+    const my = (e.offsetY/svg.clientHeight)*vb.height+vb.y;
+    vb.width  *= factor; vb.height *= factor;
+    vb.x = mx - (e.offsetX/svg.clientWidth)*vb.width;
+    vb.y = my - (e.offsetY/svg.clientHeight)*vb.height;
+  };
+}
+
+function fitMapaLotes(){
+  const svg = document.getElementById('det-mapa-svg');
+  if(svg) svg.setAttribute('viewBox','0 0 800 520');
+}
+
+function mapaShowTooltip(event, el){
+  const tt = document.getElementById('det-mapa-tooltip');
+  if(!tt) return;
+  try{
+    const info = JSON.parse(el.dataset.info.replace(/&quot;/g,'"'));
+    document.getElementById('tt-quadra').textContent  = info.cod;
+    document.getElementById('tt-area').textContent    = info.area;
+    document.getElementById('tt-status').textContent  = info.status;
+    document.getElementById('tt-status').style.color  = MAPA_CORES[info.status]||'#888';
+    document.getElementById('tt-cliente').textContent = info.cliente;
+    tt.style.display='block';
+    tt.style.left = (event.clientX+14)+'px';
+    tt.style.top  = (event.clientY-10)+'px';
+  }catch(e){}
+}
+
+function mapaHideTooltip(){
+  const tt=document.getElementById('det-mapa-tooltip');
+  if(tt) tt.style.display='none';
+}
+
+function mapaClickLote(el){
+  try{
+    const info = JSON.parse(el.dataset.info.replace(/&quot;/g,'"'));
+    mapaHideTooltip();
+    if(info.valor>0){
+      showToast(`${info.cod} · ${info.status} · ${fmt(info.valor)}`);
+    }
+  }catch(e){}
+}
+
+
+// ════════════════════════════════════════════════════════════
+let _importRows = [];
+
+const IMPORT_COLS = [
+  {key:'cliente',     label:'Cliente',              req:true},
+  {key:'cpf',         label:'CPF do Cliente',       req:true},
+  {key:'loteamento',  label:'Loteamento',           req:true},
+  {key:'quadra',      label:'Quadra',               req:true},
+  {key:'numero',      label:'Número',               req:true},
+  {key:'area',        label:'Área (m²)',            req:false},
+  {key:'valor',       label:'Valor de Venda',       req:true},
+  {key:'dt_venda',    label:'Data da Venda',        req:true},
+  {key:'entrada',     label:'Valor de Entrada',     req:false},
+  {key:'prazo',       label:'Prazo (meses)',         req:true},
+  {key:'taxa',        label:'Taxa de Juros (% a.m.)',req:true},
+  {key:'parcela',     label:'Valor da Parcela',     req:false},
+  {key:'dt_primeira', label:'Data 1º Vencimento',   req:true},
+];
+
+function abrirModalImportVendas(){
+  document.getElementById('import-step-upload').style.display='';
+  document.getElementById('import-step-preview').style.display='none';
+  const ta=document.getElementById('import-texto'); if(ta) ta.value='';
+  const fi=document.getElementById('import-file');  if(fi) fi.value='';
+  openModal('modal-import-vendas');
+}
+
+function voltarImportUpload(){
+  document.getElementById('import-step-upload').style.display='';
+  document.getElementById('import-step-preview').style.display='none';
+}
+
+function baixarModeloCSV(){
+  const header = IMPORT_COLS.map(c=>c.label).join(';');
+  const ex = 'João Silva;123.456.789-00;Jardim Arcoverde 1;A;01;250;85000;15/07/2026;8500;120;0,60;385,40;01/08/2026';
+  const blob = new Blob(['\uFEFF'+header+'\n'+ex],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='modelo_importacao_vendas.csv'; a.click();
+}
+
+function handleImportFile(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{ document.getElementById('import-texto').value=e.target.result; processarImport(); };
+  reader.readAsText(file,'UTF-8');
+}
+
+function handleImportDrop(event){
+  const file=event.dataTransfer.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{ document.getElementById('import-texto').value=e.target.result; processarImport(); };
+  reader.readAsText(file,'UTF-8');
+}
+
+function parseCsvLine(line, sep){
+  const result=[]; let cur=''; let inQ=false;
+  for(let i=0;i<line.length;i++){
+    const ch=line[i];
+    if(ch==='"'){inQ=!inQ;continue;}
+    if(!inQ&&ch===sep){result.push(cur.trim());cur='';continue;}
+    cur+=ch;
+  }
+  result.push(cur.trim()); return result;
+}
+
+function parseMoeda(s){
+  if(!s) return 0;
+  s=String(s).replace(/[R$\s]/g,'');
+  if(s.includes(',')) s=s.replace(/\./g,'').replace(',','.');
+  return parseFloat(s)||0;
+}
+
+function parseDataBR(s){
+  if(!s) return null;
+  s=s.trim();
+  const p=s.split(/[\/\-\.]/);
+  if(p.length===3&&p[2].length===4) return `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+  if(p.length===3&&p[0].length===4) return `${p[0]}-${p[1].padStart(2,'0')}-${p[2].padStart(2,'0')}`;
+  return null;
+}
+
+function processarImport(){
+  const texto=document.getElementById('import-texto')?.value?.trim();
+  if(!texto){showToast('Cole ou carregue os dados primeiro.','error');return;}
+  const linhas=texto.split('\n').map(l=>l.trim()).filter(l=>l);
+  const sep=linhas[0].includes(';')?';':',';
+  const primeira=parseCsvLine(linhas[0],sep);
+  const temHeader=isNaN(parseMoeda(primeira[6]));
+  const dados=temHeader?linhas.slice(1):linhas;
+
+  _importRows=dados.map((linha,idx)=>{
+    const cells=parseCsvLine(linha,sep);
+    const row={};
+    IMPORT_COLS.forEach((col,i)=>{row[col.key]=(cells[i]||'').trim();});
+    const quadras=row.quadra.split('|').map(s=>s.trim());
+    const numeros=row.numero.split('|').map(s=>s.trim());
+    const areas=row.area.split('|').map(s=>s.trim());
+    row.lotes_cod=quadras.map((q,i)=>`${q}-${(numeros[i]||'').padStart(2,'0')}`).join(', ');
+    row.area_total=areas.join(', ');
+    row.valor_num=parseMoeda(row.valor);
+    row.entrada_num=parseMoeda(row.entrada);
+    row.parcela_num=parseMoeda(row.parcela);
+    row.prazo_num=parseInt(row.prazo)||0;
+    row.taxa_num=parseFloat(row.taxa.replace(',','.'))||0;
+    row.dt_venda_iso=parseDataBR(row.dt_venda);
+    row.dt_prim_iso=parseDataBR(row.dt_primeira);
+    row._erros=[];
+    if(!row.cliente)      row._erros.push('Cliente obrigatório');
+    if(!row.cpf)          row._erros.push('CPF obrigatório');
+    if(!row.loteamento)   row._erros.push('Loteamento obrigatório');
+    if(!row.quadra)       row._erros.push('Quadra obrigatória');
+    if(!row.numero)       row._erros.push('Número obrigatório');
+    if(row.valor_num<=0)  row._erros.push('Valor inválido');
+    if(!row.dt_venda_iso) row._erros.push('Data da venda inválida');
+    if(row.prazo_num<=0)  row._erros.push('Prazo inválido');
+    if(row.taxa_num<=0)   row._erros.push('Taxa inválida');
+    if(!row.dt_prim_iso)  row._erros.push('Data 1º vencimento inválida');
+    row._valido=row._erros.length===0;
+    row._linha=idx+1+(temHeader?1:0);
+    return row;
+  }).filter(r=>Object.keys(r).length>1);
+
+  renderImportPreview();
+}
+
+function renderImportPreview(){
+  document.getElementById('import-step-upload').style.display='none';
+  document.getElementById('import-step-preview').style.display='';
+  const ok=_importRows.filter(r=>r._valido).length;
+  const err=_importRows.filter(r=>!r._valido).length;
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  sv('import-preview-ok',  ok  ?`✅ ${ok} linha${ok>1?'s':''} válida${ok>1?'s':''}`:'');
+  sv('import-preview-err', err ?`⚠ ${err} com erro`:'');
+  const thead=document.getElementById('import-thead');
+  const tbody=document.getElementById('import-tbody');
+  if(thead) thead.innerHTML=['#','Status','Cliente','CPF','Loteamento','Lote(s)','Área','Valor venda','Data venda','Entrada','Prazo','Taxa','Parcela','1º Venc.']
+    .map(h=>`<th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-secondary);white-space:nowrap;background:var(--bg-secondary)">${h}</th>`).join('');
+  if(tbody) tbody.innerHTML=_importRows.map(r=>{
+    const bg=r._valido?'':'background:#FEF2F2';
+    const status=r._valido
+      ?'<span style="color:var(--success);font-weight:600">✓</span>'
+      :`<span style="color:var(--danger);font-size:10px" title="${r._erros.join(', ')}">✗ ${r._erros[0]}</span>`;
+    return `<tr style="${bg};border-bottom:0.5px solid var(--border-tertiary)">
+      <td style="padding:5px 8px;color:var(--text-tertiary)">${r._linha}</td>
+      <td style="padding:5px 8px">${status}</td>
+      <td style="padding:5px 8px;white-space:nowrap">${r.cliente}</td>
+      <td style="padding:5px 8px;font-family:monospace;font-size:10px">${r.cpf}</td>
+      <td style="padding:5px 8px;white-space:nowrap">${r.loteamento}</td>
+      <td style="padding:5px 8px;white-space:nowrap">${r.lotes_cod}</td>
+      <td style="padding:5px 8px;text-align:right">${r.area_total||'—'}</td>
+      <td style="padding:5px 8px;text-align:right;font-weight:600">${r.valor_num>0?fmt(r.valor_num):'—'}</td>
+      <td style="padding:5px 8px;white-space:nowrap">${r.dt_venda||'—'}</td>
+      <td style="padding:5px 8px;text-align:right">${r.entrada_num>0?fmt(r.entrada_num):'—'}</td>
+      <td style="padding:5px 8px;text-align:center">${r.prazo_num||'—'}m</td>
+      <td style="padding:5px 8px;text-align:right">${r.taxa_num||'—'}%</td>
+      <td style="padding:5px 8px;text-align:right">${r.parcela_num>0?fmt(r.parcela_num):'—'}</td>
+      <td style="padding:5px 8px;white-space:nowrap">${r.dt_primeira||'—'}</td>
+    </tr>`;
+  }).join('');
+  const btn=document.getElementById('btn-confirmar-import');
+  if(btn) btn.disabled=ok===0;
+}
+
+async function confirmarImport(){
+  const validas=_importRows.filter(r=>r._valido);
+  if(!validas.length) return;
+  showLoading(`Importando ${validas.length} venda${validas.length>1?'s':''}...`);
+  let importadas=0, erros=0;
+  for(const r of validas){
+    try{
+      const fin=Math.max(0,r.valor_num-r.entrada_num);
+      const contrato='IMP-'+Date.now().toString().slice(-5)+'-'+(importadas+1);
+      const row={contrato,cliente:r.cliente,lotes:r.lotes_cod,loteamento:r.loteamento,
+        valor:r.valor_num,entrada:r.entrada_num||0,financiado:fin,
+        prazo:r.prazo_num,taxa:r.taxa_num,parcela:r.parcela_num||0,
+        sistema:'price',dt_primeira:r.dt_prim_iso,contrato_url:null};
+      const saved=await dbInsert('vendas',row);
+      if(saved&&r.prazo_num>0&&r.taxa_num>0&&fin>0&&r.dt_prim_iso)
+        await gerarParcelas(saved.id,{...row,financiado:fin});
+      if(saved){
+        const quadras=r.quadra.split('|').map(s=>s.trim());
+        const nums=r.numero.split('|').map(s=>s.trim());
+        for(let i=0;i<quadras.length;i++)
+          await sb.from('lotes').update({status:'Vendido',cliente_nome:r.cliente,dt_entrada:r.dt_venda_iso})
+            .eq('quadra',quadras[i]).eq('numero',nums[i]);
+      }
+      importadas++;
+    }catch(e){erros++;console.error('Erro L'+r._linha,e);}
+  }
+  hideLoading();
+  closeModal('modal-import-vendas');
+  await carregarVendasDB();
+  showToast(`✅ ${importadas} venda${importadas>1?'s':''} importada${importadas>1?'s':''}${erros?` · ${erros} erro${erros>1?'s':''}`:''}`);
+}
+
 const SIM_CFG_KEY = 'loteerp_sim_cfg';
 let simCfg = {
   taxaJuros:       0.90,   // % a.m.
@@ -6740,7 +7231,7 @@ function salvarContrato(){
 
 // ---- IMPORT LOTES ----
 // Guarda as linhas lidas do CSV para importar
-let _importRows = [];
+// _importRows declarado acima
 
 function handleImportFile(input){
   const file = input.files[0];
@@ -10141,9 +10632,10 @@ function setLotAba(aba){
     if(tab) tab.classList.toggle('active',a===aba);
     if(content) content.style.display=a===aba?'':'none';
   });
-  if(aba==='lotes')     carregarLotesDetalhe(_detLotId);
-  if(aba==='obra')      carregarObraDetalhe(_detLotId);
+  if(aba==='lotes')      carregarLotesDetalhe(_detLotId);
+  if(aba==='obra')       carregarObraDetalhe(_detLotId);
   if(aba==='negociacao') carregarNegociacao(_detLotId);
+  if(aba==='mapa')       carregarMapaDoSupabase(_detLotId);
 }
 
 async function carregarNegociacao(lotId){
