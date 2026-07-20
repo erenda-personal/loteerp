@@ -642,10 +642,11 @@ tbody tr.clickable{cursor:pointer}
 
           <!-- Abas -->
           <div class="tabs" style="margin-bottom:16px">
-            <div class="tab active" id="ltab-info"   onclick="setLotAba('info')">Informações</div>
-            <div class="tab"        id="ltab-lotes"  onclick="setLotAba('lotes')">Lotes</div>
-            <div class="tab"        id="ltab-mapa"   onclick="setLotAba('mapa')">Mapa</div>
-            <div class="tab"        id="ltab-obra"   onclick="setLotAba('obra')">Obra</div>
+            <div class="tab active" id="ltab-info"       onclick="setLotAba('info')">Informações</div>
+            <div class="tab"        id="ltab-lotes"      onclick="setLotAba('lotes')">Lotes</div>
+            <div class="tab"        id="ltab-mapa"       onclick="setLotAba('mapa')">Mapa</div>
+            <div class="tab"        id="ltab-obra"       onclick="setLotAba('obra')">Obra</div>
+            <div class="tab"        id="ltab-negociacao" onclick="setLotAba('negociacao')">Negociação</div>
           </div>
 
           <!-- ABA: Informações -->
@@ -712,6 +713,61 @@ tbody tr.clickable{cursor:pointer}
           <div id="laba-obra" style="display:none">
             <div id="det-obra-content">
               <div style="color:var(--text-secondary);text-align:center;padding:20px">Carregando cronograma...</div>
+            </div>
+          </div>
+
+          <!-- ABA: Negociação -->
+          <div id="laba-negociacao" style="display:none">
+            <div style="max-width:520px">
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;line-height:1.5">Configure os parâmetros financeiros de negociação. Os percentuais são calculados sobre o VGV total do loteamento.</div>
+              <div style="display:flex;flex-direction:column;gap:14px">
+                <div style="background:var(--bg-secondary);border-radius:10px;padding:16px">
+                  <div style="font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Permuta</div>
+                  <div class="field" style="margin:0">
+                    <label>Valor de permuta (%)</label>
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <input id="neg-permuta" type="number" min="0" max="100" step="0.1" placeholder="0,0" style="width:140px;text-align:right" oninput="calcNegValores()">
+                      <span style="font-size:12px;color:var(--text-secondary)">% do VGV</span>
+                      <span id="neg-permuta-rs" style="font-size:12px;font-weight:600;color:var(--accent);margin-left:8px">—</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Percentual do VGV destinado à permuta com o proprietário do terreno</div>
+                  </div>
+                </div>
+                <div style="background:var(--bg-secondary);border-radius:10px;padding:16px">
+                  <div style="font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Fees</div>
+                  <div style="display:flex;flex-direction:column;gap:12px">
+                    <div class="field" style="margin:0">
+                      <label>Fee de Vendas (%)</label>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <input id="neg-fee-vendas" type="number" min="0" max="100" step="0.1" placeholder="0,0" style="width:140px;text-align:right" oninput="calcNegValores()">
+                        <span style="font-size:12px;color:var(--text-secondary)">% do VGV</span>
+                        <span id="neg-fee-vendas-rs" style="font-size:12px;font-weight:600;color:var(--accent);margin-left:8px">—</span>
+                      </div>
+                      <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Comissão paga à equipe ou corretora de vendas</div>
+                    </div>
+                    <div class="field" style="margin:0">
+                      <label>Fee de Obras (%)</label>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <input id="neg-fee-obras" type="number" min="0" max="100" step="0.1" placeholder="0,0" style="width:140px;text-align:right" oninput="calcNegValores()">
+                        <span style="font-size:12px;color:var(--text-secondary)">% do VGV</span>
+                        <span id="neg-fee-obras-rs" style="font-size:12px;font-weight:600;color:var(--accent);margin-left:8px">—</span>
+                      </div>
+                      <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Taxa de administração da obra / construtora</div>
+                    </div>
+                  </div>
+                </div>
+                <div id="neg-resumo" style="display:none;background:var(--bg-secondary);border-radius:10px;padding:14px">
+                  <div style="font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Resumo</div>
+                  <div style="display:flex;flex-direction:column;gap:6px;font-size:12px">
+                    <div style="display:flex;justify-content:space-between"><span style="color:var(--text-secondary)">Total comprometido</span><span id="neg-total-pct" style="font-weight:600">—</span></div>
+                    <div style="display:flex;justify-content:space-between"><span style="color:var(--text-secondary)">Total em R$ (sobre VGV)</span><span id="neg-total-rs" style="font-weight:600;color:var(--danger)">—</span></div>
+                    <div style="display:flex;justify-content:space-between"><span style="color:var(--text-secondary)">Saldo disponível</span><span id="neg-saldo-pct" style="font-weight:600;color:var(--success)">—</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top:18px">
+                <button class="btn btn-primary" onclick="salvarNegociacao()">💾 Salvar negociação</button>
+              </div>
             </div>
           </div>
 
@@ -10070,14 +10126,69 @@ async function abrirDetalheLoteamento(lotId){
 }
 
 function setLotAba(aba){
-  ['info','lotes','mapa','obra'].forEach(a=>{
+  ['info','lotes','mapa','obra','negociacao'].forEach(a=>{
     const tab=document.getElementById('ltab-'+a);
     const content=document.getElementById('laba-'+a);
     if(tab) tab.classList.toggle('active',a===aba);
     if(content) content.style.display=a===aba?'':'none';
   });
-  if(aba==='lotes') carregarLotesDetalhe(_detLotId);
-  if(aba==='obra')  carregarObraDetalhe(_detLotId);
+  if(aba==='lotes')     carregarLotesDetalhe(_detLotId);
+  if(aba==='obra')      carregarObraDetalhe(_detLotId);
+  if(aba==='negociacao') carregarNegociacao(_detLotId);
+}
+
+async function carregarNegociacao(lotId){
+  if(!lotId) return;
+  const {data:lot} = await sb.from('loteamentos').select('permuta_pct,fee_vendas_pct,fee_obras_pct').eq('id',lotId).single();
+  if(!lot) return;
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v!=null?v:'';};
+  sv('neg-permuta',    lot.permuta_pct);
+  sv('neg-fee-vendas', lot.fee_vendas_pct);
+  sv('neg-fee-obras',  lot.fee_obras_pct);
+  calcNegValores();
+}
+
+function calcNegValores(){
+  const permuta  = parseFloat(document.getElementById('neg-permuta')?.value)||0;
+  const feVendas = parseFloat(document.getElementById('neg-fee-vendas')?.value)||0;
+  const feObras  = parseFloat(document.getElementById('neg-fee-obras')?.value)||0;
+  const total    = permuta + feVendas + feObras;
+
+  // Buscar VGV do loteamento atual (via tabela visível)
+  const vgvEl = document.querySelector('#tbody-loteamentos tr.clickable td:nth-child(5)');
+  // VGV aproximado via lotes carregados
+  const vgv = window._detLotVgv || 0;
+
+  const fmtPct = v => v>0 ? v.toFixed(1)+'%' : '—';
+  const fmtRs  = v => vgv>0 ? fmt(vgv*v/100) : '—';
+
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  sv('neg-permuta-rs',    fmtRs(permuta));
+  sv('neg-fee-vendas-rs', fmtRs(feVendas));
+  sv('neg-fee-obras-rs',  fmtRs(feObras));
+
+  const resumo = document.getElementById('neg-resumo');
+  if(resumo) resumo.style.display = total>0?'':'none';
+  sv('neg-total-pct',  fmtPct(total));
+  sv('neg-total-rs',   fmtRs(total));
+  sv('neg-saldo-pct',  fmtPct(100-total));
+}
+
+async function salvarNegociacao(){
+  const permuta  = parseFloat(document.getElementById('neg-permuta')?.value)||null;
+  const feVendas = parseFloat(document.getElementById('neg-fee-vendas')?.value)||null;
+  const feObras  = parseFloat(document.getElementById('neg-fee-obras')?.value)||null;
+
+  showLoading('Salvando...');
+  const {error} = await sb.from('loteamentos').update({
+    permuta_pct:    permuta,
+    fee_vendas_pct: feVendas,
+    fee_obras_pct:  feObras,
+  }).eq('id', _detLotId);
+  hideLoading();
+
+  if(error){ showToast('Erro: '+error.message,'error'); return; }
+  showToast('✅ Negociação salva!');
 }
 
 async function carregarLotesDetalhe(lotId){
