@@ -690,22 +690,23 @@ tbody tr.clickable{cursor:pointer}
 
           <!-- ABA: Mapa -->
           <div id="laba-mapa" style="display:none">
-            <!-- Controles do mapa -->
+
+            <!-- Barra de controles + legenda dinâmica -->
             <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
-              <div id="det-mapa-legenda" style="display:flex;gap:10px;font-size:11px;flex:1">
-                <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#4CAF50;display:inline-block"></span>Disponível</span>
-                <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#2196F3;display:inline-block"></span>Vendido</span>
-                <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#FF9800;display:inline-block"></span>Reservado</span>
-                <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#9E9E9E;display:inline-block"></span>Sem dados</span>
+              <div id="det-mapa-legenda" style="display:flex;gap:6px;flex-wrap:wrap;flex:1;align-items:center;min-height:28px">
+                <span style="font-size:11px;color:var(--text-secondary)">Carregue um GeoJSON para ver a legenda</span>
               </div>
-              <button class="btn btn-sm" onclick="document.getElementById('det-geojson-file').click()" style="font-size:11px;white-space:nowrap">📁 Carregar GeoJSON</button>
-              <input type="file" id="det-geojson-file" accept=".geojson,.json" style="display:none" onchange="carregarGeoJSONMapa(this)">
-              <button class="btn btn-sm" id="btn-mapa-fit" onclick="fitMapaLotes()" style="font-size:11px;display:none">⊞ Ajustar</button>
+              <div style="display:flex;gap:6px;flex-shrink:0;align-items:center">
+                <button class="btn btn-sm" onclick="filtrarMapaStatus('')" id="btn-mapa-reset-filtro" style="font-size:11px;display:none;color:var(--danger);border-color:var(--danger)" title="Limpar filtro">✕ Filtro</button>
+                <button class="btn btn-sm" id="btn-mapa-fit" onclick="fitMapaLotes()" style="font-size:11px;display:none" title="Ajustar ao tamanho original">⊞ Fit</button>
+                <button class="btn btn-sm" onclick="document.getElementById('det-geojson-file').click()" style="font-size:11px;white-space:nowrap">📁 Carregar GeoJSON</button>
+                <input type="file" id="det-geojson-file" accept=".geojson,.json" style="display:none" onchange="carregarGeoJSONMapa(this)">
+              </div>
             </div>
 
             <!-- Canvas do mapa -->
-            <div id="det-mapa-wrap" style="position:relative;border:1px solid var(--border-secondary);border-radius:10px;overflow:hidden;background:#f8f9fa;min-height:420px">
-              <!-- Estado vazio -->
+            <div id="det-mapa-wrap" style="position:relative;border:1px solid var(--border-secondary);border-radius:10px;overflow:hidden;background:#f0f4f8;min-height:420px">
+              <!-- Estado vazio / loading -->
               <div id="det-mapa-vazio" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:420px;color:var(--text-secondary)">
                 <div style="font-size:48px;margin-bottom:12px">🗺️</div>
                 <div style="font-weight:600;margin-bottom:6px">Nenhuma planta cadastrada</div>
@@ -713,17 +714,23 @@ tbody tr.clickable{cursor:pointer}
                 <button class="btn btn-primary" onclick="document.getElementById('det-geojson-file').click()">📁 Carregar GeoJSON dos lotes</button>
               </div>
               <!-- SVG do mapa -->
-              <svg id="det-mapa-svg" style="display:none;width:100%;cursor:grab" viewBox="0 0 800 500">
+              <svg id="det-mapa-svg" style="display:none;width:100%;cursor:grab;touch-action:none" viewBox="0 0 800 520">
                 <g id="det-mapa-g"></g>
               </svg>
             </div>
 
-            <!-- Tooltip do lote -->
-            <div id="det-mapa-tooltip" style="display:none;position:fixed;background:#1a1d23;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;pointer-events:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3);min-width:160px">
+            <!-- Dica de uso -->
+            <div style="margin-top:8px;font-size:11px;color:var(--text-tertiary);display:flex;gap:16px;flex-wrap:wrap">
+              <span>🖱️ Arraste para navegar · Scroll para zoom · Clique no lote para detalhes</span>
+              <span>📱 Pinça para zoom no mobile</span>
+            </div>
+
+            <!-- Tooltip do lote (position:fixed, fora do overflow:hidden) -->
+            <div id="det-mapa-tooltip" style="display:none;position:fixed;background:#1a1d23;color:#fff;padding:10px 14px;border-radius:8px;font-size:12px;pointer-events:none;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3);min-width:160px;max-width:220px">
               <div id="tt-quadra" style="font-weight:700;font-size:13px;margin-bottom:4px"></div>
               <div id="tt-area" style="color:#aaa;margin-bottom:4px"></div>
               <div id="tt-status" style="font-weight:600"></div>
-              <div id="tt-cliente" style="color:#aaa;font-size:11px;margin-top:2px"></div>
+              <div id="tt-cliente" style="color:#aaa;font-size:11px;margin-top:2px;word-break:break-word"></div>
             </div>
           </div>
 
@@ -5122,228 +5129,550 @@ async function criarVendaDeKanban(lead){
 // ════════════════════════════════════════════════════════════
 // MAPA INTERATIVO DE LOTES (GeoJSON → SVG)
 // ════════════════════════════════════════════════════════════
-let _mapaGeoJSON = null;
-let _mapaLotes   = [];
-let _mapaViewBox = {minX:0,minY:0,w:800,h:500};
-let _mapaZoom    = 1;
-let _mapaPan     = {x:0,y:0};
-let _mapaIsDrag  = false;
-let _mapaDragStart = {x:0,y:0,px:0,py:0};
 
-const MAPA_CORES = {
-  'Disponível':  '#4CAF50',
-  'Vendido':     '#2196F3',
-  'Reservado':   '#FF9800',
-  'Inadimplente':'#E53935',
-  'Quitado':     '#9C27B0',
-  '_default':    '#9E9E9E',
+// ── Estado global do mapa ─────────────────────────────────────
+const MAPA_STATE = {
+  geojson:       null,
+  lotes:         [],
+  vgvTotal:      0,
+  filtroStatus:  '',
+  _selectedEl:   null,
+  _origViewBox:  '0 0 800 520',
 };
 
-function carregarGeoJSONMapa(input){
-  const file = input.files[0]; if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async e => {
-    try{
-      _mapaGeoJSON = JSON.parse(e.target.result);
-      // Buscar lotes do Supabase para cruzar status
-      const lotesDB = await dbSelect('lotes',{
-        filter:[['loteamento_id','eq',_detLotId]],
-        select:'quadra,numero,status,area_m2,valor_tabela,cliente_nome'
-      });
-      _mapaLotes = lotesDB;
-      renderMapaInterativo();
-      // Salvar GeoJSON no Supabase para reusar
-      await sb.from('loteamentos').update({geojson_lotes: e.target.result}).eq('id',_detLotId);
-      showToast('✅ Mapa carregado com '+_mapaGeoJSON.features.length+' lotes!');
-    }catch(err){ showToast('Erro ao carregar GeoJSON: '+err.message,'error'); }
-  };
-  reader.readAsText(file);
-}
+const MAPA_CORES = {
+  'Disponível':   '#4CAF50',
+  'Vendido':      '#2196F3',
+  'Reservado':    '#FF9800',
+  'Inadimplente': '#E53935',
+  'Quitado':      '#9C27B0',
+  'Distratado':   '#9E9E9E',
+  '_default':     '#BDBDBD',
+};
 
-async function carregarMapaDoSupabase(lotId){
-  const {data} = await sb.from('loteamentos').select('geojson_lotes').eq('id',lotId).single();
-  if(!data?.geojson_lotes) return false;
-  try{
-    _mapaGeoJSON = JSON.parse(data.geojson_lotes);
-    const lotesDB = await dbSelect('lotes',{filter:[['loteamento_id','eq',lotId]],select:'quadra,numero,status,area_m2,valor_tabela,cliente_nome'});
-    _mapaLotes = lotesDB;
+// ── Carregar arquivo GeoJSON ──────────────────────────────────
+async function carregarGeoJSONMapa(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+
+  const vazio = document.getElementById('det-mapa-vazio');
+  if (vazio) {
+    vazio.style.display = 'flex';
+    vazio.innerHTML = `
+      <div style="font-size:36px;margin-bottom:10px">⏳</div>
+      <div style="font-weight:600;margin-bottom:4px">Processando mapa...</div>
+      <div style="font-size:12px;color:var(--text-secondary)">${file.name}</div>`;
+  }
+
+  try {
+    const text = await file.text();
+    let geojson;
+    try { geojson = JSON.parse(text); }
+    catch (e) { throw new Error('Arquivo inválido — verifique se é um GeoJSON válido.'); }
+
+    if (!geojson.features || !geojson.features.length)
+      throw new Error('GeoJSON sem features/polígonos.');
+
+    MAPA_STATE.geojson = geojson;
+
+    showLoading('Sincronizando com banco de dados...');
+    const lotesDB = await dbSelect('lotes', {
+      filter: [['loteamento_id','eq',_detLotId]],
+      select: 'quadra,numero,status,area_m2,valor_tabela,cliente_nome,dt_entrada'
+    });
+    hideLoading();
+
+    MAPA_STATE.lotes    = lotesDB;
+    MAPA_STATE.vgvTotal = lotesDB.reduce((s,l) => s + (parseFloat(l.valor_tabela)||0), 0);
+    MAPA_STATE.filtroStatus = '';
+
     renderMapaInterativo();
-    return true;
-  }catch(e){ return false; }
+    atualizarLegendaMapa();
+
+    try {
+      await sb.from('loteamentos').update({geojson_lotes: text}).eq('id', _detLotId);
+    } catch(e) { console.warn('Não foi possível salvar GeoJSON:', e.message); }
+
+    const total = geojson.features.length;
+    const btnFit = document.getElementById('btn-mapa-fit');
+    if (btnFit) btnFit.style.display = '';
+    const btnReset = document.getElementById('btn-mapa-reset-filtro');
+    if (btnReset) btnReset.style.display = 'none';
+
+    showToast(`✅ Mapa carregado — ${total} lote${total!==1?'s':''}`);
+
+  } catch (err) {
+    hideLoading();
+    showToast('Erro: ' + err.message, 'error');
+    const v = document.getElementById('det-mapa-vazio');
+    if (v) {
+      v.style.display = 'flex';
+      v.innerHTML = `
+        <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+        <div style="font-weight:600;margin-bottom:6px;color:var(--danger)">Erro no arquivo</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px">${err.message}</div>
+        <button class="btn btn-primary" onclick="document.getElementById('det-geojson-file').click()">Tentar novamente</button>`;
+    }
+  }
 }
 
-function renderMapaInterativo(){
-  if(!_mapaGeoJSON) return;
-  const features = _mapaGeoJSON.features.filter(f =>
-    f.geometry?.coordinates && f.geometry.coordinates.length > 0
-  );
-  if(!features.length){ showToast('GeoJSON sem polígonos válidos.','error'); return; }
+// ── Carregar GeoJSON salvo no Supabase ao abrir a aba ────────
+async function carregarMapaDoSupabase(lotId) {
+  const vazio  = document.getElementById('det-mapa-vazio');
+  const svg    = document.getElementById('det-mapa-svg');
+  const btnFit = document.getElementById('btn-mapa-fit');
 
-  // Extrair todos os pontos independente do tipo (Polygon ou MultiPolygon)
+  fecharPainelLote();
+  MAPA_STATE.filtroStatus = '';
+
+  if (vazio) {
+    vazio.style.display = 'flex';
+    vazio.innerHTML = `
+      <div style="font-size:36px;margin-bottom:10px">⏳</div>
+      <div style="font-weight:600;margin-bottom:4px">Buscando mapa salvo...</div>`;
+  }
+  if (svg) svg.style.display = 'none';
+
+  try {
+    const {data} = await sb.from('loteamentos').select('geojson_lotes').eq('id',lotId).single();
+
+    if (!data?.geojson_lotes) {
+      _resetMapaVazio();
+      return false;
+    }
+
+    MAPA_STATE.geojson = JSON.parse(data.geojson_lotes);
+    const lotesDB = await dbSelect('lotes', {
+      filter: [['loteamento_id','eq',lotId]],
+      select: 'quadra,numero,status,area_m2,valor_tabela,cliente_nome,dt_entrada'
+    });
+    MAPA_STATE.lotes    = lotesDB;
+    MAPA_STATE.vgvTotal = lotesDB.reduce((s,l) => s + (parseFloat(l.valor_tabela)||0), 0);
+
+    renderMapaInterativo();
+    atualizarLegendaMapa();
+    if (btnFit) btnFit.style.display = '';
+    return true;
+
+  } catch(e) {
+    console.warn('carregarMapaDoSupabase:', e.message);
+    _resetMapaVazio();
+    return false;
+  }
+}
+
+function _resetMapaVazio() {
+  const vazio = document.getElementById('det-mapa-vazio');
+  if (vazio) {
+    vazio.style.display = 'flex';
+    vazio.innerHTML = `
+      <div style="font-size:48px;margin-bottom:12px">🗺️</div>
+      <div style="font-weight:600;margin-bottom:6px">Nenhuma planta cadastrada</div>
+      <div style="font-size:12px;margin-bottom:16px;text-align:center;color:var(--text-secondary)">
+        Carregue o arquivo GeoJSON exportado do QGIS<br>para visualizar os lotes interativamente
+      </div>
+      <button class="btn btn-primary" onclick="document.getElementById('det-geojson-file').click()">
+        📁 Carregar GeoJSON dos lotes
+      </button>`;
+  }
+}
+
+// ── Renderizar SVG a partir do GeoJSON ───────────────────────
+function renderMapaInterativo() {
+  const {geojson, lotes, filtroStatus} = MAPA_STATE;
+  if (!geojson) return;
+
+  const features = (geojson.features||[]).filter(f =>
+    f.geometry?.type && f.geometry?.coordinates?.length > 0
+  );
+  if (!features.length) { showToast('GeoJSON sem polígonos válidos.','error'); return; }
+
+  // Bounding box
   const allPts = [];
-  function extractPts(coords){
-    if(!Array.isArray(coords)) return;
-    if(typeof coords[0] === 'number'){ allPts.push(coords); return; }
+  function extractPts(coords) {
+    if (!Array.isArray(coords)||!coords.length) return;
+    if (typeof coords[0]==='number') { allPts.push(coords); return; }
     coords.forEach(c => extractPts(c));
   }
   features.forEach(f => extractPts(f.geometry.coordinates));
+  if (!allPts.length) return;
 
-  if(!allPts.length){ showToast('Nenhum ponto encontrado no GeoJSON.','error'); return; }
-
-  const xs = allPts.map(p=>p[0]), ys = allPts.map(p=>p[1]);
+  const xs=allPts.map(p=>p[0]), ys=allPts.map(p=>p[1]);
   const minX=Math.min(...xs), maxX=Math.max(...xs);
   const minY=Math.min(...ys), maxY=Math.max(...ys);
 
-  const W=800, H=520, PAD=24;
-  const rangeX = maxX - minX || 1;
-  const rangeY = maxY - minY || 1;
-  const scaleX = (W-PAD*2) / rangeX;
-  const scaleY = (H-PAD*2) / rangeY;
-  const scale  = Math.min(scaleX, scaleY);
-  const offX   = PAD + ((W-PAD*2) - rangeX*scale) / 2;
-  const offY   = PAD + ((H-PAD*2) - rangeY*scale) / 2;
+  const W=800, H=520, PAD=30;
+  const rangeX=(maxX-minX)||1, rangeY=(maxY-minY)||1;
+  const scale=Math.min((W-PAD*2)/rangeX, (H-PAD*2)/rangeY);
+  const offX=PAD+((W-PAD*2)-rangeX*scale)/2;
+  const offY=PAD+((H-PAD*2)-rangeY*scale)/2;
 
-  // Converter ponto para SVG — Y invertido (GeoJSON Y cresce p/cima, SVG p/baixo)
-  const toSVG = (x, y) => [
-    offX + (x - minX) * scale,
-    H - offY - (y - minY) * scale
+  const toSVG = (lon,lat) => [
+    offX + (lon-minX)*scale,
+    H - offY - (lat-minY)*scale,
   ];
 
-  // Converter coordenadas de um ring em string de pontos SVG
-  function ringToPoints(ring){
-    return ring.map(coord => {
-      const [sx,sy] = toSVG(coord[0], coord[1]);
-      return `${sx.toFixed(2)},${sy.toFixed(2)}`;
-    }).join(' ');
+  function ringToPath(ring) {
+    return ring.map((c,i) => {
+      const [sx,sy]=toSVG(c[0],c[1]);
+      return (i===0?'M':'L')+sx.toFixed(2)+','+sy.toFixed(2);
+    }).join(' ')+' Z';
+  }
+
+  function centroide(ring) {
+    let cx=0,cy=0;
+    ring.forEach(p=>{cx+=p[0];cy+=p[1];});
+    return toSVG(cx/ring.length, cy/ring.length);
   }
 
   // Mapa de status por código do lote
   const statusMap = {};
-  _mapaLotes.forEach(l => {
-    const num = String(l.numero||'').padStart(2,'0');
-    const key = `${l.quadra}-${num}`;
-    statusMap[key] = l;
+  lotes.forEach(l => {
+    const q   = (l.quadra||'').toString().toUpperCase().trim();
+    const num = (l.numero||'').toString().trim().padStart(2,'0');
+    if (q) {
+      statusMap[`${q}-${num}`] = l;
+      statusMap[`${q}-${(l.numero||'').toString().trim()}`] = l;
+    }
   });
 
   const svg = document.getElementById('det-mapa-svg');
   const g   = document.getElementById('det-mapa-g');
-  if(!svg||!g) return;
+  if (!svg||!g) return;
+
   svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  MAPA_STATE._origViewBox = `0 0 ${W} ${H}`;
 
-  let svgContent = '';
-  features.forEach((feat, idx) => {
-    const props  = feat.properties || {};
-    const loteCod = props.quadra
-      ? `${props.quadra}-${String(props.numero||'').padStart(2,'0')}`
-      : null;
-    const loteInfo = loteCod ? statusMap[loteCod] : null;
-    const status   = loteInfo?.status || '_default';
-    const cor      = MAPA_CORES[status] || MAPA_CORES['_default'];
+  const estArea = (W*H)/Math.max(features.length,1)/4;
+  const fontSize = Math.max(5, Math.min(10, Math.sqrt(estArea)*0.15));
 
-    const info = JSON.stringify({
-      cod:     loteCod || `Lote ${idx+1}`,
-      area:    loteInfo?.area_m2 ? loteInfo.area_m2+'m²' : '',
-      status:  status === '_default' ? 'Sem dados' : status,
-      cliente: loteInfo?.cliente_nome || '',
-      valor:   loteInfo?.valor_tabela || 0,
-    }).replace(/"/g,'&quot;');
+  const parts = [];
 
-    // Suporte a Polygon e MultiPolygon
-    const geom = feat.geometry;
-    const polys = geom.type === 'MultiPolygon' ? geom.coordinates : [geom.coordinates];
+  features.forEach((feat,idx) => {
+    const props  = feat.properties||{};
+    const quadra = (props.quadra||props.QUADRA||props.Quadra||props.bloco||props.BLOCO||'').toString().toUpperCase().trim();
+    const numero = (props.numero||props.NUMERO||props.Numero||props.num||props.NUM||props.lote||props.LOTE||(idx+1)).toString().trim();
+    const numPad = numero.padStart(2,'0');
+    const loteCod = quadra ? `${quadra}-${numPad}` : null;
+    const loteInfo = loteCod ? (statusMap[loteCod]||statusMap[`${quadra}-${numero}`]||null) : null;
+    const status   = loteInfo?.status||'_default';
+    const dbt      = filtroStatus && filtroStatus!==status;
+    const cor      = dbt ? '#C8C8C8' : (MAPA_CORES[status]||MAPA_CORES['_default']);
+    const opac     = dbt ? 0.2 : 0.72;
 
-    polys.forEach(poly => {
-      poly.forEach((ring, ri) => {
-        if(!ring.length) return;
-        const pts = ringToPoints(ring);
-        // Primeiro ring = contorno, demais = buracos (fill-rule evenodd)
-        svgContent += `<polygon
-          points="${pts}"
-          fill="${ri===0?cor:'white'}"
-          fill-opacity="${ri===0?'0.75':'1'}"
-          stroke="#fff" stroke-width="0.8"
-          data-info="${info}"
-          style="cursor:pointer;transition:fill-opacity .12s"
-          onmouseover="this.style.fillOpacity='1';mapaShowTooltip(event,this)"
-          onmouseout="this.style.fillOpacity='${ri===0?'0.75':'1'}';mapaHideTooltip()"
-          onclick="mapaClickLote(this)"
-        />`;
-      });
+    const infoStr = [
+      loteCod||`#${idx+1}`,
+      loteInfo?.area_m2 ? loteInfo.area_m2+'m²' : (props.area_m2||''),
+      status==='_default' ? 'Sem dados' : status,
+      loteInfo?.cliente_nome||'',
+      loteInfo?.valor_tabela||0,
+      loteInfo?.dt_entrada||'',
+    ].map(v=>String(v).replace(/\|/g,' ')).join('|');
+
+    const geom  = feat.geometry;
+    const polys = geom.type==='MultiPolygon' ? geom.coordinates : [geom.coordinates];
+
+    polys.forEach((poly,pi) => {
+      const outer = poly[0]||[];
+      if (!outer.length) return;
+      const pathData = poly.map(r=>ringToPath(r)).join(' ');
+      const [cx,cy]  = centroide(outer);
+
+      parts.push(`<path d="${pathData}" fill="${cor}" fill-opacity="${opac}"
+        fill-rule="evenodd" stroke="#ffffff" stroke-width="0.85" stroke-linejoin="round"
+        data-info="${infoStr}" data-status="${status}"
+        style="cursor:pointer;transition:fill-opacity .12s"
+        onmouseover="mapaShowTooltip(event,this)"
+        onmouseout="mapaHideTooltip()"
+        onclick="mapaClickLote(this)"/>`);
+
+      if (pi===0 && numero && !dbt) {
+        parts.push(`<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}"
+          text-anchor="middle" dominant-baseline="middle"
+          font-size="${fontSize.toFixed(1)}"
+          font-family="system-ui,-apple-system,sans-serif"
+          font-weight="600" fill="rgba(0,0,0,0.5)"
+          pointer-events="none" style="user-select:none">${numero}</text>`);
+      }
     });
   });
 
-  g.innerHTML = svgContent;
+  g.innerHTML = parts.join('\n');
   document.getElementById('det-mapa-vazio').style.display = 'none';
   svg.style.display = 'block';
-  const btnFit = document.getElementById('btn-mapa-fit');
-  if(btnFit) btnFit.style.display = '';
+  svg.style.cursor  = 'grab';
 
   // Drag to pan
+  let isDrag=false, ox=0, oy=0;
   svg.onmousedown = e => {
-    _mapaIsDrag = true;
-    _mapaDragStart = {x:e.clientX, y:e.clientY};
-    svg.style.cursor = 'grabbing';
+    if(e.button!==0) return;
+    isDrag=true; ox=e.clientX; oy=e.clientY;
+    svg.style.cursor='grabbing'; e.preventDefault();
   };
-  svg.onmouseup   = () => { _mapaIsDrag=false; svg.style.cursor='grab'; };
-  svg.onmouseleave= () => { _mapaIsDrag=false; svg.style.cursor='grab'; };
-  svg.onmousemove = e => {
-    if(!_mapaIsDrag) return;
-    const dx = e.clientX - _mapaDragStart.x;
-    const dy = e.clientY - _mapaDragStart.y;
-    _mapaDragStart = {x:e.clientX, y:e.clientY};
-    const vb = svg.viewBox.baseVal;
-    vb.x -= dx * (vb.width  / svg.clientWidth);
-    vb.y -= dy * (vb.height / svg.clientHeight);
+  const stopDrag = () => { isDrag=false; svg.style.cursor='grab'; };
+  svg.onmouseup     = stopDrag;
+  svg.onmouseleave  = stopDrag;
+  svg.onmousemove   = e => {
+    if(!isDrag) return;
+    const vb=svg.viewBox.baseVal, r=svg.getBoundingClientRect();
+    vb.x -= (e.clientX-ox)*(vb.width/r.width);
+    vb.y -= (e.clientY-oy)*(vb.height/r.height);
+    ox=e.clientX; oy=e.clientY;
   };
+
+  // Zoom com scroll
   svg.onwheel = e => {
     e.preventDefault();
-    const factor = e.deltaY > 0 ? 1.12 : 0.89;
-    const vb = svg.viewBox.baseVal;
-    const mx = (e.offsetX / svg.clientWidth)  * vb.width  + vb.x;
-    const my = (e.offsetY / svg.clientHeight) * vb.height + vb.y;
-    vb.width  *= factor;
-    vb.height *= factor;
-    vb.x = mx - (e.offsetX / svg.clientWidth)  * vb.width;
-    vb.y = my - (e.offsetY / svg.clientHeight) * vb.height;
+    const f=e.deltaY>0?1.18:0.85;
+    const vb=svg.viewBox.baseVal, r=svg.getBoundingClientRect();
+    const px=((e.clientX-r.left)/r.width)*vb.width+vb.x;
+    const py=((e.clientY-r.top)/r.height)*vb.height+vb.y;
+    vb.width*=f; vb.height*=f;
+    vb.x=px-((e.clientX-r.left)/r.width)*vb.width;
+    vb.y=py-((e.clientY-r.top)/r.height)*vb.height;
   };
+
+  // Zoom por pinça (mobile)
+  let lastDist=0;
+  svg.addEventListener('touchstart', e=>{
+    if(e.touches.length===2)
+      lastDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+  },{passive:true});
+  svg.addEventListener('touchmove', e=>{
+    if(e.touches.length!==2) return;
+    e.preventDefault();
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    const f=lastDist/(d||1);
+    const vb=svg.viewBox.baseVal;
+    vb.width*=f; vb.height*=f;
+    lastDist=d;
+  },{passive:false});
+
+  // Injetar estilo dos botões de filtro
+  if (!document.getElementById('mapa-filtro-style')) {
+    const s=document.createElement('style');
+    s.id='mapa-filtro-style';
+    s.textContent=`
+      @keyframes fadePainel{from{opacity:0;transform:translateY(-4px) scale(.97)}to{opacity:1;transform:none}}
+      .mapa-filtro-btn:hover{opacity:.75!important}
+    `;
+    document.head.appendChild(s);
+  }
 }
 
-function fitMapaLotes(){
+// ── Ajustar viewBox ao tamanho original ──────────────────────
+function fitMapaLotes() {
   const svg = document.getElementById('det-mapa-svg');
-  if(svg) svg.setAttribute('viewBox','0 0 800 520');
+  if (svg) svg.setAttribute('viewBox', MAPA_STATE._origViewBox||'0 0 800 520');
 }
 
-function mapaShowTooltip(event, el){
+// ── Tooltip ───────────────────────────────────────────────────
+function mapaShowTooltip(event, el) {
   const tt = document.getElementById('det-mapa-tooltip');
-  if(!tt) return;
-  try{
-    const info = JSON.parse(el.dataset.info.replace(/&quot;/g,'"'));
-    document.getElementById('tt-quadra').textContent  = info.cod;
-    document.getElementById('tt-area').textContent    = info.area;
-    document.getElementById('tt-status').textContent  = info.status;
-    document.getElementById('tt-status').style.color  = MAPA_CORES[info.status]||'#888';
-    document.getElementById('tt-cliente').textContent = info.cliente;
+  if (!tt) return;
+  el.style.fillOpacity = '1';
+  el.style.strokeWidth = '2px';
+
+  try {
+    const [cod,area,status,cliente,valor] = el.dataset.info.split('|');
+    document.getElementById('tt-quadra').textContent = cod||'—';
+    document.getElementById('tt-area').textContent   = area||'';
+    const stEl = document.getElementById('tt-status');
+    stEl.textContent=status; stEl.style.color=MAPA_CORES[status]||'#888'; stEl.style.fontWeight='600';
+    const cliEl = document.getElementById('tt-cliente');
+    const valNum=parseFloat(valor)||0;
+    cliEl.textContent = (cliente&&cliente!=='undefined') ? cliente
+      : valNum>0 ? 'R$ '+valNum.toLocaleString('pt-BR') : '';
+
     tt.style.display='block';
-    tt.style.left = (event.clientX+14)+'px';
-    tt.style.top  = (event.clientY-10)+'px';
-  }catch(e){}
+    tt.style.left=(event.clientX+16)+'px';
+    tt.style.top=(event.clientY-10)+'px';
+    requestAnimationFrame(()=>{
+      const r=tt.getBoundingClientRect();
+      if(r.right>window.innerWidth-8)  tt.style.left=(event.clientX-r.width-8)+'px';
+      if(r.bottom>window.innerHeight-8) tt.style.top=(event.clientY-r.height-8)+'px';
+    });
+  } catch(e) {}
 }
 
-function mapaHideTooltip(){
+function mapaHideTooltip() {
   const tt=document.getElementById('det-mapa-tooltip');
   if(tt) tt.style.display='none';
-}
-
-function mapaClickLote(el){
-  try{
-    const info = JSON.parse(el.dataset.info.replace(/&quot;/g,'"'));
-    mapaHideTooltip();
-    if(info.valor>0){
-      showToast(`${info.cod} · ${info.status} · ${fmt(info.valor)}`);
+  const filtro=MAPA_STATE.filtroStatus;
+  document.querySelectorAll('#det-mapa-g path[data-info]').forEach(p=>{
+    if(p!==MAPA_STATE._selectedEl){
+      p.style.fillOpacity=(filtro&&p.dataset.status!==filtro)?'0.2':'0.72';
+      p.style.strokeWidth='0.85px';
     }
-  }catch(e){}
+  });
 }
 
+// ── Click no lote: abre painel lateral ────────────────────────
+function mapaClickLote(el) {
+  mapaHideTooltip();
+  if(MAPA_STATE._selectedEl && MAPA_STATE._selectedEl!==el){
+    MAPA_STATE._selectedEl.style.stroke='#ffffff';
+    MAPA_STATE._selectedEl.style.strokeWidth='0.85px';
+  }
+  el.style.stroke='#1a1a18';
+  el.style.strokeWidth='2.5px';
+  el.style.fillOpacity='1';
+  MAPA_STATE._selectedEl=el;
+
+  try {
+    const [cod,area,status,cliente,valor,dt]=el.dataset.info.split('|');
+    mostrarPainelLote({cod,area,status,cliente,valor:parseFloat(valor)||0,dt:dt||''});
+  } catch(e) {}
+}
+
+// ── Painel lateral de detalhes do lote ────────────────────────
+function mostrarPainelLote(info) {
+  let painel=document.getElementById('det-mapa-painel');
+  if (!painel) {
+    painel=document.createElement('div');
+    painel.id='det-mapa-painel';
+    painel.style.cssText=[
+      'position:absolute','top:10px','right:10px',
+      'background:var(--bg-primary)',
+      'border:0.5px solid var(--border-secondary)',
+      'border-radius:10px','padding:14px 16px','width:196px',
+      'box-shadow:0 4px 20px rgba(0,0,0,.18)',
+      'z-index:10','font-size:12px',
+      'animation:fadePainel .15s ease',
+    ].join(';');
+    const wrap=document.getElementById('det-mapa-wrap');
+    if(wrap){ wrap.style.position='relative'; wrap.appendChild(painel); }
+  }
+
+  const cor    = MAPA_CORES[info.status]||'#888';
+  const valStr = info.valor>0 ? 'R$ '+info.valor.toLocaleString('pt-BR',{minimumFractionDigits:0}) : '—';
+  const dtStr  = (info.dt&&info.dt!=='undefined')
+    ? new Date(info.dt+'T12:00').toLocaleDateString('pt-BR') : '';
+  const isDisp = info.status==='Disponível';
+
+  painel.innerHTML=`
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="font-size:14px;font-weight:700;color:var(--text-primary)">${info.cod}</span>
+      <button onclick="fecharPainelLote()"
+        style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-tertiary);line-height:1;padding:2px 4px">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;
+                padding:6px 8px;border-radius:6px;background:${cor}18">
+      <span style="width:10px;height:10px;border-radius:50%;background:${cor};flex-shrink:0"></span>
+      <span style="font-weight:600;color:${cor};font-size:12px">${info.status}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${info.area&&info.area!=='undefined'?`
+        <div style="display:flex;justify-content:space-between;border-bottom:0.5px solid var(--border-tertiary);padding-bottom:5px">
+          <span style="color:var(--text-secondary)">Área</span>
+          <span style="font-weight:500">${info.area}</span>
+        </div>`:''}
+      <div style="display:flex;justify-content:space-between">
+        <span style="color:var(--text-secondary)">Valor</span>
+        <span style="font-weight:600;color:var(--accent)">${valStr}</span>
+      </div>
+      ${info.cliente&&info.cliente!=='undefined'?`
+        <div style="border-top:0.5px solid var(--border-tertiary);padding-top:6px;margin-top:2px">
+          <div style="color:var(--text-secondary);font-size:10px;text-transform:uppercase;
+                      letter-spacing:.04em;margin-bottom:3px">Cliente</div>
+          <div style="font-weight:500;word-break:break-word">${info.cliente}</div>
+          ${dtStr?`<div style="color:var(--text-tertiary);font-size:10px;margin-top:2px">Venda: ${dtStr}</div>`:''}
+        </div>`:''}
+    </div>
+    ${isDisp&&info.valor>0?`
+      <button onclick="fecharPainelLote();_abrirSimuladorLote(${info.valor})"
+        class="btn btn-primary"
+        style="width:100%;margin-top:10px;font-size:11px;padding:6px">
+        📊 Simular financiamento
+      </button>`:''}
+  `;
+}
+
+function fecharPainelLote() {
+  const painel=document.getElementById('det-mapa-painel');
+  if(painel) painel.remove();
+  if(MAPA_STATE._selectedEl){
+    MAPA_STATE._selectedEl.style.stroke='#ffffff';
+    MAPA_STATE._selectedEl.style.strokeWidth='0.85px';
+    const filtro=MAPA_STATE.filtroStatus;
+    MAPA_STATE._selectedEl.style.fillOpacity=
+      (filtro&&MAPA_STATE._selectedEl.dataset.status!==filtro)?'0.2':'0.72';
+    MAPA_STATE._selectedEl=null;
+  }
+}
+
+function _abrirSimuladorLote(valor) {
+  closeModal('modal-det-loteamento');
+  const navEl=document.querySelector('.nav-item[onclick*="simulador"]');
+  showPage('simulador', navEl);
+  setTimeout(()=>{
+    const el=document.getElementById('sim-valor');
+    if(el){
+      el.value=parseFloat(valor).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+      if(typeof calcSim==='function') calcSim();
+    }
+  },120);
+}
+
+// ── Filtro de status no mapa ──────────────────────────────────
+function filtrarMapaStatus(status) {
+  MAPA_STATE.filtroStatus=status;
+  fecharPainelLote();
+  document.querySelectorAll('#det-mapa-g path[data-info]').forEach(p=>{
+    const st=p.dataset.status||'_default';
+    const dbt=status&&status!==st;
+    p.setAttribute('fill', dbt?'#C8C8C8':(MAPA_CORES[st]||MAPA_CORES['_default']));
+    p.style.fillOpacity=dbt?'0.2':'0.72';
+    p.style.strokeWidth='0.85px';
+  });
+  document.querySelectorAll('.mapa-filtro-btn').forEach(b=>{
+    const ativo=b.dataset.status===status;
+    const corBtn=MAPA_CORES[b.dataset.status]||'#888';
+    b.style.background=ativo?corBtn:'transparent';
+    b.style.color=ativo?'#fff':'var(--text-primary)';
+    b.style.borderColor=corBtn;
+  });
+  const btnReset=document.getElementById('btn-mapa-reset-filtro');
+  if(btnReset) btnReset.style.display=status?'':'none';
+}
+
+// ── Legenda dinâmica com contagens reais ──────────────────────
+function atualizarLegendaMapa() {
+  const {lotes,vgvTotal}=MAPA_STATE;
+  const legendaEl=document.getElementById('det-mapa-legenda');
+  if(!legendaEl) return;
+
+  const cnt={};
+  lotes.forEach(l=>{ const s=l.status||'_default'; cnt[s]=(cnt[s]||0)+1; });
+
+  const ordem=['Disponível','Vendido','Reservado','Inadimplente','Quitado','Distratado'];
+
+  const btns=ordem.map(st=>{
+    const n=cnt[st]||0;
+    const cor=MAPA_CORES[st];
+    return `<button class="mapa-filtro-btn" data-status="${st}"
+      onclick="filtrarMapaStatus(MAPA_STATE.filtroStatus==='${st}'?'':'${st}')"
+      title="${n} lote${n!==1?'s':''} ${st.toLowerCase()}"
+      style="display:inline-flex;align-items:center;gap:5px;
+             padding:3px 10px;border-radius:20px;
+             border:1.5px solid ${cor};background:transparent;
+             cursor:pointer;font-size:11px;color:var(--text-primary);
+             transition:background .12s,color .12s;
+             opacity:${n?'1':'0.4'};font-family:inherit">
+      <span style="width:9px;height:9px;border-radius:2px;background:${cor};display:inline-block;flex-shrink:0"></span>
+      ${st}
+      ${n?`<strong style="color:${cor}">${n}</strong>`:''}
+    </button>`;
+  }).join('');
+
+  const vgvStr=vgvTotal>0
+    ? `<span style="font-size:11px;color:var(--text-secondary);margin-left:4px;align-self:center">
+        VGV: <strong>R$ ${(vgvTotal/1e6).toFixed(2)}M</strong>
+       </span>` : '';
+
+  legendaEl.innerHTML=btns+vgvStr;
+}
 
 // ════════════════════════════════════════════════════════════
 let _importRows = [];
