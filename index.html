@@ -1456,43 +1456,72 @@ tbody tr.clickable{cursor:pointer}
 
       <!-- ===== LEAD DETALHE ===== -->
       <div class="page" id="page-lead-detalhe">
-        <!-- Cabeçalho -->
+
         <div class="back-btn" onclick="showPage('crm',null)">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Voltar para CRM
         </div>
 
         <!-- Header do lead -->
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;flex-wrap:wrap">
           <div id="ld-avatar" style="width:48px;height:48px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--accent);flex-shrink:0">?</div>
           <div style="flex:1">
             <div style="font-size:20px;font-weight:700;color:var(--text-primary)" id="ld-nome-header">—</div>
             <div style="font-size:12px;color:var(--text-secondary);margin-top:2px" id="ld-sub-header">—</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <span id="ld-badge-situacao" class="badge badge-blue">Em andamento</span>
+            <select id="ld-situacao" onchange="ldAtualizarBadge(this.value)"
+              style="font-size:12px;padding:5px 10px;border-radius:20px;border:1.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-primary);font-family:var(--font);cursor:pointer">
+              <option value="Em andamento">🟢 Em andamento</option>
+              <option value="Pausado">⏸ Pausado</option>
+              <option value="Perdido">🔴 Perdido</option>
+              <option value="Vendido">✅ Vendido</option>
+            </select>
             <button class="btn btn-primary" onclick="salvarEdicaoLead()">💾 Salvar</button>
           </div>
         </div>
 
         <!-- Timeline horizontal de etapas -->
-        <div class="card" style="padding:16px 20px;margin-bottom:16px;overflow-x:auto">
-          <div id="ld-timeline-horizontal" style="display:flex;align-items:flex-start;gap:0;min-width:600px"></div>
+        <div class="card" style="padding:16px 20px;margin-bottom:14px;overflow-x:auto">
+          <div id="ld-timeline-horizontal" style="display:flex;align-items:flex-start;gap:0;min-width:580px;padding-bottom:4px"></div>
         </div>
 
         <!-- Abas -->
         <div class="tabs" style="margin-bottom:14px">
-          <div class="tab active" id="ld-tab-contrato"      onclick="setLeadDetalheAba('contrato')">📋 Contrato</div>
-          <div class="tab"        id="ld-tab-cliente"       onclick="setLeadDetalheAba('cliente')">👤 Cliente</div>
-          <div class="tab"        id="ld-tab-conjuge"       onclick="setLeadDetalheAba('conjuge')">👫 Cônjuge</div>
-          <div class="tab"        id="ld-tab-corretor"      onclick="setLeadDetalheAba('corretor')">🏷️ Corretor</div>
-          <div class="tab"        id="ld-tab-acompanhamento" onclick="setLeadDetalheAba('acompanhamento')">📊 Acompanhamento</div>
+          <div class="tab active" id="ld-tab-contrato"  onclick="setLeadDetalheAba('contrato')">📋 Contrato</div>
+          <div class="tab"        id="ld-tab-cliente"   onclick="setLeadDetalheAba('cliente')">👤 Cliente</div>
+          <div class="tab"        id="ld-tab-conjuge"   onclick="setLeadDetalheAba('conjuge')">👫 Cônjuge</div>
+          <div class="tab"        id="ld-tab-corretor"  onclick="setLeadDetalheAba('corretor')">🏷️ Corretor</div>
+          <div class="tab"        id="ld-tab-visitas"   onclick="setLeadDetalheAba('visitas')">📅 Visitas</div>
         </div>
 
-        <!-- ABA: Contrato -->
+        <!-- ─── ABA: Contrato (inclui acompanhamento) ─── -->
         <div id="ld-aba-contrato">
+          <!-- Situação e observação -->
+          <div class="card" style="padding:14px 18px;margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px" class="field" style="margin:0">
+              <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em">Observação</label>
+              <input id="ld-obs-acomp" placeholder="Registro desta atualização..." style="font-size:12px;padding:6px 10px;border-radius:6px;border:0.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-primary);width:100%;outline:none">
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:10px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.04em">Documentos</span>
+                <div style="display:flex;gap:6px">
+                  <button class="btn btn-sm" onclick="document.getElementById('ld-doc-input').click()">📎 Anexar</button>
+                  <input type="file" id="ld-doc-input" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleLeadDocUpload(this)">
+                  <span id="ld-doc-nome" style="font-size:11px;color:var(--text-secondary);align-self:center">Nenhum</span>
+                </div>
+                <div id="ld-doc-preview" style="display:none">
+                  <a id="ld-doc-link" href="#" target="_blank" style="font-size:11px;color:var(--accent)">📄 Ver doc</a>
+                  <button onclick="removerDocLead()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:11px;margin-left:6px">✕</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contrato -->
           <div class="card" style="padding:18px">
-            <div class="form-section">Identificação do contrato</div>
+            <div class="form-section" style="margin-top:0">Identificação do contrato</div>
             <div class="form-row col3">
               <div class="field"><label>ID do contrato</label><input id="ld-contrato-id" placeholder="Ex: VV-001"></div>
               <div class="field"><label>Loteamento *</label>
@@ -1508,7 +1537,7 @@ tbody tr.clickable{cursor:pointer}
             </div>
             <div class="form-row col2">
               <div class="field"><label>Quadra</label><input id="ld-quadra" placeholder="Ex: A" readonly style="background:var(--bg-secondary);opacity:.8"></div>
-              <div class="field"><label>Área do lote (m²)</label><input id="ld-area-lote" placeholder="Preenchido automaticamente" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+              <div class="field"><label>Área do lote (m²)</label><input id="ld-area-lote" placeholder="Autofill" readonly style="background:var(--bg-secondary);opacity:.8"></div>
             </div>
             <div class="form-section">Condições financeiras</div>
             <div class="form-row col2">
@@ -1518,7 +1547,9 @@ tbody tr.clickable{cursor:pointer}
                   <option value="parcelado">Parcelado</option>
                 </select>
               </div>
-              <div class="field"><label>Valor do lote (R$)</label><input id="ld-valor-lote" type="text" placeholder="Preenchido automaticamente" oninput="maskMoney(this);ldCalcFinanciado()" style="background:var(--bg-secondary);opacity:.8" readonly></div>
+              <div class="field"><label>Valor do lote (R$)</label>
+                <input id="ld-valor-lote" type="text" placeholder="Autofill" readonly style="background:var(--bg-secondary);opacity:.8">
+              </div>
             </div>
             <div id="ld-parcelamento-wrap">
               <div class="form-row col2">
@@ -1529,7 +1560,7 @@ tbody tr.clickable{cursor:pointer}
                 <div class="field"><label>Prazo (meses)</label><input id="ld-prazo" type="number" min="1" max="360" placeholder="60" oninput="ldCalcParcela()"></div>
                 <div class="field"><label>Taxa de juros (% a.m.)</label><input id="ld-taxa" type="text" placeholder="0,90" oninput="maskDecimal(this);ldCalcParcela()"></div>
                 <div class="field"><label>Sistema</label>
-                  <select id="ld-sistema"><option value="price">Price (parcelas iguais)</option><option value="sac">SAC</option></select>
+                  <select id="ld-sistema"><option value="price">Price</option><option value="sac">SAC</option></select>
                 </div>
               </div>
               <div class="form-row col2">
@@ -1541,14 +1572,16 @@ tbody tr.clickable{cursor:pointer}
               <div class="field"><label>Data da assinatura</label><input id="ld-dt-assinatura" type="date"></div>
               <div class="field"><label>Cartório / Matrícula</label><input id="ld-cartorio" placeholder="Ex: 3º RI / Mat. 12345"></div>
             </div>
-            <div class="form-row"><div class="field"><label>Observações</label><textarea id="ld-obs-contrato" rows="2" placeholder="Condições especiais, descontos, permuta..." style="font-size:12px;padding:7px 10px;border-radius:6px;border:0.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-primary);resize:vertical;outline:none;width:100%"></textarea></div></div>
+            <div class="form-row"><div class="field"><label>Observações do contrato</label>
+              <textarea id="ld-obs-contrato" rows="2" placeholder="Condições especiais, descontos, permuta..." style="font-size:12px;padding:7px 10px;border-radius:6px;border:0.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-primary);resize:vertical;outline:none;width:100%"></textarea>
+            </div></div>
           </div>
         </div>
 
-        <!-- ABA: Cliente -->
+        <!-- ─── ABA: Cliente ─── -->
         <div id="ld-aba-cliente" style="display:none">
           <div class="card" style="padding:18px">
-            <div class="form-section">Dados pessoais</div>
+            <div class="form-section" style="margin-top:0">Dados pessoais</div>
             <div class="form-row col2">
               <div class="field"><label>Nome completo *</label><input id="ld-cli-nome" placeholder="Nome completo do cliente"></div>
               <div class="field"><label>CPF *</label><input id="ld-cli-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
@@ -1556,7 +1589,7 @@ tbody tr.clickable{cursor:pointer}
             <div class="form-row col3">
               <div class="field"><label>RG</label><input id="ld-cli-rg" placeholder="00.000.000-0"></div>
               <div class="field"><label>Órgão emissor</label><input id="ld-cli-rg-orgao" placeholder="Ex: SSP/SP"></div>
-              <div class="field"><label>Nacionalidade</label><input id="ld-cli-nacionalidade" placeholder="Brasileira" value="Brasileira"></div>
+              <div class="field"><label>Nacionalidade</label><input id="ld-cli-nacionalidade" placeholder="Brasileira"></div>
             </div>
             <div class="form-row col3">
               <div class="field"><label>Data de nascimento</label><input id="ld-cli-nasc" type="date"></div>
@@ -1588,7 +1621,7 @@ tbody tr.clickable{cursor:pointer}
           </div>
         </div>
 
-        <!-- ABA: Cônjuge -->
+        <!-- ─── ABA: Cônjuge ─── -->
         <div id="ld-aba-conjuge" style="display:none">
           <div class="card" style="padding:18px">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--bg-secondary);border-radius:8px">
@@ -1618,10 +1651,10 @@ tbody tr.clickable{cursor:pointer}
           </div>
         </div>
 
-        <!-- ABA: Corretor -->
+        <!-- ─── ABA: Corretor ─── -->
         <div id="ld-aba-corretor" style="display:none">
           <div class="card" style="padding:18px">
-            <div class="form-section">Corretor responsável</div>
+            <div class="form-section" style="margin-top:0">Corretor responsável</div>
             <div class="form-row col2">
               <div class="field"><label>Nome do corretor</label>
                 <select id="ld-cor-select" onchange="ldPreencherDadosCorretor()">
@@ -1632,59 +1665,73 @@ tbody tr.clickable{cursor:pointer}
             </div>
             <div class="form-row col2">
               <div class="field"><label>CPF do corretor</label><input id="ld-cor-cpf" placeholder="000.000.000-00" readonly style="background:var(--bg-secondary);opacity:.8"></div>
-              <div class="field"><label>Telefone do corretor</label><input id="ld-cor-telefone" placeholder="(11) 9 9999-0000" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+              <div class="field"><label>Telefone</label><input id="ld-cor-telefone" placeholder="(11) 9 9999-0000" readonly style="background:var(--bg-secondary);opacity:.8"></div>
             </div>
             <div class="form-row">
-              <div class="field"><label>Endereço do corretor</label><input id="ld-cor-endereco" placeholder="Endereço completo do corretor" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+              <div class="field"><label>Endereço</label><input id="ld-cor-endereco" placeholder="Endereço completo" readonly style="background:var(--bg-secondary);opacity:.8"></div>
             </div>
-            <div style="margin-top:10px;font-size:11px;color:var(--text-secondary)">
-              Os dados do corretor são preenchidos automaticamente ao selecionar. Edite no cadastro de Corretores.
+            <div style="margin-top:10px;font-size:11px;color:var(--text-secondary)">Dados preenchidos automaticamente. Edite no cadastro de Corretores.</div>
+          </div>
+        </div>
+
+        <!-- ─── ABA: Visitas ─── -->
+        <div id="ld-aba-visitas" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:12px;color:var(--text-secondary)" id="ld-visitas-subtitle">Visitas agendadas para este lead</div>
+            <button class="btn btn-primary" onclick="abrirAgendarVisita()" id="btn-agendar-visita">+ Agendar visita</button>
+          </div>
+
+          <!-- Lista de visitas -->
+          <div id="ld-visitas-lista">
+            <div style="text-align:center;padding:40px;color:var(--text-secondary)" id="ld-visitas-empty">
+              <div style="font-size:36px;margin-bottom:10px">🗓️</div>
+              <div style="font-weight:500;margin-bottom:6px">Nenhuma visita agendada</div>
+              <div style="font-size:12px;margin-bottom:14px">Agende uma visita ao loteamento para este lead</div>
+              <button class="btn btn-primary" onclick="abrirAgendarVisita()">+ Agendar primeira visita</button>
             </div>
           </div>
         </div>
 
-        <!-- ABA: Acompanhamento -->
-        <div id="ld-aba-acompanhamento" style="display:none">
-          <div class="card" style="padding:18px;margin-bottom:14px">
-            <div class="form-section" style="margin-top:0">Status e responsável</div>
-            <div class="form-row col2">
-              <div class="field"><label>Situação do lead</label>
-                <select id="ld-situacao">
-                  <option value="Em andamento">🟢 Em andamento</option>
-                  <option value="Pausado">⏸ Pausado</option>
-                  <option value="Perdido">🔴 Perdido</option>
-                  <option value="Vendido">✅ Vendido</option>
+        <!-- Modal inline: Agendar visita -->
+        <div id="modal-agendar-visita" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;align-items:center;justify-content:center">
+          <div style="background:var(--bg-primary);border-radius:14px;padding:22px 24px;width:440px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+              <span style="font-size:15px;font-weight:700">Agendar visita</span>
+              <button onclick="fecharAgendarVisita()" style="background:none;border:0.5px solid var(--border-secondary);border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:14px;color:var(--text-secondary)">✕</button>
+            </div>
+            <div id="ld-visita-lote-aviso" style="display:none;background:var(--warning-bg);color:var(--warning);padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:14px">
+              ⚠️ Selecione um loteamento na aba Contrato antes de agendar uma visita.
+            </div>
+            <div class="form-row col2" style="margin-bottom:10px">
+              <div class="field"><label>Data *</label><input id="visita-data" type="date"></div>
+              <div class="field"><label>Horário *</label><input id="visita-hora" type="time" value="10:00"></div>
+            </div>
+            <div class="form-row" style="margin-bottom:10px">
+              <div class="field"><label>Loteamento</label>
+                <input id="visita-loteamento-nome" readonly style="background:var(--bg-secondary);opacity:.8">
+              </div>
+            </div>
+            <div class="form-row" style="margin-bottom:10px">
+              <div class="field"><label>Corretor responsável</label>
+                <select id="visita-corretor">
+                  <option value="">— Nenhum —</option>
                 </select>
               </div>
-              <div class="field"><label>Corretor responsável</label>
-                <select id="ld-corretor-acomp"><option value="">— Nenhum —</option></select>
+            </div>
+            <div class="form-row" style="margin-bottom:14px">
+              <div class="field"><label>Observações</label>
+                <input id="visita-obs" placeholder="Ponto de encontro, instruções...">
               </div>
             </div>
-            <div class="form-row"><div class="field"><label>Observação / Registro</label><input id="ld-obs-acomp" placeholder="Registro desta atualização..."></div></div>
-          </div>
-          <div class="card" style="padding:18px">
-            <div class="form-section" style="margin-top:0">Datas comerciais</div>
-            <div class="form-row col3">
-              <div class="field"><label>Proposta enviada</label><input id="ld-dt-proposta" type="date"></div>
-              <div class="field"><label>Contrato assinado</label><input id="ld-dt-contrato-acomp" type="date"></div>
-              <div class="field"><label>Entrada paga</label><input id="ld-dt-entrada" type="date"></div>
-            </div>
-            <div class="form-section">Documentos</div>
-            <div style="border:1.5px dashed var(--border-secondary);border-radius:8px;padding:12px">
-              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-                <button class="btn btn-sm" onclick="document.getElementById('ld-doc-input').click()">📎 Anexar documento</button>
-                <input type="file" id="ld-doc-input" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleLeadDocUpload(this)">
-                <span id="ld-doc-nome" style="font-size:11px;color:var(--text-secondary)">Nenhum arquivo selecionado</span>
-              </div>
-              <div id="ld-doc-preview" style="margin-top:8px;display:none">
-                <a id="ld-doc-link" href="#" target="_blank" style="font-size:11px;color:var(--accent)">📄 Ver documento</a>
-                <button onclick="removerDocLead()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:11px;margin-left:8px">✕ Remover</button>
-              </div>
-              <div style="font-size:10px;color:var(--text-tertiary);margin-top:6px">PDF, JPG ou PNG · máx. 5MB</div>
+            <div style="display:flex;justify-content:flex-end;gap:8px">
+              <button class="btn" onclick="fecharAgendarVisita()">Cancelar</button>
+              <button class="btn btn-primary" onclick="salvarVisitaLead()">✅ Confirmar agendamento</button>
             </div>
           </div>
         </div>
+
       </div>
+
 
       <!-- ===== VENDAS ===== -->
       <div class="page" id="page-vendas">
@@ -6969,6 +7016,9 @@ function abrirEditLead(id){
     if(docNome) docNome.textContent = 'Documento já anexado';
   }
 
+  // ── Carregar visitas ─────────────────────────────────────
+  ldCarregarVisitas(lead);
+
   // ── Navegar para a página ─────────────────────────────────
   setLeadDetalheAba('contrato');
   showPage('lead-detalhe', null);
@@ -6983,47 +7033,124 @@ function renderLeadTimelineHorizontal(lead){
   el.innerHTML = etapas.map((etapa,i) => {
     const feito   = !!(lead.etapas?.[etapa.key] || lead.etapas?.[etapa.kanbanKey]);
     const dataVal = lead.etapas?.[etapa.key+'_data'] || (etapa.campo_data ? lead[etapa.campo_data]||'' : '');
+    const horaVal = lead.etapas?.[etapa.key+'_hora'] || '';
     const dataFmt = dataVal ? new Date(dataVal+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '';
     const isLast  = i === etapas.length-1;
     const cor     = etapa.color || 'var(--accent)';
 
-    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative;min-width:80px">
-      <!-- Linha conectora (exceto último) -->
+    // Botões extras por etapa
+    const labelLow = (etapa.label||'').toLowerCase();
+    const isVisita  = labelLow.includes('visita');
+    const isProposta = labelLow.includes('proposta');
+
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative;min-width:90px">
+      <!-- Linha conectora -->
       ${!isLast ? `<div style="position:absolute;top:18px;left:50%;width:100%;height:2px;background:${feito?cor:'var(--border-secondary)'};z-index:0"></div>` : ''}
 
-      <!-- Círculo -->
-      <div onclick="concluirEtapaLead('${etapa.key}')"
+      <!-- Círculo clicável -->
+      <div onclick="ldConcluirEtapa('${etapa.key}')"
         style="width:36px;height:36px;border-radius:50%;
                background:${feito?cor:'var(--bg-secondary)'};
                border:2px solid ${feito?cor:'var(--border-secondary)'};
                display:flex;align-items:center;justify-content:center;
                cursor:pointer;z-index:1;position:relative;flex-shrink:0;
-               transition:all .18s;font-size:${feito?'14':'13'}px"
+               transition:all .18s;box-shadow:${feito?'0 2px 8px '+cor+'55':'none'}"
         title="${feito?'Clique para desfazer':'Marcar como concluído'}">
-        ${feito ? '<span style="color:#fff;font-weight:700">✓</span>' : '<span style="color:var(--text-tertiary)">○</span>'}
+        ${feito
+          ? '<span style="color:#fff;font-weight:700;font-size:14px">✓</span>'
+          : '<span style="color:var(--text-tertiary);font-size:13px">○</span>'}
       </div>
 
-      <!-- Label e data -->
-      <div style="text-align:center;margin-top:6px;padding:0 4px">
-        <div style="font-size:10px;font-weight:${feito?'600':'400'};color:${feito?'var(--text-primary)':'var(--text-secondary)'};line-height:1.3;word-break:break-word">${etapa.label}</div>
-        ${dataFmt ? `<div style="font-size:10px;color:${cor};margin-top:2px;font-weight:600">${dataFmt}</div>` : ''}
-        ${!feito ? `<button onclick="concluirEtapaLead('${etapa.key}')"
-          style="margin-top:4px;font-size:9px;padding:1px 6px;border-radius:10px;
-                 border:1px solid ${cor};background:transparent;color:${cor};
-                 cursor:pointer;font-family:inherit;white-space:nowrap">✓ Feito</button>` : ''}
+      <!-- Label -->
+      <div style="text-align:center;margin-top:6px;padding:0 2px;width:100%">
+        <div style="font-size:10px;font-weight:${feito?'600':'400'};color:${feito?'var(--text-primary)':'var(--text-secondary)'};line-height:1.3">${etapa.label}</div>
+
+        <!-- Se não marcado: botão Feito -->
+        ${!feito ? `
+          <button onclick="ldConcluirEtapa('${etapa.key}')"
+            style="margin-top:4px;font-size:9px;padding:2px 7px;border-radius:10px;
+                   border:1px solid ${cor};background:transparent;color:${cor};
+                   cursor:pointer;font-family:inherit;white-space:nowrap;display:block;margin-left:auto;margin-right:auto">
+            ✓ Feito
+          </button>` : ''}
+
+        <!-- Se marcado: data editável + hora -->
+        ${feito ? `
+          <div style="margin-top:5px">
+            <input type="date" value="${dataVal}"
+              onchange="ldAtualizarDataEtapa('${etapa.key}','data',this.value)"
+              style="font-size:9px;padding:2px 4px;border-radius:4px;border:0.5px solid ${cor}44;
+                     background:${cor}11;color:${cor};outline:none;width:88px;font-family:inherit;cursor:pointer">
+            ${horaVal ? `<input type="time" value="${horaVal}"
+              onchange="ldAtualizarDataEtapa('${etapa.key}','hora',this.value)"
+              style="font-size:9px;padding:2px 3px;border-radius:4px;border:0.5px solid ${cor}44;
+                     background:${cor}11;color:${cor};outline:none;width:62px;font-family:inherit;margin-top:2px;cursor:pointer">` : ''}
+          </div>` : ''}
+
+        <!-- Botão extra: Agendar visita (abaixo da etapa visita, se marcada) -->
+        ${isVisita && feito ? `
+          <button onclick="setLeadDetalheAba('visitas');abrirAgendarVisita()"
+            style="margin-top:5px;font-size:9px;padding:2px 7px;border-radius:10px;
+                   border:1px solid var(--accent);background:var(--accent);color:#fff;
+                   cursor:pointer;font-family:inherit;white-space:nowrap;display:block;margin-left:auto;margin-right:auto">
+            📅 Agendar
+          </button>` : ''}
+
+        <!-- Botão extra: Gerar contrato (abaixo de proposta, se marcada) -->
+        ${isProposta && feito ? `
+          <button onclick="ldGerarContrato()"
+            style="margin-top:5px;font-size:9px;padding:2px 7px;border-radius:10px;
+                   border:1px solid var(--teal);background:var(--teal);color:#fff;
+                   cursor:pointer;font-family:inherit;white-space:nowrap;display:block;margin-left:auto;margin-right:auto">
+            📄 Contrato
+          </button>` : ''}
       </div>
     </div>`;
   }).join('');
 }
 
+// ── Concluir etapa a partir da página do lead ─────────────────
+async function ldConcluirEtapa(key){
+  const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+  if(!lead) return;
+  // Chamar a função existente que já lida com tudo
+  await concluirEtapaLead(key);
+  // Re-renderizar a timeline da PÁGINA (não o modal antigo)
+  renderLeadTimelineHorizontal(lead);
+  // Atualizar badge de situação
+  ldAtualizarBadge(lead.situacao);
+}
+
+// ── Atualizar data/hora de etapa inline ───────────────────────
+async function ldAtualizarDataEtapa(key, campo, valor){
+  const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+  if(!lead) return;
+  if(!lead.etapas) lead.etapas = {};
+  lead.etapas[key+'_'+campo] = valor;
+  // Sincronizar campo fixo se existir
+  const etapa = getLeadEtapas().find(e=>e.key===key);
+  if(campo==='data' && etapa?.campo_data){
+    lead[etapa.campo_data] = valor;
+    if(!lead.etapas_datas) lead.etapas_datas = {};
+    lead.etapas_datas[etapa.campo_data] = valor;
+  }
+  await persistirEtapas(lead);
+}
+
+// ── Badge de situação ─────────────────────────────────────────
+function ldAtualizarBadge(situacao){
+  // Não há mais badge separado — situação agora é o select inline
+}
+
 // ── Abas da página de detalhe do lead ────────────────────────
 function setLeadDetalheAba(aba){
-  ['contrato','cliente','conjuge','corretor','acompanhamento'].forEach(a=>{
+  ['contrato','cliente','conjuge','corretor','visitas'].forEach(a=>{
     const tabEl = document.getElementById('ld-tab-'+a);
     const abaEl = document.getElementById('ld-aba-'+a);
     if(tabEl) tabEl.classList.toggle('active', a===aba);
     if(abaEl) abaEl.style.display = a===aba ? '' : 'none';
   });
+  if(aba==='visitas') renderVisitasLead();
 }
 
 // ── Carregar lotes do loteamento selecionado (aba contrato lead) ──
@@ -7343,7 +7470,12 @@ async function concluirEtapaLead(key){
   showLoading('Salvando...');
   await persistirEtapas(lead);
   hideLoading();
-  renderLeadTimeline(lead);
+  // Re-renderizar onde estivermos — página ou modal antigo
+  if(document.getElementById('page-lead-detalhe')?.classList.contains('active')){
+    renderLeadTimelineHorizontal(lead);
+  } else {
+    if(typeof renderLeadTimeline==='function') renderLeadTimeline(lead);
+  }
   renderLeads();
 }
 
@@ -7370,9 +7502,12 @@ async function salvarEdicaoLead(){
   const situacao  = document.getElementById('ld-situacao')?.value
                  || document.getElementById('edit-lead-situacao')?.value
                  || 'Em andamento';
-  const corretor  = document.getElementById('ld-corretor-acomp')?.value
-                 || document.getElementById('edit-lead-corretor')?.value
-                 || null;
+  // Corretor vem da aba Corretor (ld-cor-select) ou fallback
+  const _corSel   = document.getElementById('ld-cor-select');
+  const corretorNomeOpt = _corSel?.options[_corSel?.selectedIndex]?.text||'';
+  const corretor  = (corretorNomeOpt && corretorNomeOpt!=='— Selecione o corretor —')
+                    ? corretorNomeOpt
+                    : (document.getElementById('edit-lead-corretor')?.value||null);
   const obs       = document.getElementById('ld-obs-acomp')?.value
                  || document.getElementById('edit-lead-obs')?.value
                  || null;
@@ -13047,6 +13182,202 @@ function fazerLogout(){ sb.auth.signOut(); }
     document.getElementById('p-cronograma-wrap').style.display='block';
   };
 })();
+
+
+// ════════════════════════════════════════════════════════════
+// VISITAS DO LEAD
+// ════════════════════════════════════════════════════════════
+let _visitasLead = []; // array local das visitas do lead atual
+
+function renderVisitasLead(){
+  const lista = document.getElementById('ld-visitas-lista');
+  const empty = document.getElementById('ld-visitas-empty');
+  if(!lista) return;
+
+  if(!_visitasLead.length){
+    if(empty) empty.style.display='';
+    return;
+  }
+  if(empty) empty.style.display='none';
+
+  lista.innerHTML = `<div class="card" style="overflow:hidden;margin-bottom:14px">
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+      <thead><tr>
+        <th style="width:100px;padding:9px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);border-bottom:0.5px solid var(--border-tertiary);text-align:left">Data</th>
+        <th style="width:70px;padding:9px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);border-bottom:0.5px solid var(--border-tertiary)">Hora</th>
+        <th style="padding:9px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);border-bottom:0.5px solid var(--border-tertiary)">Loteamento</th>
+        <th style="padding:9px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);border-bottom:0.5px solid var(--border-tertiary)">Corretor</th>
+        <th style="padding:9px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);border-bottom:0.5px solid var(--border-tertiary)">Status</th>
+        <th style="width:90px;padding:9px 14px;font-size:11px;font-weight:600;color:var(--text-secondary);border-bottom:0.5px solid var(--border-tertiary)">Ações</th>
+      </tr></thead>
+      <tbody>${_visitasLead.map((v,i) => {
+        const hoje  = new Date(); hoje.setHours(0,0,0,0);
+        const dtV   = v.data ? new Date(v.data+'T12:00') : null;
+        const isPast = dtV && dtV < hoje;
+        const status = v.realizada ? 'Realizada' : isPast ? 'Não realizada' : 'Agendada';
+        const stCls  = v.realizada ? 'badge-green' : isPast ? 'badge-red' : 'badge-blue';
+        const dtFmt  = dtV ? dtV.toLocaleDateString('pt-BR') : '—';
+        return `<tr>
+          <td style="padding:9px 14px;font-size:12px">${dtFmt}</td>
+          <td style="padding:9px 14px;font-size:12px;text-align:center">${v.hora||'—'}</td>
+          <td style="padding:9px 14px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.loteamento||'—'}</td>
+          <td style="padding:9px 14px;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.corretor||'—'}</td>
+          <td style="padding:9px 14px"><span class="badge ${stCls}" style="font-size:10px">${status}</span></td>
+          <td style="padding:9px 14px;white-space:nowrap">
+            ${!v.realizada ? `<button class="btn btn-sm" style="font-size:10px;margin-right:3px" onclick="marcarVisitaRealizada(${i})">✓ Realizada</button>` : ''}
+            <button class="btn btn-sm" style="font-size:10px;color:var(--danger);border-color:var(--danger)" onclick="removerVisita(${i})">✕</button>
+          </td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+  </div>` + (empty ? '' : '');
+}
+
+function abrirAgendarVisita(){
+  const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+  const modal = document.getElementById('modal-agendar-visita');
+  if(!modal) return;
+
+  // Verificar se tem loteamento selecionado
+  const lotNome = document.getElementById('ld-loteamento')?.options[
+    document.getElementById('ld-loteamento')?.selectedIndex]?.text || '';
+  const aviso   = document.getElementById('ld-visita-lote-aviso');
+  const btnConf = modal.querySelector('button.btn-primary');
+
+  if(!lotNome || lotNome==='— Selecione —'){
+    if(aviso)  aviso.style.display='';
+    if(btnConf) btnConf.disabled=true;
+  } else {
+    if(aviso)  aviso.style.display='none';
+    if(btnConf) btnConf.disabled=false;
+  }
+
+  // Preencher loteamento
+  const lotInput = document.getElementById('visita-loteamento-nome');
+  if(lotInput) lotInput.value = (lotNome==='— Selecione —') ? '' : lotNome;
+
+  // Data padrão = amanhã
+  const amanha = new Date(); amanha.setDate(amanha.getDate()+1);
+  const dataEl = document.getElementById('visita-data');
+  if(dataEl) dataEl.value = amanha.toISOString().split('T')[0];
+
+  // Popular corretores
+  dbSelect('corretores',{filter:[['status','eq','Ativo']],order:'nome',asc:true}).then(corts=>{
+    const sel = document.getElementById('visita-corretor');
+    if(sel){
+      sel.innerHTML = '<option value="">— Nenhum —</option>' +
+        corts.map(r=>`<option value="${r.nome}">${r.nome}</option>`).join('');
+    }
+  });
+
+  // Limpar obs
+  const obsEl = document.getElementById('visita-obs');
+  if(obsEl) obsEl.value='';
+
+  modal.style.display='flex';
+}
+
+function fecharAgendarVisita(){
+  const modal=document.getElementById('modal-agendar-visita');
+  if(modal) modal.style.display='none';
+}
+
+async function salvarVisitaLead(){
+  const data     = document.getElementById('visita-data')?.value;
+  const hora     = document.getElementById('visita-hora')?.value;
+  const loteNome = document.getElementById('visita-loteamento-nome')?.value;
+  const corretor = document.getElementById('visita-corretor')?.value||'';
+  const obs      = document.getElementById('visita-obs')?.value||'';
+
+  if(!data){ showToast('Informe a data da visita.','error'); return; }
+
+  const novaVisita = {
+    id:          Date.now(),
+    data, hora, loteamento:loteNome, corretor, obs,
+    realizada:   false,
+    criado_em:   new Date().toISOString(),
+  };
+
+  _visitasLead.push(novaVisita);
+
+  // Persistir no campo visitas_json do lead
+  const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+  if(lead){
+    lead.visitas = _visitasLead;
+    await dbUpdate('leads', lead.id, {visitas_json: JSON.stringify(_visitasLead)});
+    // Marcar etapa de visita automaticamente
+    if(!lead.etapas?.visita_agendada){
+      await ldConcluirEtapa('visita_agendada');
+    }
+  }
+
+  fecharAgendarVisita();
+  renderVisitasLead();
+  showToast('✅ Visita agendada para '+new Date(data+'T12:00').toLocaleDateString('pt-BR')+'!');
+}
+
+function marcarVisitaRealizada(idx){
+  _visitasLead[idx].realizada = true;
+  const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+  if(lead){
+    lead.visitas = _visitasLead;
+    dbUpdate('leads', lead.id, {visitas_json: JSON.stringify(_visitasLead)}).catch(()=>{});
+  }
+  renderVisitasLead();
+  showToast('Visita marcada como realizada!');
+}
+
+function removerVisita(idx){
+  if(!confirm('Remover esta visita?')) return;
+  _visitasLead.splice(idx,1);
+  const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+  if(lead){
+    lead.visitas = _visitasLead;
+    dbUpdate('leads', lead.id, {visitas_json: JSON.stringify(_visitasLead)}).catch(()=>{});
+  }
+  renderVisitasLead();
+}
+
+// ── Gerar Contrato (placeholder — abre aba Contrato) ─────────
+function ldGerarContrato(){
+  const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+
+  // Checar se dados mínimos estão preenchidos
+  const loteamento = document.getElementById('ld-loteamento')?.value;
+  const cliente    = document.getElementById('ld-cli-nome')?.value?.trim();
+
+  if(!loteamento){
+    showToast('Selecione o loteamento na aba Contrato antes de gerar.','error');
+    setLeadDetalheAba('contrato');
+    return;
+  }
+  if(!cliente){
+    showToast('Preencha o nome do cliente na aba Cliente antes de gerar.','error');
+    setLeadDetalheAba('cliente');
+    return;
+  }
+
+  // Criar ID de contrato automático se vazio
+  const idContrato = document.getElementById('ld-contrato-id');
+  if(idContrato && !idContrato.value){
+    const ano  = new Date().getFullYear();
+    const seq  = String(Math.floor(Math.random()*900)+100);
+    idContrato.value = `CT-${ano}-${seq}`;
+  }
+
+  showToast('📄 Dados prontos para contrato. Revise e salve para gerar o documento.');
+  setLeadDetalheAba('contrato');
+}
+
+// ── Carregar visitas ao abrir o lead ─────────────────────────
+function ldCarregarVisitas(lead){
+  _visitasLead = [];
+  if(lead?.visitas_json){
+    try{ _visitasLead = JSON.parse(lead.visitas_json); }catch(e){}
+  } else if(lead?.visitas){
+    _visitasLead = lead.visitas;
+  }
+}
 
 iniciarApp();
 </script>
