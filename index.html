@@ -227,6 +227,13 @@ tbody tr.clickable{cursor:pointer}
 .sim-row{display:flex;justify-content:space-between;padding:3px 0}
 .sim-key{color:var(--text-secondary)}
 .sim-val{font-weight:600}
+
+/* ── Timeline horizontal do lead ─────────────────────────────── */
+#ld-timeline-horizontal { padding: 8px 4px 4px; }
+#ld-timeline-horizontal > div { min-width: 80px; }
+@media(max-width: 600px){
+  #ld-timeline-horizontal { overflow-x: auto; }
+}
 </style>
 </head>
 <body>
@@ -1447,6 +1454,238 @@ tbody tr.clickable{cursor:pointer}
         </div>
       </div>
 
+      <!-- ===== LEAD DETALHE ===== -->
+      <div class="page" id="page-lead-detalhe">
+        <!-- Cabeçalho -->
+        <div class="back-btn" onclick="showPage('crm',null)">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Voltar para CRM
+        </div>
+
+        <!-- Header do lead -->
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap">
+          <div id="ld-avatar" style="width:48px;height:48px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:var(--accent);flex-shrink:0">?</div>
+          <div style="flex:1">
+            <div style="font-size:20px;font-weight:700;color:var(--text-primary)" id="ld-nome-header">—</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px" id="ld-sub-header">—</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span id="ld-badge-situacao" class="badge badge-blue">Em andamento</span>
+            <button class="btn btn-primary" onclick="salvarEdicaoLead()">💾 Salvar</button>
+          </div>
+        </div>
+
+        <!-- Timeline horizontal de etapas -->
+        <div class="card" style="padding:16px 20px;margin-bottom:16px;overflow-x:auto">
+          <div id="ld-timeline-horizontal" style="display:flex;align-items:flex-start;gap:0;min-width:600px"></div>
+        </div>
+
+        <!-- Abas -->
+        <div class="tabs" style="margin-bottom:14px">
+          <div class="tab active" id="ld-tab-contrato"      onclick="setLeadDetalheAba('contrato')">📋 Contrato</div>
+          <div class="tab"        id="ld-tab-cliente"       onclick="setLeadDetalheAba('cliente')">👤 Cliente</div>
+          <div class="tab"        id="ld-tab-conjuge"       onclick="setLeadDetalheAba('conjuge')">👫 Cônjuge</div>
+          <div class="tab"        id="ld-tab-corretor"      onclick="setLeadDetalheAba('corretor')">🏷️ Corretor</div>
+          <div class="tab"        id="ld-tab-acompanhamento" onclick="setLeadDetalheAba('acompanhamento')">📊 Acompanhamento</div>
+        </div>
+
+        <!-- ABA: Contrato -->
+        <div id="ld-aba-contrato">
+          <div class="card" style="padding:18px">
+            <div class="form-section">Identificação do contrato</div>
+            <div class="form-row col3">
+              <div class="field"><label>ID do contrato</label><input id="ld-contrato-id" placeholder="Ex: VV-001"></div>
+              <div class="field"><label>Loteamento *</label>
+                <select id="ld-loteamento" onchange="ldCarregarLotes()">
+                  <option value="">— Selecione —</option>
+                </select>
+              </div>
+              <div class="field"><label>Lote *</label>
+                <select id="ld-lote" onchange="ldPreencherDadosLote()">
+                  <option value="">— Selecione o loteamento —</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>Quadra</label><input id="ld-quadra" placeholder="Ex: A" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+              <div class="field"><label>Área do lote (m²)</label><input id="ld-area-lote" placeholder="Preenchido automaticamente" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+            </div>
+            <div class="form-section">Condições financeiras</div>
+            <div class="form-row col2">
+              <div class="field"><label>Forma de pagamento *</label>
+                <select id="ld-forma-pagamento" onchange="ldToggleParcelamento()">
+                  <option value="avista">À vista</option>
+                  <option value="parcelado">Parcelado</option>
+                </select>
+              </div>
+              <div class="field"><label>Valor do lote (R$)</label><input id="ld-valor-lote" type="text" placeholder="Preenchido automaticamente" oninput="maskMoney(this);ldCalcFinanciado()" style="background:var(--bg-secondary);opacity:.8" readonly></div>
+            </div>
+            <div id="ld-parcelamento-wrap">
+              <div class="form-row col2">
+                <div class="field"><label>Valor de entrada (R$)</label><input id="ld-entrada" type="text" placeholder="0,00" oninput="maskMoney(this);ldCalcFinanciado()"></div>
+                <div class="field"><label>Valor financiado (R$)</label><input id="ld-financiado" type="text" placeholder="Calculado auto." readonly style="background:var(--bg-secondary);opacity:.8"></div>
+              </div>
+              <div class="form-row col3">
+                <div class="field"><label>Prazo (meses)</label><input id="ld-prazo" type="number" min="1" max="360" placeholder="60" oninput="ldCalcParcela()"></div>
+                <div class="field"><label>Taxa de juros (% a.m.)</label><input id="ld-taxa" type="text" placeholder="0,90" oninput="maskDecimal(this);ldCalcParcela()"></div>
+                <div class="field"><label>Sistema</label>
+                  <select id="ld-sistema"><option value="price">Price (parcelas iguais)</option><option value="sac">SAC</option></select>
+                </div>
+              </div>
+              <div class="form-row col2">
+                <div class="field"><label>Valor da parcela (R$)</label><input id="ld-parcela" type="text" placeholder="Calculado auto." readonly style="background:var(--bg-secondary);opacity:.8"></div>
+                <div class="field"><label>Data da 1ª parcela</label><input id="ld-dt-primeira" type="date"></div>
+              </div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>Data da assinatura</label><input id="ld-dt-assinatura" type="date"></div>
+              <div class="field"><label>Cartório / Matrícula</label><input id="ld-cartorio" placeholder="Ex: 3º RI / Mat. 12345"></div>
+            </div>
+            <div class="form-row"><div class="field"><label>Observações</label><textarea id="ld-obs-contrato" rows="2" placeholder="Condições especiais, descontos, permuta..." style="font-size:12px;padding:7px 10px;border-radius:6px;border:0.5px solid var(--border-secondary);background:var(--bg-primary);color:var(--text-primary);resize:vertical;outline:none;width:100%"></textarea></div></div>
+          </div>
+        </div>
+
+        <!-- ABA: Cliente -->
+        <div id="ld-aba-cliente" style="display:none">
+          <div class="card" style="padding:18px">
+            <div class="form-section">Dados pessoais</div>
+            <div class="form-row col2">
+              <div class="field"><label>Nome completo *</label><input id="ld-cli-nome" placeholder="Nome completo do cliente"></div>
+              <div class="field"><label>CPF *</label><input id="ld-cli-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
+            </div>
+            <div class="form-row col3">
+              <div class="field"><label>RG</label><input id="ld-cli-rg" placeholder="00.000.000-0"></div>
+              <div class="field"><label>Órgão emissor</label><input id="ld-cli-rg-orgao" placeholder="Ex: SSP/SP"></div>
+              <div class="field"><label>Nacionalidade</label><input id="ld-cli-nacionalidade" placeholder="Brasileira" value="Brasileira"></div>
+            </div>
+            <div class="form-row col3">
+              <div class="field"><label>Data de nascimento</label><input id="ld-cli-nasc" type="date"></div>
+              <div class="field"><label>Estado civil</label>
+                <select id="ld-cli-estcivil">
+                  <option>Solteiro(a)</option><option>Casado(a)</option>
+                  <option>Divorciado(a)</option><option>Viúvo(a)</option><option>União estável</option>
+                </select>
+              </div>
+              <div class="field"><label>Profissão</label><input id="ld-cli-profissao" placeholder="Ex: Engenheiro(a)"></div>
+            </div>
+            <div class="form-section">Contato</div>
+            <div class="form-row col2">
+              <div class="field"><label>E-mail</label><input id="ld-cli-email" type="email" placeholder="email@exemplo.com"></div>
+              <div class="field"><label>Telefone / WhatsApp</label><input id="ld-cli-telefone" placeholder="(11) 9 9999-0000" oninput="maskTelefone(this)"></div>
+            </div>
+            <div class="form-section">Endereço</div>
+            <div class="form-row col3">
+              <div class="field"><label>CEP</label><input id="ld-cli-cep" placeholder="00000-000" oninput="maskCep(this)" onblur="buscarCep(this.value,'ld-cli')"></div>
+              <div class="field"><label>Cidade</label><input id="ld-cli-cidade" placeholder="Cidade"></div>
+              <div class="field"><label>Estado</label>
+                <select id="ld-cli-estado"><option value="">—</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select>
+              </div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>Logradouro</label><input id="ld-cli-rua" placeholder="Rua, Av..."></div>
+              <div class="field"><label>Número / Complemento</label><input id="ld-cli-num" placeholder="123, Apto 4"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA: Cônjuge -->
+        <div id="ld-aba-conjuge" style="display:none">
+          <div class="card" style="padding:18px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--bg-secondary);border-radius:8px">
+              <input type="checkbox" id="ld-tem-conjuge" onchange="ldToggleConjuge(this)" style="width:16px;height:16px">
+              <label for="ld-tem-conjuge" style="font-size:13px;font-weight:500;cursor:pointer">Contrato com cônjuge</label>
+            </div>
+            <div id="ld-conjuge-wrap" style="display:none">
+              <div class="form-section">Dados do cônjuge</div>
+              <div class="form-row col2">
+                <div class="field"><label>Nome completo</label><input id="ld-conj-nome" placeholder="Nome completo do cônjuge"></div>
+                <div class="field"><label>CPF</label><input id="ld-conj-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
+              </div>
+              <div class="form-row col3">
+                <div class="field"><label>RG</label><input id="ld-conj-rg" placeholder="00.000.000-0"></div>
+                <div class="field"><label>Órgão emissor</label><input id="ld-conj-rg-orgao" placeholder="Ex: SSP/SP"></div>
+                <div class="field"><label>Data de nascimento</label><input id="ld-conj-nasc" type="date"></div>
+              </div>
+              <div class="form-row col2">
+                <div class="field"><label>Profissão</label><input id="ld-conj-profissao" placeholder="Ex: Professora"></div>
+                <div class="field"><label>Telefone</label><input id="ld-conj-telefone" placeholder="(11) 9 9999-0000" oninput="maskTelefone(this)"></div>
+              </div>
+            </div>
+            <div id="ld-conjuge-empty" style="text-align:center;padding:32px;color:var(--text-secondary)">
+              <div style="font-size:32px;margin-bottom:8px">👫</div>
+              <div>Marque a caixa acima para incluir os dados do cônjuge</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA: Corretor -->
+        <div id="ld-aba-corretor" style="display:none">
+          <div class="card" style="padding:18px">
+            <div class="form-section">Corretor responsável</div>
+            <div class="form-row col2">
+              <div class="field"><label>Nome do corretor</label>
+                <select id="ld-cor-select" onchange="ldPreencherDadosCorretor()">
+                  <option value="">— Selecione o corretor —</option>
+                </select>
+              </div>
+              <div class="field"><label>CRECI</label><input id="ld-cor-creci" placeholder="Nº CRECI" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>CPF do corretor</label><input id="ld-cor-cpf" placeholder="000.000.000-00" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+              <div class="field"><label>Telefone do corretor</label><input id="ld-cor-telefone" placeholder="(11) 9 9999-0000" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+            </div>
+            <div class="form-row">
+              <div class="field"><label>Endereço do corretor</label><input id="ld-cor-endereco" placeholder="Endereço completo do corretor" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:var(--text-secondary)">
+              Os dados do corretor são preenchidos automaticamente ao selecionar. Edite no cadastro de Corretores.
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA: Acompanhamento -->
+        <div id="ld-aba-acompanhamento" style="display:none">
+          <div class="card" style="padding:18px;margin-bottom:14px">
+            <div class="form-section" style="margin-top:0">Status e responsável</div>
+            <div class="form-row col2">
+              <div class="field"><label>Situação do lead</label>
+                <select id="ld-situacao">
+                  <option value="Em andamento">🟢 Em andamento</option>
+                  <option value="Pausado">⏸ Pausado</option>
+                  <option value="Perdido">🔴 Perdido</option>
+                  <option value="Vendido">✅ Vendido</option>
+                </select>
+              </div>
+              <div class="field"><label>Corretor responsável</label>
+                <select id="ld-corretor-acomp"><option value="">— Nenhum —</option></select>
+              </div>
+            </div>
+            <div class="form-row"><div class="field"><label>Observação / Registro</label><input id="ld-obs-acomp" placeholder="Registro desta atualização..."></div></div>
+          </div>
+          <div class="card" style="padding:18px">
+            <div class="form-section" style="margin-top:0">Datas comerciais</div>
+            <div class="form-row col3">
+              <div class="field"><label>Proposta enviada</label><input id="ld-dt-proposta" type="date"></div>
+              <div class="field"><label>Contrato assinado</label><input id="ld-dt-contrato-acomp" type="date"></div>
+              <div class="field"><label>Entrada paga</label><input id="ld-dt-entrada" type="date"></div>
+            </div>
+            <div class="form-section">Documentos</div>
+            <div style="border:1.5px dashed var(--border-secondary);border-radius:8px;padding:12px">
+              <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <button class="btn btn-sm" onclick="document.getElementById('ld-doc-input').click()">📎 Anexar documento</button>
+                <input type="file" id="ld-doc-input" accept=".pdf,.jpg,.jpeg,.png" style="display:none" onchange="handleLeadDocUpload(this)">
+                <span id="ld-doc-nome" style="font-size:11px;color:var(--text-secondary)">Nenhum arquivo selecionado</span>
+              </div>
+              <div id="ld-doc-preview" style="margin-top:8px;display:none">
+                <a id="ld-doc-link" href="#" target="_blank" style="font-size:11px;color:var(--accent)">📄 Ver documento</a>
+                <button onclick="removerDocLead()" style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:11px;margin-left:8px">✕ Remover</button>
+              </div>
+              <div style="font-size:10px;color:var(--text-tertiary);margin-top:6px">PDF, JPG ou PNG · máx. 5MB</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ===== VENDAS ===== -->
       <div class="page" id="page-vendas">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
@@ -1565,73 +1804,174 @@ tbody tr.clickable{cursor:pointer}
       </div>
 
       <!-- Modal: Nova Venda / Editar Venda -->
+      <!-- Modal: Nova Venda / Editar Venda -->
       <div class="modal-overlay" id="modal-venda" onclick="if(event.target===this)closeModal('modal-venda')">
-        <div class="modal-box" style="width:680px;max-height:90vh;overflow-y:auto">
+        <div class="modal-box" style="width:780px;max-height:92vh;overflow-y:auto">
           <div class="modal-header">
             <span class="modal-title" id="modal-venda-titulo">Nova venda</span>
             <button class="modal-close" onclick="closeModal('modal-venda')">✕</button>
           </div>
           <input type="hidden" id="vd-id">
-          <div class="form-section">Identificação</div>
-          <div class="form-row col2">
-            <div class="field"><label>ID do contrato *</label><input id="vd-contrato" placeholder="Ex: VV-001"></div>
-            <div class="field"><label>Cliente *</label>
-              <select id="vd-cliente-id" onchange="vdSelecionarCliente(this)">
-                <option value="">— Selecione o cliente —</option>
-              </select>
-              <input type="hidden" id="vd-cliente">
+
+          <!-- Abas do modal de venda -->
+          <div class="tabs" style="margin-bottom:14px">
+            <div class="tab active" id="vd-tab-contrato"  onclick="setVdAba('contrato')">📋 Contrato</div>
+            <div class="tab"        id="vd-tab-cliente"   onclick="setVdAba('cliente')">👤 Cliente</div>
+            <div class="tab"        id="vd-tab-conjuge"   onclick="setVdAba('conjuge')">👫 Cônjuge</div>
+            <div class="tab"        id="vd-tab-corretor"  onclick="setVdAba('corretor')">🏷️ Corretor</div>
+          </div>
+
+          <!-- ABA: Contrato -->
+          <div id="vd-aba-contrato">
+            <div class="form-section">Identificação</div>
+            <div class="form-row col3">
+              <div class="field"><label>ID do contrato *</label><input id="vd-contrato" placeholder="Ex: VV-001"></div>
+              <div class="field"><label>Loteamento *</label>
+                <select id="vd-loteamento" onchange="vdCarregarLotes()">
+                  <option value="">— Selecione —</option>
+                </select>
+              </div>
+              <div class="field"><label>Lote *</label>
+                <select id="vd-lotes" onchange="vdPreencherValorLote()">
+                  <option value="">— Selecione o loteamento primeiro —</option>
+                </select>
+              </div>
             </div>
-          </div>
-          <div class="form-row col2">
-            <div class="field"><label>Loteamento *</label>
-              <select id="vd-loteamento" onchange="vdCarregarLotes()">
-                <option value="">— Selecione —</option>
-              </select>
+            <div class="form-row col2">
+              <div class="field"><label>Quadra</label><input id="vd-quadra" placeholder="Preenchido automaticamente" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+              <div class="field"><label>Área do lote (m²)</label><input id="vd-area-lote" placeholder="Preenchido automaticamente" readonly style="background:var(--bg-secondary);opacity:.8"></div>
             </div>
-            <div class="field"><label>Lote *</label>
-              <select id="vd-lotes" onchange="vdPreencherValorLote()">
-                <option value="">— Selecione o loteamento primeiro —</option>
-              </select>
+            <input type="hidden" id="vd-lote-id">
+            <div class="form-section">Condições financeiras</div>
+            <div class="form-row col2">
+              <div class="field"><label>Forma de pagamento *</label>
+                <select id="vd-forma-pagamento" onchange="vdToggleParcelamento()">
+                  <option value="parcelado">Parcelado</option>
+                  <option value="avista">À vista</option>
+                </select>
+              </div>
+              <div class="field"><label>Valor de venda (R$) *</label><input id="vd-valor" type="text" placeholder="0,00" oninput="maskMoney(this);calcVdFinanciado()"></div>
             </div>
-          </div>
-          <input type="hidden" id="vd-lote-id"><!-- ID do lote selecionado -->
-          <div class="form-section">Condições financeiras</div>
-          <div class="form-row col2">
-            <div class="field"><label>Valor de venda (R$) *</label><input id="vd-valor" type="text" placeholder="0,00" oninput="maskMoney(this);calcVdFinanciado()"></div>
-            <div class="field"><label>Valor de entrada (R$)</label><input id="vd-entrada" type="text" placeholder="0,00" oninput="maskMoney(this);calcVdFinanciado()"></div>
-          </div>
-          <div class="form-row col2">
-            <div class="field"><label>Valor financiado (R$)</label><input id="vd-financiado" type="text" placeholder="Calculado auto." readonly style="background:var(--bg-secondary);opacity:.8"></div>
-            <div class="field"><label>Prazo (meses)</label><input id="vd-prazo" type="number" min="1" max="360" placeholder="60" oninput="calcVdParcela()"></div>
-          </div>
-          <div class="form-row col2">
-            <div class="field"><label>Taxa de juros (% a.m.)</label><input id="vd-taxa" type="text" placeholder="0,90" oninput="maskDecimal(this);calcVdParcela()"></div>
-            <div class="field"><label>Valor da parcela (R$)</label><input id="vd-parcela" type="text" placeholder="Calculado auto." style="background:var(--bg-secondary);opacity:.8" readonly></div>
-          </div>
-          <div class="form-row col2">
-            <div class="field"><label>Data da 1ª parcela</label><input id="vd-dt-primeira" type="date"></div>
-            <div class="field"><label>Sistema</label>
-              <select id="vd-sistema"><option value="price">Price (parcelas iguais)</option><option value="sac">SAC</option></select>
-            </div>
-          </div>
-          <div class="form-section">Contrato</div>
-          <div class="form-row">
-            <div class="field">
-              <label>Arquivo do contrato (PDF)</label>
-              <div id="vd-contrato-drop" onclick="document.getElementById('vd-contrato-file').click()"
-                style="border:2px dashed var(--border-secondary);border-radius:8px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px">
-                <span style="font-size:18px">📄</span>
-                <div>
-                  <div id="vd-contrato-label" style="font-size:12px;color:var(--text-secondary)">Clique para anexar o contrato</div>
-                  <div id="vd-contrato-sub" style="font-size:10px;color:var(--text-tertiary)">PDF — máx. 10 MB</div>
+            <div id="vd-parcelamento-fields">
+              <div class="form-row col2">
+                <div class="field"><label>Valor de entrada (R$)</label><input id="vd-entrada" type="text" placeholder="0,00" oninput="maskMoney(this);calcVdFinanciado()"></div>
+                <div class="field"><label>Valor financiado (R$)</label><input id="vd-financiado" type="text" placeholder="Calculado auto." readonly style="background:var(--bg-secondary);opacity:.8"></div>
+              </div>
+              <div class="form-row col3">
+                <div class="field"><label>Prazo (meses)</label><input id="vd-prazo" type="number" min="1" max="360" placeholder="60" oninput="calcVdParcela()"></div>
+                <div class="field"><label>Taxa de juros (% a.m.)</label><input id="vd-taxa" type="text" placeholder="0,90" oninput="maskDecimal(this);calcVdParcela()"></div>
+                <div class="field"><label>Sistema</label>
+                  <select id="vd-sistema"><option value="price">Price (parcelas iguais)</option><option value="sac">SAC</option></select>
                 </div>
               </div>
-              <input type="file" id="vd-contrato-file" accept=".pdf" style="display:none" onchange="handleVdContrato(this)">
-              <div id="vd-contrato-link" style="display:none;margin-top:4px">
-                <a id="vd-contrato-url" href="#" target="_blank" style="font-size:11px;color:var(--accent)">📄 Ver contrato atual</a>
+              <div class="form-row col2">
+                <div class="field"><label>Valor da parcela (R$)</label><input id="vd-parcela" type="text" placeholder="Calculado auto." style="background:var(--bg-secondary);opacity:.8" readonly></div>
+                <div class="field"><label>Data da 1ª parcela</label><input id="vd-dt-primeira" type="date"></div>
+              </div>
+            </div>
+            <div class="form-section">Contrato</div>
+            <div class="form-row">
+              <div class="field">
+                <label>Arquivo do contrato (PDF)</label>
+                <div id="vd-contrato-drop" onclick="document.getElementById('vd-contrato-file').click()"
+                  style="border:2px dashed var(--border-secondary);border-radius:8px;padding:12px 16px;cursor:pointer;display:flex;align-items:center;gap:10px">
+                  <span style="font-size:18px">📄</span>
+                  <div>
+                    <div id="vd-contrato-label" style="font-size:12px;color:var(--text-secondary)">Clique para anexar o contrato</div>
+                    <div id="vd-contrato-sub" style="font-size:10px;color:var(--text-tertiary)">PDF — máx. 10 MB</div>
+                  </div>
+                </div>
+                <input type="file" id="vd-contrato-file" accept=".pdf" style="display:none" onchange="handleVdContrato(this)">
+                <div id="vd-contrato-link" style="display:none;margin-top:4px">
+                  <a id="vd-contrato-url" href="#" target="_blank" style="font-size:11px;color:var(--accent)">📄 Ver contrato atual</a>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- ABA: Cliente -->
+          <div id="vd-aba-cliente" style="display:none">
+            <div class="form-section">Dados pessoais</div>
+            <div class="form-row col2">
+              <div class="field"><label>Nome completo *</label>
+                <select id="vd-cliente-id" onchange="vdSelecionarCliente(this)">
+                  <option value="">— Selecione o cliente —</option>
+                </select>
+                <input type="hidden" id="vd-cliente">
+              </div>
+              <div class="field"><label>CPF *</label><input id="vd-cli-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
+            </div>
+            <div class="form-row col3">
+              <div class="field"><label>RG</label><input id="vd-cli-rg" placeholder="00.000.000-0"></div>
+              <div class="field"><label>Órgão emissor</label><input id="vd-cli-rg-orgao" placeholder="Ex: SSP/SP"></div>
+              <div class="field"><label>Nacionalidade</label><input id="vd-cli-nacionalidade" placeholder="Brasileira"></div>
+            </div>
+            <div class="form-row col3">
+              <div class="field"><label>Data de nascimento</label><input id="vd-cli-nasc" type="date"></div>
+              <div class="field"><label>Estado civil</label>
+                <select id="vd-cli-estcivil">
+                  <option>Solteiro(a)</option><option>Casado(a)</option>
+                  <option>Divorciado(a)</option><option>Viúvo(a)</option><option>União estável</option>
+                </select>
+              </div>
+              <div class="field"><label>Profissão</label><input id="vd-cli-profissao" placeholder="Ex: Engenheiro(a)"></div>
+            </div>
+            <div class="form-section">Contato</div>
+            <div class="form-row col2">
+              <div class="field"><label>E-mail</label><input id="vd-cli-email" type="email" placeholder="email@exemplo.com"></div>
+              <div class="field"><label>Telefone / WhatsApp</label><input id="vd-cli-telefone" placeholder="(11) 9 9999-0000" oninput="maskTelefone(this)"></div>
+            </div>
+          </div>
+
+          <!-- ABA: Cônjuge -->
+          <div id="vd-aba-conjuge" style="display:none">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:var(--bg-secondary);border-radius:8px">
+              <input type="checkbox" id="vd-tem-conjuge" onchange="vdToggleConjuge(this)" style="width:16px;height:16px">
+              <label for="vd-tem-conjuge" style="font-size:13px;font-weight:500;cursor:pointer">Contrato com cônjuge / segundo titular</label>
+            </div>
+            <div id="vd-conjuge-wrap" style="display:none">
+              <div class="form-section">Dados do cônjuge</div>
+              <div class="form-row col2">
+                <div class="field"><label>Nome completo</label><input id="vd-conj-nome" placeholder="Nome completo do cônjuge"></div>
+                <div class="field"><label>CPF</label><input id="vd-conj-cpf" placeholder="000.000.000-00" oninput="maskCpfCnpj(this)"></div>
+              </div>
+              <div class="form-row col3">
+                <div class="field"><label>RG</label><input id="vd-conj-rg" placeholder="00.000.000-0"></div>
+                <div class="field"><label>Órgão emissor</label><input id="vd-conj-rg-orgao" placeholder="Ex: SSP/SP"></div>
+                <div class="field"><label>Data de nascimento</label><input id="vd-conj-nasc" type="date"></div>
+              </div>
+              <div class="form-row col2">
+                <div class="field"><label>Profissão</label><input id="vd-conj-profissao" placeholder="Ex: Professora"></div>
+                <div class="field"><label>Telefone</label><input id="vd-conj-telefone" placeholder="(11) 9 9999-0000" oninput="maskTelefone(this)"></div>
+              </div>
+            </div>
+            <div id="vd-conjuge-empty" style="text-align:center;padding:40px;color:var(--text-secondary)">
+              <div style="font-size:36px;margin-bottom:8px">👫</div>
+              <div>Marque a caixa acima para incluir os dados do cônjuge</div>
+            </div>
+          </div>
+
+          <!-- ABA: Corretor -->
+          <div id="vd-aba-corretor" style="display:none">
+            <div class="form-section">Corretor responsável</div>
+            <div class="form-row col2">
+              <div class="field"><label>Nome do corretor</label>
+                <select id="vd-cor-select" onchange="vdPreencherDadosCorretor()">
+                  <option value="">— Selecione o corretor —</option>
+                </select>
+              </div>
+              <div class="field"><label>CRECI</label><input id="vd-cor-creci" placeholder="Nº CRECI" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+            </div>
+            <div class="form-row col2">
+              <div class="field"><label>CPF do corretor</label><input id="vd-cor-cpf" placeholder="000.000.000-00" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+              <div class="field"><label>Telefone do corretor</label><input id="vd-cor-telefone" placeholder="(11) 9 9999-0000" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+            </div>
+            <div class="form-row">
+              <div class="field"><label>Endereço do corretor</label><input id="vd-cor-endereco" placeholder="Endereço completo" readonly style="background:var(--bg-secondary);opacity:.8"></div>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:var(--text-secondary)">Dados preenchidos automaticamente. Edite no cadastro de Corretores.</div>
+          </div>
+
           <div class="modal-footer">
             <button class="btn" onclick="closeModal('modal-venda')">Cancelar</button>
             <button class="btn btn-primary" onclick="salvarVenda()">💾 Salvar contrato</button>
@@ -1640,6 +1980,7 @@ tbody tr.clickable{cursor:pointer}
       </div>
 
       <!-- Modal: Plano de parcelas -->
+
 <!-- Modal: Detalhe da Venda (4 abas) -->
       <div class="modal-overlay" id="modal-parcelas" onclick="if(event.target===this)closeModal('modal-parcelas')">
         <div class="modal-box" style="width:800px;max-height:92vh;overflow-y:auto">
@@ -3521,7 +3862,7 @@ function hideLoading() {
   const el=document.getElementById('sb-loading');
   if(el) el.style.display='none';
 }
-const pageTitles={dashboard:'Dashboard executivo',loteamentos:'Loteamentos',lotes:'Lotes',clientes:'Clientes',vendas:'Vendas',contrato_detalhe:'Contrato #1042',contratos:'Contratos','cliente-detalhe':'Maria Aparecida Souza — Ficha','contrato-detalhe':'Contrato #1042 — Detalhes',financeiro:'Financeiro',inadimplencia:'Inadimplência',obras:'Obras',crm:'CRM / Leads',simulador:'Simulador Price / SAC',configuracoes:'Configurações do sistema',corretores:'Corretores',investidores:'Investidores','contas-bancarias':'Contas Bancárias'};
+const pageTitles={dashboard:'Dashboard executivo',loteamentos:'Loteamentos',lotes:'Lotes',clientes:'Clientes',vendas:'Vendas',contrato_detalhe:'Contrato #1042',contratos:'Contratos','cliente-detalhe':'Maria Aparecida Souza — Ficha','contrato-detalhe':'Contrato #1042 — Detalhes',financeiro:'Financeiro',inadimplencia:'Inadimplência',obras:'Obras',crm:'CRM / Leads','lead-detalhe':'Lead',simulador:'Simulador Price / SAC',configuracoes:'Configurações do sistema',corretores:'Corretores',investidores:'Investidores','contas-bancarias':'Contas Bancárias'};
 
 function showPage(id, navEl){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -4562,10 +4903,20 @@ async function abrirModalNovaVenda(vendaId){
   // Popular clientes
   const selCli = document.getElementById('vd-cliente-id');
   if(selCli){
-    const clis = await dbSelect('clientes',{order:'nome',asc:true,select:'id,nome,cpf'});
+    const clis = await dbSelect('clientes',{order:'nome',asc:true,select:'id,nome,cpf,rg,profissao,data_nasc,estado_civil,email,celular'});
     selCli.innerHTML='<option value="">— Selecione o cliente —</option>'+
-      clis.map(c=>`<option value="${c.id}" data-nome="${c.nome}">${c.nome}${c.cpf?' · '+c.cpf:''}</option>`).join('');
+      clis.map(c=>`<option value="${c.id}"
+        data-nome="${(c.nome||'').replace(/"/g,'&quot;')}"
+        data-cpf="${c.cpf||''}"
+        data-rg="${c.rg||''}"
+        data-profissao="${c.profissao||''}"
+        data-nasc="${c.data_nasc||''}"
+        data-estcivil="${c.estado_civil||''}"
+        data-email="${c.email||''}"
+        data-telefone="${c.celular||''}"
+      >${c.nome}${c.cpf?' · '+c.cpf:''}</option>`).join('');
   }
+
   // Popular loteamentos
   const selLot = document.getElementById('vd-loteamento');
   if(selLot){
@@ -4573,10 +4924,15 @@ async function abrirModalNovaVenda(vendaId){
     selLot.innerHTML='<option value="">— Selecione —</option>'+
       lots.map(r=>`<option value="${r.id}" data-nome="${r.nome}${r.fase?' · '+r.fase:''}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
   }
-  // Resetar lotes
+
+  // Resetar lotes e autofill
   const selLote = document.getElementById('vd-lotes');
   if(selLote) selLote.innerHTML='<option value="">— Selecione o loteamento primeiro —</option>';
   document.getElementById('vd-lote-id').value='';
+  ['vd-quadra','vd-area-lote'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+
+  // Popular corretores
+  await popularCorretoresModalVenda();
 
   // Taxa das configs
   const taxaEl = document.getElementById('vd-taxa');
@@ -4587,12 +4943,15 @@ async function abrirModalNovaVenda(vendaId){
     if(v){
       const sv=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
       sv('vd-contrato',   v.contrato);
-      sv('vd-cliente',    v.cliente);
+      sv('vd-cli-cpf',    v.cli_cpf||'');
+      sv('vd-cli-rg',     v.cli_rg||'');
+      sv('vd-cli-rg-orgao', v.cli_rg_orgao||'');
+      sv('vd-cli-nacionalidade', v.cli_nacionalidade||'Brasileira');
       sv('vd-prazo',      v.prazo);
       sv('vd-dt-primeira',v.dt_primeira);
-      document.getElementById('vd-valor').value  = v.valor.toLocaleString('pt-BR',{minimumFractionDigits:2});
-      document.getElementById('vd-entrada').value= v.entrada.toLocaleString('pt-BR',{minimumFractionDigits:2});
-      document.getElementById('vd-taxa').value   = v.taxa.toFixed(2).replace('.',',');
+      document.getElementById('vd-valor').value   = v.valor.toLocaleString('pt-BR',{minimumFractionDigits:2});
+      document.getElementById('vd-entrada').value = v.entrada.toLocaleString('pt-BR',{minimumFractionDigits:2});
+      document.getElementById('vd-taxa').value    = v.taxa.toFixed(2).replace('.',',');
       if(selLot && v.loteamento_id){ selLot.value = v.loteamento_id; await vdCarregarLotes(v.lote_id, v.lotes); }
       const selSis = document.getElementById('vd-sistema');
       if(selSis) selSis.value = v.sistema||'price';
@@ -4606,19 +4965,21 @@ async function abrirModalNovaVenda(vendaId){
       }
     }
   } else {
-    ['vd-contrato','vd-cliente','vd-prazo','vd-dt-primeira'].forEach(id=>{
+    ['vd-contrato','vd-prazo','vd-dt-primeira','vd-cli-cpf','vd-cli-rg',
+     'vd-cli-rg-orgao','vd-cli-profissao'].forEach(id=>{
       const el=document.getElementById(id); if(el)el.value='';
     });
     ['vd-valor','vd-entrada'].forEach(id=>{
       const el=document.getElementById(id); if(el)el.value='';
     });
+    const nac = document.getElementById('vd-cli-nacionalidade');
+    if(nac) nac.value='Brasileira';
     const link=document.getElementById('vd-contrato-link');
     if(link) link.style.display='none';
-    const drop=document.getElementById('vd-contrato-drop');
-    const lbl =document.getElementById('vd-contrato-label');
-    if(drop) drop.style.borderColor='var(--border-secondary)';
-    if(lbl)  lbl.textContent='Clique para anexar o contrato';
   }
+
+  // Abrir na aba Contrato
+  setVdAba('contrato');
   openModal('modal-venda');
 }
 
@@ -4626,6 +4987,19 @@ function vdSelecionarCliente(sel){
   const opt = sel.options[sel.selectedIndex];
   const el  = document.getElementById('vd-cliente');
   if(el) el.value = opt?.dataset?.nome || opt?.text || '';
+  // Autofill dos campos do cliente na aba Cliente
+  if(!opt||!opt.value) return;
+  const sv=(id,v)=>{const el2=document.getElementById(id);if(el2)el2.value=v||'';};
+  sv('vd-cli-cpf',         opt.dataset.cpf||'');
+  sv('vd-cli-rg',          opt.dataset.rg||'');
+  sv('vd-cli-profissao',   opt.dataset.profissao||'');
+  sv('vd-cli-nasc',        opt.dataset.nasc||'');
+  sv('vd-cli-email',       opt.dataset.email||'');
+  sv('vd-cli-telefone',    opt.dataset.telefone||'');
+  sv('vd-cli-nacionalidade','Brasileira');
+  const selEC = document.getElementById('vd-cli-estcivil');
+  if(selEC && opt.dataset.estcivil)
+    [...selEC.options].forEach(o=>o.selected=o.text===opt.dataset.estcivil||o.value===opt.dataset.estcivil);
 }
 
 
@@ -4635,6 +5009,7 @@ async function vdCarregarLotes(selecionarLoteId, selecionarLabel){
   if(!sel) return;
   sel.innerHTML='<option value="">— Selecione —</option>';
   document.getElementById('vd-lote-id').value='';
+  ['vd-quadra','vd-area-lote'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   if(!lotId) return;
   const lotes = await dbSelect('lotes',{
     filter:[['loteamento_id','eq',lotId]],
@@ -4646,15 +5021,16 @@ async function vdCarregarLotes(selecionarLoteId, selecionarLabel){
   });
   sel.innerHTML='<option value="">— Selecione —</option>'+
     ord.map(r=>{
-      const cod = `${r.quadra}-${(r.numero||'').padStart(2,'0')}`;
+      const cod    = `${r.quadra}-${(r.numero||'').padStart(2,'0')}`;
       const status = r.status!=='Disponível' ? ` [${r.status}]` : '';
       const disabled = r.status==='Vendido' ? 'disabled style="color:var(--text-tertiary)"' : '';
       return `<option value="${r.id}" ${disabled}
         data-valor="${r.valor_tabela||0}"
         data-cod="${cod}"
+        data-quadra="${r.quadra||''}"
+        data-area="${r.area_m2||''}"
       >${cod} · ${r.area_m2||'—'}m² · R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}${status}</option>`;
     }).join('');
-  // Pré-selecionar se editando
   if(selecionarLoteId){
     [...sel.options].forEach(o=>o.selected=o.value===String(selecionarLoteId));
     vdPreencherValorLote();
@@ -4668,11 +5044,15 @@ function vdPreencherValorLote(){
   const opt  = sel?.options[sel.selectedIndex];
   if(!opt || !opt.value) return;
   document.getElementById('vd-lote-id').value = opt.value;
+  // Autofill quadra e área
+  const quadraEl = document.getElementById('vd-quadra');
+  const areaEl   = document.getElementById('vd-area-lote');
+  if(quadraEl) quadraEl.value = opt.dataset.quadra||'';
+  if(areaEl)   areaEl.value   = opt.dataset.area||'';
   const valor = parseFloat(opt.dataset.valor)||0;
   if(valor>0){
     const valEl = document.getElementById('vd-valor');
     if(valEl) valEl.value = valor.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-    // Entrada padrão das configs
     const entEl = document.getElementById('vd-entrada');
     if(entEl && simCfg.entradaPctDefault>0)
       entEl.value = (valor*simCfg.entradaPctDefault/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -6506,76 +6886,274 @@ function abrirEditLead(id){
   const lead=leads.find(l=>String(l.id)===String(id));
   if(!lead){showToast('Lead não encontrado.','error');return;}
   _editLeadId = lead.id;
-  editLeadId  = lead.id; // manter compatibilidade
+  editLeadId  = lead.id;
   _vendaLotes = [];
 
-  const titulo=document.getElementById('edit-lead-titulo');
-  if(titulo)titulo.textContent=lead.nome;
+  // ── Cabeçalho ────────────────────────────────────────────
+  const iniciais = lead.nome.split(' ').slice(0,2).map(n=>n[0]||'').join('').toUpperCase();
+  const avatar   = document.getElementById('ld-avatar');
+  if(avatar) { avatar.textContent=iniciais; }
 
-  // Preencher aba Acompanhamento
-  const obs=document.getElementById('edit-lead-obs');
-  if(obs)obs.value='';
-  // data/hora visita agora na timeline
-  const sel=document.getElementById('edit-lead-status');
-  if(sel){ const s=['Novo','Contato feito','Perdido']; sel.value=s.includes(lead.status)?lead.status:'Contato feito'; }
-  const selSit=document.getElementById('edit-lead-situacao');
-  if(selSit) selSit.value=lead.situacao||'Em andamento';
+  document.getElementById('ld-nome-header').textContent = lead.nome;
+  document.getElementById('ld-sub-header').textContent  =
+    [lead.lote||'', lead.origem||'', lead.corretor||''].filter(Boolean).join(' · ') || '—';
 
-  // Popular corretores no select
-  dbSelect('corretores',{filter:[['status','eq','Ativo']],order:'nome',asc:true}).then(corts=>{
-    const selCor=document.getElementById('edit-lead-corretor');
-    if(selCor){
-      selCor.innerHTML='<option value="">— Nenhum —</option>'+
+  const badge = document.getElementById('ld-badge-situacao');
+  if(badge){
+    const cores = {'Em andamento':'badge-blue','Pausado':'badge-amber','Perdido':'badge-red','Vendido':'badge-teal'};
+    badge.className = 'badge '+(cores[lead.situacao||'Em andamento']||'badge-blue');
+    badge.textContent = lead.situacao||'Em andamento';
+  }
+
+  // ── Timeline horizontal ───────────────────────────────────
+  renderLeadTimelineHorizontal(lead);
+
+  // ── Aba Acompanhamento ────────────────────────────────────
+  const selSit = document.getElementById('ld-situacao');
+  if(selSit) selSit.value = lead.situacao||'Em andamento';
+  const obsEl = document.getElementById('ld-obs-acomp');
+  if(obsEl) obsEl.value = '';
+  const sv=(elId,v)=>{const el=document.getElementById(elId);if(el)el.value=v||'';};
+  sv('ld-dt-proposta',       lead.dt_proposta||'');
+  sv('ld-dt-contrato-acomp', lead.dt_contrato||'');
+  sv('ld-dt-entrada',        lead.dt_entrada||'');
+
+  // ── Aba Cliente ───────────────────────────────────────────
+  sv('ld-cli-nome',     lead.nome);
+  sv('ld-cli-cpf',      lead.cpf||'');
+  sv('ld-cli-email',    lead.email||'');
+  sv('ld-cli-telefone', lead.tel||'');
+
+  // ── Popular selects de corretor (ambas as abas) ──────────
+  Promise.all([
+    dbSelect('corretores',{filter:[['status','eq','Ativo']],order:'nome',asc:true}),
+    dbSelect('loteamentos',{order:'nome',asc:true}),
+  ]).then(([corts, lots]) => {
+    // Dropdown corretor (acompanhamento)
+    const selCorAcomp = document.getElementById('ld-corretor-acomp');
+    if(selCorAcomp){
+      selCorAcomp.innerHTML = '<option value="">— Nenhum —</option>' +
         corts.map(r=>`<option value="${r.nome}" ${r.nome===lead.corretor?'selected':''}>${r.nome}</option>`).join('');
+    }
+    // Dropdown corretor (aba corretor) com autofill
+    const selCor = document.getElementById('ld-cor-select');
+    if(selCor){
+      selCor.innerHTML = '<option value="">— Selecione —</option>' +
+        corts.map(r=>`<option value="${r.id}"
+          data-creci="${r.creci||''}"
+          data-cpf="${r.cpf||''}"
+          data-telefone="${r.celular||''}"
+          data-endereco="${r.endereco||''}"
+          ${r.nome===lead.corretor?'selected':''}
+        >${r.nome}</option>`).join('');
+      ldPreencherDadosCorretor();
+    }
+    // Dropdown loteamento (aba contrato)
+    const selLot = document.getElementById('ld-loteamento');
+    if(selLot){
+      selLot.innerHTML = '<option value="">— Selecione —</option>' +
+        lots.map(r=>`<option value="${r.id}">${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
     }
   });
 
-  // Linha do tempo
-  renderLeadTimeline(lead);
-
-  // Preencher aba Dados do cliente
-  const sv=(elId,v)=>{const el=document.getElementById(elId);if(el)el.value=v||'';};
-  sv('edit-lead-nome-cli', lead.nome);
-  sv('edit-lead-cpf', lead.cpf||'');
-  sv('edit-lead-tel', lead.tel);
-  sv('edit-lead-email', lead.email);
-  sv('edit-lead-dt-proposta', lead.dt_proposta||'');
-  sv('edit-lead-dt-contrato', lead.dt_contrato||'');
-  sv('edit-lead-dt-entrada',  lead.dt_entrada||'');
-  // Resetar doc
-  window._leadDocBase64=null;
-  const docNome=document.getElementById('edit-lead-doc-nome');
-  if(docNome) docNome.textContent='Nenhum arquivo selecionado';
-  const docPrev=document.getElementById('edit-lead-doc-preview');
-  if(docPrev) docPrev.style.display='none';
+  // ── Documentos ────────────────────────────────────────────
+  window._leadDocBase64 = null;
+  const docNome = document.getElementById('ld-doc-nome');
+  const docPrev = document.getElementById('ld-doc-preview');
+  if(docNome) docNome.textContent = 'Nenhum arquivo selecionado';
+  if(docPrev) docPrev.style.display = 'none';
   if(lead.doc_url){
     if(docPrev) docPrev.style.display='block';
-    const docLink=document.getElementById('edit-lead-doc-link');
-    if(docLink){docLink.href=lead.doc_url;docLink.textContent='📄 Ver documento anexado';}
-    if(docNome) docNome.textContent='Documento já anexado';
+    const docLink = document.getElementById('ld-doc-link');
+    if(docLink){ docLink.href=lead.doc_url; docLink.textContent='📄 Ver documento'; }
+    if(docNome) docNome.textContent = 'Documento já anexado';
   }
 
-  // Preencher aba Venda se tiver dados salvos
-  if(lead.obs && lead.obs.startsWith('[VENDA]')){
-    try{
-      const venda = JSON.parse(lead.obs.replace('[VENDA]',''));
-      sv('venda-valor-total', (venda.valor_total||0).toLocaleString('pt-BR',{minimumFractionDigits:2}));
-      sv('venda-entrada',     (venda.valor_entrada||0).toLocaleString('pt-BR',{minimumFractionDigits:2}));
-      sv('venda-parcelas',    venda.num_parcelas||'');
-      sv('venda-taxa',        ((venda.taxa_juros_am||0)*100).toLocaleString('pt-BR',{minimumFractionDigits:2}));
-      sv('venda-data-assina', venda.data_assinatura||'');
-      sv('venda-data-venc1',  venda.data_venc1||'');
-      sv('venda-num-contrato',venda.num_contrato||'');
-      sv('venda-cartorio',    venda.cartorio||'');
-      sv('venda-obs',         venda.obs_venda||'');
-      if(venda.sistema_amort){const ss=document.getElementById('venda-sistema');if(ss)ss.value=venda.sistema_amort;}
-      if(venda.lotes) try{_vendaLotes=JSON.parse(venda.lotes);}catch(e){}
-    }catch(e){}
-  }
-  renderLoteVenda();
+  // ── Navegar para a página ─────────────────────────────────
+  setLeadDetalheAba('contrato');
+  showPage('lead-detalhe', null);
+}
 
-  switchLeadTab('acomp');
-  openModal('modal-edit-lead');
+// ── Timeline HORIZONTAL ───────────────────────────────────────
+function renderLeadTimelineHorizontal(lead){
+  const el = document.getElementById('ld-timeline-horizontal');
+  if(!el) return;
+  const etapas = getLeadEtapas();
+
+  el.innerHTML = etapas.map((etapa,i) => {
+    const feito   = !!(lead.etapas?.[etapa.key] || lead.etapas?.[etapa.kanbanKey]);
+    const dataVal = lead.etapas?.[etapa.key+'_data'] || (etapa.campo_data ? lead[etapa.campo_data]||'' : '');
+    const dataFmt = dataVal ? new Date(dataVal+'T12:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : '';
+    const isLast  = i === etapas.length-1;
+    const cor     = etapa.color || 'var(--accent)';
+
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative;min-width:80px">
+      <!-- Linha conectora (exceto último) -->
+      ${!isLast ? `<div style="position:absolute;top:18px;left:50%;width:100%;height:2px;background:${feito?cor:'var(--border-secondary)'};z-index:0"></div>` : ''}
+
+      <!-- Círculo -->
+      <div onclick="concluirEtapaLead('${etapa.key}')"
+        style="width:36px;height:36px;border-radius:50%;
+               background:${feito?cor:'var(--bg-secondary)'};
+               border:2px solid ${feito?cor:'var(--border-secondary)'};
+               display:flex;align-items:center;justify-content:center;
+               cursor:pointer;z-index:1;position:relative;flex-shrink:0;
+               transition:all .18s;font-size:${feito?'14':'13'}px"
+        title="${feito?'Clique para desfazer':'Marcar como concluído'}">
+        ${feito ? '<span style="color:#fff;font-weight:700">✓</span>' : '<span style="color:var(--text-tertiary)">○</span>'}
+      </div>
+
+      <!-- Label e data -->
+      <div style="text-align:center;margin-top:6px;padding:0 4px">
+        <div style="font-size:10px;font-weight:${feito?'600':'400'};color:${feito?'var(--text-primary)':'var(--text-secondary)'};line-height:1.3;word-break:break-word">${etapa.label}</div>
+        ${dataFmt ? `<div style="font-size:10px;color:${cor};margin-top:2px;font-weight:600">${dataFmt}</div>` : ''}
+        ${!feito ? `<button onclick="concluirEtapaLead('${etapa.key}')"
+          style="margin-top:4px;font-size:9px;padding:1px 6px;border-radius:10px;
+                 border:1px solid ${cor};background:transparent;color:${cor};
+                 cursor:pointer;font-family:inherit;white-space:nowrap">✓ Feito</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Abas da página de detalhe do lead ────────────────────────
+function setLeadDetalheAba(aba){
+  ['contrato','cliente','conjuge','corretor','acompanhamento'].forEach(a=>{
+    const tabEl = document.getElementById('ld-tab-'+a);
+    const abaEl = document.getElementById('ld-aba-'+a);
+    if(tabEl) tabEl.classList.toggle('active', a===aba);
+    if(abaEl) abaEl.style.display = a===aba ? '' : 'none';
+  });
+}
+
+// ── Carregar lotes do loteamento selecionado (aba contrato lead) ──
+async function ldCarregarLotes(){
+  const lotId = document.getElementById('ld-loteamento')?.value;
+  const sel   = document.getElementById('ld-lote');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">— Selecione —</option>';
+  document.getElementById('ld-quadra').value    = '';
+  document.getElementById('ld-area-lote').value = '';
+  document.getElementById('ld-valor-lote').value= '';
+  if(!lotId) return;
+  const lotes = await dbSelect('lotes',{
+    filter:[['loteamento_id','eq',lotId]],
+    order:'quadra',asc:true
+  });
+  const ord = [...lotes].sort((a,b)=>{
+    if(a.quadra!==b.quadra) return (a.quadra||'').localeCompare(b.quadra||'');
+    return (parseInt(a.numero)||0)-(parseInt(b.numero)||0);
+  });
+  sel.innerHTML = '<option value="">— Selecione —</option>' +
+    ord.map(r=>`<option value="${r.id}"
+      data-quadra="${r.quadra||''}"
+      data-area="${r.area_m2||''}"
+      data-valor="${r.valor_tabela||0}"
+    >${r.quadra}-${(r.numero||'').padStart(2,'0')} · ${r.area_m2||'—'}m² · R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</option>`).join('');
+}
+
+function ldPreencherDadosLote(){
+  const sel = document.getElementById('ld-lote');
+  const opt = sel?.options[sel.selectedIndex];
+  if(!opt||!opt.value) return;
+  document.getElementById('ld-quadra').value     = opt.dataset.quadra||'';
+  document.getElementById('ld-area-lote').value  = opt.dataset.area||'';
+  const valor = parseFloat(opt.dataset.valor)||0;
+  const valEl = document.getElementById('ld-valor-lote');
+  if(valEl && valor>0)
+    valEl.value = valor.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function ldToggleParcelamento(){
+  const val = document.getElementById('ld-forma-pagamento')?.value;
+  const wrap = document.getElementById('ld-parcelamento-wrap');
+  if(wrap) wrap.style.display = val==='avista' ? 'none' : '';
+}
+
+function ldCalcFinanciado(){
+  const v   = parseFloat((document.getElementById('ld-valor-lote')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const ent = parseFloat((document.getElementById('ld-entrada')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const fin = Math.max(0,v-ent);
+  const el  = document.getElementById('ld-financiado');
+  if(el) el.value = fin.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  ldCalcParcela();
+}
+
+function ldCalcParcela(){
+  const fin  = parseFloat((document.getElementById('ld-financiado')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const n    = parseInt(document.getElementById('ld-prazo')?.value)||0;
+  const taxa = parseFloat((document.getElementById('ld-taxa')?.value||'0').replace(',','.'))/100;
+  const el   = document.getElementById('ld-parcela');
+  if(!el||fin<=0||n<=0||taxa<=0){ if(el)el.value=''; return; }
+  const pmt  = fin*(taxa*Math.pow(1+taxa,n))/(Math.pow(1+taxa,n)-1);
+  el.value   = pmt.toLocaleString('pt-BR',{minimumFractionDigits:2});
+}
+
+function ldToggleConjuge(cb){
+  const wrap  = document.getElementById('ld-conjuge-wrap');
+  const empty = document.getElementById('ld-conjuge-empty');
+  if(wrap)  wrap.style.display  = cb.checked ? '' : 'none';
+  if(empty) empty.style.display = cb.checked ? 'none' : '';
+}
+
+function ldPreencherDadosCorretor(){
+  const sel = document.getElementById('ld-cor-select');
+  const opt = sel?.options[sel?.selectedIndex];
+  if(!opt||!opt.value) return;
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  sv('ld-cor-creci',    opt.dataset.creci);
+  sv('ld-cor-cpf',      opt.dataset.cpf);
+  sv('ld-cor-telefone', opt.dataset.telefone);
+  sv('ld-cor-endereco', opt.dataset.endereco);
+}
+
+// ── Abas do modal de venda ────────────────────────────────────
+function setVdAba(aba){
+  ['contrato','cliente','conjuge','corretor'].forEach(a=>{
+    const tabEl = document.getElementById('vd-tab-'+a);
+    const abaEl = document.getElementById('vd-aba-'+a);
+    if(tabEl) tabEl.classList.toggle('active', a===aba);
+    if(abaEl) abaEl.style.display = a===aba ? '' : 'none';
+  });
+}
+
+function vdToggleParcelamento(){
+  const val  = document.getElementById('vd-forma-pagamento')?.value;
+  const wrap = document.getElementById('vd-parcelamento-fields');
+  if(wrap) wrap.style.display = val==='avista' ? 'none' : '';
+}
+
+function vdToggleConjuge(cb){
+  const wrap  = document.getElementById('vd-conjuge-wrap');
+  const empty = document.getElementById('vd-conjuge-empty');
+  if(wrap)  wrap.style.display  = cb.checked ? '' : 'none';
+  if(empty) empty.style.display = cb.checked ? 'none' : '';
+}
+
+function vdPreencherDadosCorretor(){
+  const sel = document.getElementById('vd-cor-select');
+  const opt = sel?.options[sel?.selectedIndex];
+  if(!opt||!opt.value) return;
+  const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  sv('vd-cor-creci',    opt.dataset.creci);
+  sv('vd-cor-cpf',      opt.dataset.cpf);
+  sv('vd-cor-telefone', opt.dataset.telefone);
+  sv('vd-cor-endereco', opt.dataset.endereco);
+}
+
+// Popular dropdown de corretores no modal de venda ao abrir
+async function popularCorretoresModalVenda(){
+  const corts = await dbSelect('corretores',{filter:[['status','eq','Ativo']],order:'nome',asc:true});
+  const sel   = document.getElementById('vd-cor-select');
+  if(sel){
+    sel.innerHTML = '<option value="">— Selecione o corretor —</option>' +
+      corts.map(r=>`<option value="${r.id}"
+        data-creci="${r.creci||''}"
+        data-cpf="${r.cpf||''}"
+        data-telefone="${r.celular||''}"
+        data-endereco="${r.endereco||''}"
+      >${r.nome}</option>`).join('');
+  }
 }
 
 // ================================================================
@@ -6787,32 +7365,103 @@ async function atualizarDataEtapa(key, campo, valor){
 async function salvarEdicaoLead(){
   const lead=leads.find(l=>String(l.id)===String(_editLeadId||editLeadId));
   if(!lead)return;
-  // Status: se lead tem etapa concluída, status vem da timeline; senão usar o select
-  const statusSelect = document.getElementById('edit-lead-status')?.value||lead.status;
-  const status = lead.status !== statusSelect ? statusSelect : lead.status;
-  const dataVis  = null; // removido — data capturada pela timeline
-  const horaVis  = null;
-  const corretor  = document.getElementById('edit-lead-corretor')?.value||null;
-  const situacao  = document.getElementById('edit-lead-situacao')?.value||'Em andamento';
-  const obs       = document.getElementById('edit-lead-obs')?.value||null;
+
+  // Ler dados da PÁGINA (campos ld-*) ou do modal antigo (fallback)
+  const situacao  = document.getElementById('ld-situacao')?.value
+                 || document.getElementById('edit-lead-situacao')?.value
+                 || 'Em andamento';
+  const corretor  = document.getElementById('ld-corretor-acomp')?.value
+                 || document.getElementById('edit-lead-corretor')?.value
+                 || null;
+  const obs       = document.getElementById('ld-obs-acomp')?.value
+                 || document.getElementById('edit-lead-obs')?.value
+                 || null;
+
+  // Dados do cliente (aba cliente da página)
+  const nomeCliente = document.getElementById('ld-cli-nome')?.value?.trim()||lead.nome;
+  const cpf         = document.getElementById('ld-cli-cpf')?.value?.trim()||null;
+  const rg          = document.getElementById('ld-cli-rg')?.value?.trim()||null;
+  const rgOrgao     = document.getElementById('ld-cli-rg-orgao')?.value?.trim()||null;
+  const nac         = document.getElementById('ld-cli-nacionalidade')?.value?.trim()||null;
+  const nasc        = document.getElementById('ld-cli-nasc')?.value||null;
+  const estcivil    = document.getElementById('ld-cli-estcivil')?.value||null;
+  const profissao   = document.getElementById('ld-cli-profissao')?.value?.trim()||null;
+  const email       = document.getElementById('ld-cli-email')?.value?.trim()||null;
+  const telefone    = document.getElementById('ld-cli-telefone')?.value?.trim()||null;
+
+  // Datas comerciais
+  const dtProposta  = document.getElementById('ld-dt-proposta')?.value||null;
+  const dtContrato  = document.getElementById('ld-dt-contrato-acomp')?.value||null;
+  const dtEntrada   = document.getElementById('ld-dt-entrada')?.value||null;
+
+  // Dados do corretor (aba corretor da página)
+  const corretorNome = document.getElementById('ld-cor-select')?.options[
+    document.getElementById('ld-cor-select')?.selectedIndex]?.text||null;
+
+  // Atualizar nome no lead
+  if(nomeCliente) lead.nome = nomeCliente;
+  lead.situacao = situacao;
+  if(corretor) lead.corretor = corretorNome||corretor||lead.corretor;
+  if(email)    lead.email    = email;
+  if(telefone) lead.tel      = telefone;
+  if(cpf)      lead.cpf      = cpf;
+
   showLoading('Salvando lead...');
+
+  // Atualizar lead
   await dbUpdate('leads', lead.id, {
-    status,
-    data_visita:   dataVis,
-    hora_visita:   horaVis,
-    corretor:      corretor,
-    situacao:      situacao,
-    observacoes:   obs && !obs.startsWith('[VENDA]') ? obs : lead.obs||null,
-    etapas_json:   JSON.stringify(lead.etapas||{}),
+    nome:         nomeCliente,
+    situacao,
+    corretor:     corretorNome||corretor||lead.corretor||null,
+    observacoes:  obs && !obs.startsWith('[VENDA]') ? obs : lead.obs||null,
+    etapas_json:  JSON.stringify(lead.etapas||{}),
+    dt_proposta:  dtProposta,
+    dt_contrato:  dtContrato,
+    dt_entrada:   dtEntrada,
   });
-  // Atualizar array local
-  lead.status=status; lead.situacao=situacao;
-  lead.dataVisita=dataVis||lead.dataVisita;
-  lead.horaVisita=horaVis||lead.horaVisita; lead.corretor=corretor||lead.corretor;
+
+  // Atualizar/criar cliente
+  if(cpf||nomeCliente){
+    const dadosCliente = {};
+    if(cpf)       dadosCliente.cpf          = cpf;
+    if(rg)        dadosCliente.rg           = rg;
+    if(rgOrgao)   dadosCliente.rg_orgao     = rgOrgao;
+    if(nac)       dadosCliente.nacionalidade = nac;
+    if(nasc)      dadosCliente.data_nasc    = nasc;
+    if(estcivil)  dadosCliente.estado_civil = estcivil;
+    if(profissao) dadosCliente.profissao    = profissao;
+    if(email)     dadosCliente.email        = email;
+    if(telefone)  dadosCliente.celular      = telefone;
+    if(nomeCliente) dadosCliente.nome       = nomeCliente;
+
+    // Buscar ou criar cliente
+    let clienteId = lead.clienteId;
+    if(!clienteId && cpf){
+      const porCpf = await dbSelect('clientes',{filter:[['cpf','eq',cpf]]});
+      if(porCpf.length) clienteId = porCpf[0].id;
+    }
+    if(clienteId){
+      await dbUpdate('clientes', clienteId, dadosCliente);
+    } else if(nomeCliente){
+      const novo = await dbInsert('clientes',{nome:nomeCliente,...dadosCliente});
+      if(novo){ clienteId=novo.id; await dbUpdate('leads',lead.id,{cliente_id:novo.id}); }
+    }
+    if(clienteId) lead.clienteId = clienteId;
+  }
+
   hideLoading();
-  closeModal('modal-edit-lead');
   renderLeads();
   showToast('Lead "'+lead.nome+'" atualizado!');
+
+  // Atualizar badge e sub-header na página
+  const badge = document.getElementById('ld-badge-situacao');
+  if(badge){
+    const cores={'Em andamento':'badge-blue','Pausado':'badge-amber','Perdido':'badge-red','Vendido':'badge-teal'};
+    badge.className='badge '+(cores[situacao]||'badge-blue');
+    badge.textContent=situacao;
+  }
+  document.getElementById('ld-nome-header').textContent = nomeCliente||lead.nome;
+
   _editLeadId=null; editLeadId=null;
 }
 
