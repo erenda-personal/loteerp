@@ -654,6 +654,7 @@ tbody tr.clickable{cursor:pointer}
             <div class="tab"        id="ltab-mapa"       onclick="setLotAba('mapa')">Mapa</div>
             <div class="tab"        id="ltab-obra"       onclick="setLotAba('obra')">Obra</div>
             <div class="tab"        id="ltab-negociacao" onclick="setLotAba('negociacao')">Negociação</div>
+            <div class="tab"        id="ltab-minuta"     onclick="setLotAba('minuta')">📄 Minuta</div>
           </div>
 
           <!-- ABA: Informações -->
@@ -693,6 +694,39 @@ tbody tr.clickable{cursor:pointer}
               </tr></thead>
               <tbody id="det-lotes-tbody"></tbody>
             </table>
+          </div>
+
+          <!-- ABA: Minuta do Contrato -->
+          <div id="laba-minuta" style="display:none">
+            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding:12px 14px;background:var(--bg-secondary);border-radius:8px;font-size:12px">
+              <span style="font-size:20px;flex-shrink:0">💡</span>
+              <div>
+                <div style="font-weight:600;margin-bottom:3px">Como funciona</div>
+                <div style="color:var(--text-secondary)">Cole o texto da minuta abaixo usando marcadores <code style="background:var(--bg-primary);padding:1px 5px;border-radius:4px;font-size:11px">{{CAMPO}}</code>. Ao gerar o contrato no lead, os campos são substituídos automaticamente pelos dados do adquirente.</div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+              <span style="font-size:11px;font-weight:600;color:var(--text-secondary)">Campos disponíveis:</span>
+              <div style="display:flex;gap:5px;flex-wrap:wrap" id="minuta-tags-ref">
+                <!-- Gerado por JS -->
+              </div>
+            </div>
+
+            <textarea id="det-minuta-texto"
+              placeholder="Cole aqui o texto da minuta de contrato para este loteamento..."
+              style="width:100%;height:380px;padding:12px 14px;border:1px solid var(--border-secondary);
+                     border-radius:8px;background:var(--bg-primary);color:var(--text-primary);
+                     font-size:12px;font-family:'Courier New',monospace;resize:vertical;
+                     outline:none;line-height:1.6"></textarea>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px">
+              <div style="font-size:11px;color:var(--text-secondary)" id="minuta-char-count">0 caracteres</div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-sm" onclick="minutaInserirTemplate()">📋 Inserir template Alto Vitta</button>
+                <button class="btn btn-primary" onclick="salvarMinutaLoteamento()">💾 Salvar minuta</button>
+              </div>
+            </div>
           </div>
 
           <!-- ABA: Mapa -->
@@ -11767,7 +11801,7 @@ async function abrirDetalheLoteamento(lotId){
 }
 
 function setLotAba(aba){
-  ['info','lotes','mapa','obra','negociacao'].forEach(a=>{
+  ['info','lotes','mapa','obra','negociacao','minuta'].forEach(a=>{
     const tab=document.getElementById('ltab-'+a);
     const content=document.getElementById('laba-'+a);
     if(tab) tab.classList.toggle('active',a===aba);
@@ -11777,6 +11811,7 @@ function setLotAba(aba){
   if(aba==='obra')       carregarObraDetalhe(_detLotId);
   if(aba==='negociacao') carregarNegociacao(_detLotId);
   if(aba==='mapa')       carregarMapaDoSupabase(_detLotId);
+  if(aba==='minuta')     carregarMinutaLoteamento(_detLotId);
 }
 
 async function carregarNegociacao(lotId){
@@ -13339,34 +13374,406 @@ function removerVisita(idx){
 }
 
 // ── Gerar Contrato (placeholder — abre aba Contrato) ─────────
-function ldGerarContrato(){
-  const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+// ════════════════════════════════════════════════════════════
+// SISTEMA DE MINUTA E GERAÇÃO DE CONTRATO
+// ════════════════════════════════════════════════════════════
 
-  // Checar se dados mínimos estão preenchidos
-  const loteamento = document.getElementById('ld-loteamento')?.value;
-  const cliente    = document.getElementById('ld-cli-nome')?.value?.trim();
+// Campos mapeados: marcador → função que extrai o valor dos inputs
+const MINUTA_CAMPOS = {
+  // Contrato
+  '{{CONTRATO_NUM}}':       () => v('ld-contrato-id') || gerarIdContrato(),
+  '{{LOTEAMENTO_NOME}}':    () => textoOpcao('ld-loteamento') || '',
+  '{{LOTE_NUM}}':           () => textoOpcao('ld-lote')?.split('-')[1]?.trim() || '',
+  '{{QUADRA_NUM}}':         () => v('ld-quadra') || '',
+  '{{LOTE_AREA}}':          () => v('ld-area-lote') || '',
+  '{{DATA_ASSINATURA}}':    () => fmtData(v('ld-dt-assinatura')),
+  '{{DATA_ASSINATURA_EXT}}': () => fmtDataExtenso(v('ld-dt-assinatura')),
+  // Financeiro
+  '{{PRECO_TOTAL}}':        () => v('ld-valor-lote') ? 'R$ '+v('ld-valor-lote') : '',
+  '{{PRECO_TOTAL_EXTENSO}}': () => v('ld-valor-lote') ? valorExtenso(parseMoney(v('ld-valor-lote'))) : '',
+  '{{FORMA_PAGAMENTO}}':    () => v('ld-forma-pagamento')==='avista' ? 'à vista' : 'parcelado',
+  '{{SINAL_VALOR}}':        () => v('ld-entrada') ? 'R$ '+v('ld-entrada') : '',
+  '{{SINAL_EXTENSO}}':      () => v('ld-entrada') ? valorExtenso(parseMoney(v('ld-entrada'))) : '',
+  '{{SINAL_PCT}}':          () => {
+    const total = parseMoney(v('ld-valor-lote')||'0');
+    const ent   = parseMoney(v('ld-entrada')||'0');
+    return total>0 ? Math.round(ent/total*100)+'%' : '';
+  },
+  '{{PARCELAS_NUM}}':       () => v('ld-prazo') || '',
+  '{{PARCELA_VALOR}}':      () => v('ld-parcela') ? 'R$ '+v('ld-parcela') : '',
+  '{{PARCELA_EXTENSO}}':    () => v('ld-parcela') ? valorExtenso(parseMoney(v('ld-parcela'))) : '',
+  '{{PARCELA_VENC1}}':      () => fmtData(v('ld-dt-primeira')),
+  '{{TAXA_JUROS_AM}}':      () => v('ld-taxa') ? v('ld-taxa').replace('.',',')+'%' : '0,6%',
+  '{{CARTORIO}}':           () => v('ld-cartorio') || '',
+  // Cliente
+  '{{CLI_NOME}}':           () => v('ld-cli-nome') || '',
+  '{{CLI_CPF}}':            () => v('ld-cli-cpf') || '',
+  '{{CLI_RG}}':             () => v('ld-cli-rg') || '',
+  '{{CLI_RG_ORGAO}}':       () => v('ld-cli-rg-orgao') || '',
+  '{{CLI_NACIONALIDADE}}':  () => v('ld-cli-nacionalidade') || 'brasileira',
+  '{{CLI_PROFISSAO}}':      () => v('ld-cli-profissao') || '',
+  '{{CLI_NASC}}':           () => fmtData(v('ld-cli-nasc')),
+  '{{CLI_ESTCIVIL}}':       () => v('ld-cli-estcivil') || '',
+  '{{CLI_EMAIL}}':          () => v('ld-cli-email') || '',
+  '{{CLI_TELEFONE}}':       () => v('ld-cli-telefone') || '',
+  '{{CLI_RUA}}':            () => v('ld-cli-rua') || '',
+  '{{CLI_CEP}}':            () => v('ld-cli-cep') || '',
+  '{{CLI_CIDADE}}':         () => v('ld-cli-cidade') || '',
+  '{{CLI_ESTADO}}':         () => v('ld-cli-estado') || '',
+  '{{CLI_ENDERECO}}':       () => [v('ld-cli-rua'),v('ld-cli-cidade'),v('ld-cli-estado')].filter(Boolean).join(', '),
+  // Cônjuge
+  '{{CONJ_NOME}}':          () => v('ld-conj-nome') || '',
+  '{{CONJ_CPF}}':           () => v('ld-conj-cpf') || '',
+  '{{CONJ_RG}}':            () => v('ld-conj-rg') || '',
+  // Corretor
+  '{{COR_NOME}}':           () => textoOpcao('ld-cor-select') || '',
+  '{{COR_CRECI}}':          () => v('ld-cor-creci') || '',
+  '{{COR_CPF}}':            () => v('ld-cor-cpf') || '',
+  '{{COR_ENDERECO}}':       () => v('ld-cor-endereco') || '',
+  '{{COR_COMISSAO_PCT}}':   () => '3%',
+  '{{COR_COMISSAO_VALOR}}': () => {
+    const total = parseMoney(v('ld-valor-lote')||'0');
+    return total>0 ? 'R$ '+(total*0.03).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '';
+  },
+};
 
-  if(!loteamento){
+// helpers
+const v    = id => document.getElementById(id)?.value?.trim()||'';
+const textoOpcao = id => {
+  const sel=document.getElementById(id);
+  const opt=sel?.options[sel?.selectedIndex];
+  return opt?.text&&opt.value ? opt.text : '';
+};
+const parseMoney = s => parseFloat((s||'0').replace(/\./g,'').replace(',','.'))||0;
+const fmtData = iso => iso ? new Date(iso+'T12:00').toLocaleDateString('pt-BR') : '';
+const fmtDataExtenso = iso => {
+  if(!iso) return '';
+  const d = new Date(iso+'T12:00');
+  const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  return `${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
+};
+function gerarIdContrato(){
+  const ano = new Date().getFullYear();
+  const seq = String(Math.floor(Math.random()*900)+100);
+  const id  = `CT-${ano}-${seq}`;
+  const el  = document.getElementById('ld-contrato-id');
+  if(el && !el.value) el.value = id;
+  return id;
+}
+function valorExtenso(n){
+  // Converte número para extenso (simplificado para valores de loteamento)
+  if(!n||n===0) return 'zero reais';
+  const centavos = Math.round((n%1)*100);
+  const reais    = Math.floor(n);
+  const unidades = ['','um','dois','três','quatro','cinco','seis','sete','oito','nove','dez',
+    'onze','doze','treze','quatorze','quinze','dezesseis','dezessete','dezoito','dezenove'];
+  const dezenas  = ['','','vinte','trinta','quarenta','cinquenta','sessenta','setenta','oitenta','noventa'];
+  const centenas = ['','cem','duzentos','trezentos','quatrocentos','quinhentos',
+    'seiscentos','setecentos','oitocentos','novecentos'];
+  function grupo(n3){
+    let s='';
+    const c=Math.floor(n3/100), d=Math.floor((n3%100)/10), u=n3%10;
+    if(c>0) s+=centenas[c];
+    const du=d*10+u;
+    if(du>0){
+      if(s) s+=(n3%100===0?'':' e ');
+      if(du<20) s+=unidades[du];
+      else{ s+=dezenas[d]; if(u>0) s+=' e '+unidades[u]; }
+    }
+    return s;
+  }
+  let ext='';
+  const M=Math.floor(reais/1000000), m=Math.floor((reais%1000000)/1000), c=reais%1000;
+  if(M>0) ext+=grupo(M)+(M===1?' milhão':' milhões');
+  if(m>0){ if(ext) ext+=' e '; ext+=grupo(m)+(m===1?' mil':' mil'); }
+  if(c>0){ if(ext) ext+=' e '; ext+=grupo(c); }
+  ext+=reais===1?' real':' reais';
+  if(centavos>0) ext+=' e '+grupo(centavos)+(centavos===1?' centavo':' centavos');
+  return ext.toLowerCase();
+}
+
+// ── Carregar minuta do loteamento (aba Minuta) ───────────────
+async function carregarMinutaLoteamento(lotId){
+  const el = document.getElementById('det-minuta-texto');
+  if(!el) return;
+  el.value='';
+  renderMinutaTags();
+  // Atualizar contador ao digitar
+  el.oninput = ()=>{
+    const cnt=document.getElementById('minuta-char-count');
+    if(cnt) cnt.textContent=el.value.length.toLocaleString('pt-BR')+' caracteres';
+  };
+  try{
+    const {data} = await sb.from('loteamentos').select('minuta_contrato').eq('id',lotId).single();
+    if(data?.minuta_contrato) el.value = data.minuta_contrato;
+    const cnt=document.getElementById('minuta-char-count');
+    if(cnt) cnt.textContent=el.value.length.toLocaleString('pt-BR')+' caracteres';
+  }catch(e){ console.warn('carregarMinutaLoteamento:', e.message); }
+}
+
+// ── Renderizar tags de referência ────────────────────────────
+function renderMinutaTags(){
+  const el = document.getElementById('minuta-tags-ref');
+  if(!el) return;
+  const grupos = [
+    { label:'Contrato', tags:['{{CONTRATO_NUM}}','{{LOTEAMENTO_NOME}}','{{LOTE_NUM}}','{{QUADRA_NUM}}','{{LOTE_AREA}}','{{DATA_ASSINATURA_EXT}}'] },
+    { label:'Financeiro', tags:['{{PRECO_TOTAL}}','{{PRECO_TOTAL_EXTENSO}}','{{SINAL_VALOR}}','{{SINAL_EXTENSO}}','{{SINAL_PCT}}','{{PARCELAS_NUM}}','{{PARCELA_VALOR}}','{{PARCELA_EXTENSO}}','{{PARCELA_VENC1}}','{{TAXA_JUROS_AM}}'] },
+    { label:'Cliente', tags:['{{CLI_NOME}}','{{CLI_CPF}}','{{CLI_RG}}','{{CLI_RG_ORGAO}}','{{CLI_NACIONALIDADE}}','{{CLI_PROFISSAO}}','{{CLI_NASC}}','{{CLI_ESTCIVIL}}','{{CLI_EMAIL}}','{{CLI_TELEFONE}}','{{CLI_ENDERECO}}'] },
+    { label:'Cônjuge', tags:['{{CONJ_NOME}}','{{CONJ_CPF}}','{{CONJ_RG}}'] },
+    { label:'Corretor', tags:['{{COR_NOME}}','{{COR_CRECI}}','{{COR_CPF}}','{{COR_ENDERECO}}','{{COR_COMISSAO_VALOR}}'] },
+  ];
+  el.innerHTML = grupos.map(g=>`
+    <details style="font-size:10.5px;margin-bottom:2px">
+      <summary style="cursor:pointer;font-weight:600;color:var(--text-secondary);padding:2px 4px;border-radius:4px;list-style:none;display:inline-flex;align-items:center;gap:4px">
+        ▸ ${g.label}
+      </summary>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;padding-left:6px">
+        ${g.tags.map(t=>`<code onclick="minutaInserirTag('${t}')"
+          style="background:var(--accent-light);color:var(--accent);padding:1px 6px;border-radius:4px;
+                 font-size:10px;cursor:pointer;border:1px solid var(--accent)22"
+          title="Clique para copiar">${t}</code>`).join('')}
+      </div>
+    </details>`).join('');
+}
+
+function minutaInserirTag(tag){
+  const el = document.getElementById('det-minuta-texto');
+  if(!el) return;
+  const s=el.selectionStart, e=el.selectionEnd;
+  el.value = el.value.slice(0,s)+tag+el.value.slice(e);
+  el.selectionStart=el.selectionEnd=s+tag.length;
+  el.focus();
+}
+
+// ── Salvar minuta no Supabase ────────────────────────────────
+async function salvarMinutaLoteamento(){
+  const texto = document.getElementById('det-minuta-texto')?.value||'';
+  if(!_detLotId){ showToast('Nenhum loteamento selecionado.','error'); return; }
+  showLoading('Salvando minuta...');
+  try{
+    await sb.from('loteamentos').update({minuta_contrato: texto}).eq('id',_detLotId);
+    showToast('✅ Minuta salva com sucesso!');
+  }catch(e){
+    showToast('Erro ao salvar minuta: '+e.message,'error');
+  }finally{ hideLoading(); }
+}
+
+// ── Inserir template Alto Vitta ──────────────────────────────
+function minutaInserirTemplate(){
+  const el = document.getElementById('det-minuta-texto');
+  if(!el) return;
+  if(el.value && !confirm('Substituir o texto atual pelo template do Alto Vitta?')) return;
+  el.value = MINUTA_TEMPLATE_ALTO_VITTA;
+  const cnt=document.getElementById('minuta-char-count');
+  if(cnt) cnt.textContent=el.value.length.toLocaleString('pt-BR')+' caracteres';
+  showToast('Template inserido! Revise e salve.');
+}
+
+// ── TEMPLATE com a minuta real do Alto Vitta ─────────────────
+const MINUTA_TEMPLATE_ALTO_VITTA = `INSTRUMENTO PARTICULAR DE PROMESSA DE COMPRA E VENDA DE LOTE URBANO
+
+LOTEAMENTO ALTO VITTA – BELO JARDIM/PE
+
+Contrato nº {{CONTRATO_NUM}}    Lote nº {{LOTE_NUM}} da Quadra {{QUADRA_NUM}}
+
+Pelo presente Instrumento Particular, as partes identificadas e qualificadas no QUADRO-RESUMO abaixo têm entre si, justo e contratado o presente Compromisso de Compra e Venda de Lote de Terreno Urbano pertencente ao LOTEAMENTO ALTO VITTA, situado no Município de Belo Jardim, Estado de Pernambuco, mediante as cláusulas e condições a seguir estipuladas.
+
+I — QUADRO-RESUMO
+
+1.1 PROMITENTE VENDEDORA: ALTO VITTA SPE LTDA., CNPJ nº 61.230.188/0001-59, com sede na Rua Padre Carapuceiro, nº 968, sala 705, Edifício Empresarial Janete Costa, Bairro Boa Viagem, CEP 51.020-280, Recife/PE, e-mail: financeiro@villanovaurbanismo.com.br, doravante denominada simplesmente VENDEDORA.
+
+1.2 PROMISSÁRIO ADQUIRENTE:
+Nome: {{CLI_NOME}}
+CPF: {{CLI_CPF}}
+RG / Órgão Emissor: {{CLI_RG}} / {{CLI_RG_ORGAO}}
+Nacionalidade: {{CLI_NACIONALIDADE}}
+Profissão: {{CLI_PROFISSAO}}
+Data de Nascimento: {{CLI_NASC}}
+Estado Civil: {{CLI_ESTCIVIL}}
+Endereço: {{CLI_ENDERECO}}
+E-mail: {{CLI_EMAIL}}
+Telefone: {{CLI_TELEFONE}}
+
+CÔNJUGE/COMPANHEIRO(A):
+Nome: {{CONJ_NOME}}
+CPF: {{CONJ_CPF}}
+RG: {{CONJ_RG}}
+
+Doravante denominado(s) simplesmente ADQUIRENTE.
+
+2. IDENTIFICAÇÃO DO LOTE
+Lote nº {{LOTE_NUM}}, Quadra nº {{QUADRA_NUM}}, do Loteamento {{LOTEAMENTO_NOME}}, com área de {{LOTE_AREA}} m², parte integrante do Loteamento ALTO VITTA, registrado no Ofício de Registro de Imóveis da Comarca de Belo Jardim/PE, na matrícula nº 23.239, localizado na BR 232, S/N, KM 181, CEP 55.150-790, Bairro Alto Limpo, Belo Jardim/PE.
+
+3. PREÇO TOTAL
+{{PRECO_TOTAL}} ({{PRECO_TOTAL_EXTENSO}})
+
+4. FORMA DE PAGAMENTO
+
+Opção 2 — Pagamento parcelado:
+
+(a) Sinal: {{SINAL_VALOR}} ({{SINAL_EXTENSO}}), equivalente a {{SINAL_PCT}} do preço total, pago neste ato, cuja quitação dar-se-á após efetiva compensação bancária;
+
+(b) Parcelas mensais: {{PARCELAS_NUM}} parcelas mensais e consecutivas, no valor de {{PARCELA_VALOR}} ({{PARCELA_EXTENSO}}) cada, vencendo-se a primeira em {{PARCELA_VENC1}} e as demais na mesma data dos meses subsequentes, sujeitas a reajuste anual pelo IPCA/IBGE;
+
+4.2 TAXA DE JUROS: {{TAXA_JUROS_AM}} ao mês — Sistema Price.
+
+8. COMISSÃO DE CORRETAGEM
+Corretor(a): {{COR_NOME}}
+CRECI/PE nº {{COR_CRECI}}  —  CPF: {{COR_CPF}}
+Endereço: {{COR_ENDERECO}}
+Valor da comissão: {{COR_COMISSAO_VALOR}} ({{COR_COMISSAO_PCT}} do preço total)
+
+IV — ASSINATURAS
+
+Belo Jardim/PE, {{DATA_ASSINATURA_EXT}}.
+
+VENDEDORA:
+ALTO VITTA SPE LTDA.
+por: MARCELO CARNEIRO LEÃO RENDA
+Sócio Administrador — CPF: 108.273.704-66
+
+ADQUIRENTE:
+_______________________________________________
+Nome: {{CLI_NOME}}
+CPF: {{CLI_CPF}}
+
+CÔNJUGE / COMPANHEIRO(A):
+________________________________________________
+Nome: {{CONJ_NOME}}
+CPF: {{CONJ_CPF}}
+
+TESTEMUNHAS:
+1. Nome: _____________________________    2. Nome: _____________________________
+   RG: ___________________                   RG: ___________________________
+   CPF: ___________________                  CPF: __________________________
+`;
+
+// ════════════════════════════════════════════════════════════
+// GERAÇÃO DO CONTRATO PREENCHIDO
+// ════════════════════════════════════════════════════════════
+
+async function ldGerarContrato(){
+  // Validação mínima
+  const loteamentoId = v('ld-loteamento');
+  const cliente      = v('ld-cli-nome');
+
+  if(!loteamentoId){
     showToast('Selecione o loteamento na aba Contrato antes de gerar.','error');
-    setLeadDetalheAba('contrato');
-    return;
+    setLeadDetalheAba('contrato'); return;
   }
   if(!cliente){
     showToast('Preencha o nome do cliente na aba Cliente antes de gerar.','error');
-    setLeadDetalheAba('cliente');
-    return;
+    setLeadDetalheAba('cliente'); return;
   }
 
-  // Criar ID de contrato automático se vazio
-  const idContrato = document.getElementById('ld-contrato-id');
-  if(idContrato && !idContrato.value){
-    const ano  = new Date().getFullYear();
-    const seq  = String(Math.floor(Math.random()*900)+100);
-    idContrato.value = `CT-${ano}-${seq}`;
+  // Gerar ID de contrato se vazio
+  if(!v('ld-contrato-id')) gerarIdContrato();
+
+  showLoading('Buscando minuta do loteamento...');
+  let template = '';
+  try{
+    const {data} = await sb.from('loteamentos')
+      .select('minuta_contrato')
+      .eq('id', loteamentoId)
+      .single();
+    template = data?.minuta_contrato || '';
+  }catch(e){}
+  hideLoading();
+
+  if(!template){
+    if(!confirm('Este loteamento não possui minuta cadastrada. Deseja usar o template padrão do Alto Vitta?')) return;
+    template = MINUTA_TEMPLATE_ALTO_VITTA;
   }
 
-  showToast('📄 Dados prontos para contrato. Revise e salve para gerar o documento.');
-  setLeadDetalheAba('contrato');
+  // Substituir todos os marcadores
+  let contrato = template;
+  for(const [marcador, fn] of Object.entries(MINUTA_CAMPOS)){
+    try{
+      const valor = fn() || '';
+      contrato = contrato.split(marcador).join(valor);
+    }catch(e){}
+  }
+
+  // Checar campos não preenchidos que sobraram
+  const faltando = [...contrato.matchAll(/\{\{[A-Z_]+\}\}/g)].map(m=>m[0]);
+  if(faltando.length){
+    const uniq = [...new Set(faltando)];
+    if(!confirm(`Atenção: ${uniq.length} campo(s) não preenchido(s):\n${uniq.slice(0,8).join(', ')}${uniq.length>8?'...':''}\n\nGerar mesmo assim?`)) return;
+  }
+
+  // Abrir janela de impressão com o contrato formatado
+  abrirJanelaContrato(contrato, v('ld-cli-nome'), v('ld-contrato-id'));
+}
+
+function abrirJanelaContrato(texto, nomeCliente, numContrato){
+  const titulo = `Contrato ${numContrato} — ${nomeCliente}`;
+
+  // Converter quebras de linha e negrito simples para HTML
+  const html = texto
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .split('\n\n')
+    .map(p => {
+      // Detectar títulos (linha em maiúsculas ou com I —, II —, etc.)
+      const linhas = p.split('\n');
+      const linhasHtml = linhas.map(l => {
+        // Cabeçalhos de seção
+        if(/^[IVX]+\s*—\s*.+$/.test(l.trim())) return `<h3>${l.trim()}</h3>`;
+        if(/^CLÁUSULA\s+/i.test(l.trim())) return `<h4>${l.trim()}</h4>`;
+        if(l.trim()===l.trim().toUpperCase()&&l.trim().length>3&&l.trim().length<80)
+          return `<p style="font-weight:600;text-align:center">${l.trim()}</p>`;
+        return l;
+      });
+      return '<p>'+linhasHtml.join('<br>')+' </p>';
+    })
+    .join('');
+
+  const win = window.open('','_blank','width=900,height=800');
+  if(!win){ showToast('Permita pop-ups para gerar o contrato.','error'); return; }
+
+  win.document.write(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>${titulo}</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Times New Roman',serif; font-size:12pt; color:#000;
+         background:#fff; padding:0; }
+  .page { max-width:210mm; margin:0 auto; padding:25mm 20mm; }
+  h1 { font-size:14pt; text-align:center; margin-bottom:6pt; text-transform:uppercase; }
+  h2 { font-size:13pt; text-align:center; margin-bottom:12pt; }
+  h3 { font-size:12pt; font-weight:bold; margin:16pt 0 6pt;
+       border-bottom:1px solid #000; padding-bottom:3pt; }
+  h4 { font-size:12pt; font-weight:bold; margin:12pt 0 4pt; text-decoration:underline; }
+  p  { text-align:justify; line-height:1.6; margin-bottom:8pt; }
+  .no-print { display:flex; gap:10px; justify-content:center;
+              padding:14px; background:#f5f5f5; border-bottom:1px solid #ddd;
+              position:sticky; top:0; z-index:100; }
+  button { padding:8px 20px; border-radius:6px; border:none; cursor:pointer;
+           font-size:13px; font-weight:600; font-family:sans-serif; }
+  .btn-print  { background:#185FA5; color:#fff; }
+  .btn-fechar { background:#e2e8f0; color:#333; }
+  @media print {
+    .no-print { display:none; }
+    .page     { padding:15mm 15mm; }
+    body      { font-size:11pt; }
+  }
+</style>
+</head>
+<body>
+<div class="no-print">
+  <button class="btn-print"  onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
+  <button class="btn-fechar" onclick="window.close()">✕ Fechar</button>
+  <span style="font-size:12px;color:#666;align-self:center">Para salvar como PDF: use "Salvar como PDF" na janela de impressão</span>
+</div>
+<div class="page">
+${html}
+</div>
+</body>
+</html>`);
+  win.document.close();
 }
 
 // ── Carregar visitas ao abrir o lead ─────────────────────────
