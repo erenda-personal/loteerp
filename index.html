@@ -13711,21 +13711,27 @@ TESTEMUNHAS:
 // ════════════════════════════════════════════════════════════
 
 async function ldGerarContrato(){
-  // Validação mínima
-  const loteamentoId = v('ld-loteamento');
-  const cliente      = v('ld-cli-nome');
+  // Validação — com mensagens de erro claras
+  const loteamentoEl = document.getElementById('ld-loteamento');
+  const loteamentoId = loteamentoEl?.value||'';
+  const cliente      = (document.getElementById('ld-cli-nome')?.value||'').trim();
 
   if(!loteamentoId){
-    showToast('Selecione o loteamento na aba Contrato antes de gerar.','error');
-    setLeadDetalheAba('contrato'); return;
+    showToast('⚠️ Selecione o loteamento na aba Contrato antes de gerar o contrato.','error');
+    setLeadDetalheAba('contrato');
+    document.getElementById('ld-loteamento')?.focus();
+    return;
   }
   if(!cliente){
-    showToast('Preencha o nome do cliente na aba Cliente antes de gerar.','error');
-    setLeadDetalheAba('cliente'); return;
+    showToast('⚠️ Preencha o nome do cliente na aba Cliente antes de gerar o contrato.','error');
+    setLeadDetalheAba('cliente');
+    document.getElementById('ld-cli-nome')?.focus();
+    return;
   }
 
   // Gerar ID de contrato se vazio
-  if(!v('ld-contrato-id')) gerarIdContrato();
+  const idContEl = document.getElementById('ld-contrato-id');
+  if(idContEl && !idContEl.value.trim()) gerarIdContrato();
 
   showLoading('Buscando minuta do loteamento...');
   let template = '';
@@ -13735,103 +13741,156 @@ async function ldGerarContrato(){
       .eq('id', loteamentoId)
       .single();
     template = data?.minuta_contrato || '';
-  }catch(e){}
+  }catch(e){
+    console.error('Erro ao buscar minuta:', e);
+  }
   hideLoading();
 
   if(!template){
-    if(!confirm('Este loteamento não possui minuta cadastrada. Deseja usar o template padrão do Alto Vitta?')) return;
+    // Sem minuta cadastrada — usar template embutido com confirmação
+    const usar = confirm('Este loteamento não possui minuta cadastrada ainda.\n\nDeseja gerar o contrato usando o template padrão do Alto Vitta?');
+    if(!usar) return;
     template = MINUTA_TEMPLATE_ALTO_VITTA;
   }
 
-  // Substituir todos os marcadores
+  // Substituir todos os marcadores {{CAMPO}} pelos valores reais
   let contrato = template;
+  const errosCampos = [];
   for(const [marcador, fn] of Object.entries(MINUTA_CAMPOS)){
     try{
       const valor = fn() || '';
       contrato = contrato.split(marcador).join(valor);
-    }catch(e){}
+    }catch(e){
+      errosCampos.push(marcador);
+    }
   }
 
-  // Checar campos não preenchidos que sobraram
-  const faltando = [...contrato.matchAll(/\{\{[A-Z_]+\}\}/g)].map(m=>m[0]);
-  if(faltando.length){
-    const uniq = [...new Set(faltando)];
-    if(!confirm(`Atenção: ${uniq.length} campo(s) não preenchido(s):\n${uniq.slice(0,8).join(', ')}${uniq.length>8?'...':''}\n\nGerar mesmo assim?`)) return;
+  // Detectar marcadores não substituídos (campos não preenchidos)
+  const naoPreenchidos = [];
+  const matchRe = /\{\{[A-Z_]+\}\}/g;
+  let m;
+  while((m = matchRe.exec(contrato)) !== null){
+    if(!naoPreenchidos.includes(m[0])) naoPreenchidos.push(m[0]);
   }
 
-  // Abrir janela de impressão com o contrato formatado
-  abrirJanelaContrato(contrato, _mVal('ld-cli-nome'), _mVal('ld-contrato-id'));
+  if(naoPreenchidos.length){
+    // Mostrar quais campos faltam — com opção de continuar
+    const msg = `${naoPreenchidos.length} campo(s) não preenchido(s):\n\n${naoPreenchidos.slice(0,10).join('\n')}${naoPreenchidos.length>10?`\n... e mais ${naoPreenchidos.length-10}`:''}\n\nGerar mesmo assim (campos aparecerão em branco)?`;
+    if(!confirm(msg)) return;
+  }
+
+  // Mostrar contrato em modal inline (sem window.open — evita bloqueio de pop-up)
+  mostrarModalContrato(contrato, cliente, (document.getElementById('ld-contrato-id')?.value||''));
 }
 
-function abrirJanelaContrato(texto, nomeCliente, numContrato){
-  const titulo = `Contrato ${numContrato} — ${nomeCliente}`;
+function mostrarModalContrato(texto, nomeCliente, numContrato){
+  // Criar ou reutilizar modal de visualização do contrato
+  let overlay = document.getElementById('modal-contrato-gerado');
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'modal-contrato-gerado';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto';
+    document.body.appendChild(overlay);
+  }
 
-  // Converter quebras de linha e negrito simples para HTML
-  const html = texto
+  // Formatar texto para HTML
+  const htmlTexto = texto
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;')
     .split('\n\n')
     .map(p => {
-      // Detectar títulos (linha em maiúsculas ou com I —, II —, etc.)
-      const linhas = p.split('\n');
-      const linhasHtml = linhas.map(l => {
-        // Cabeçalhos de seção
-        if(/^[IVX]+\s*—\s*.+$/.test(l.trim())) return `<h3>${l.trim()}</h3>`;
-        if(/^CLÁUSULA\s+/i.test(l.trim())) return `<h4>${l.trim()}</h4>`;
-        if(l.trim()===l.trim().toUpperCase()&&l.trim().length>3&&l.trim().length<80)
-          return `<p style="font-weight:600;text-align:center">${l.trim()}</p>`;
+      const linhas = p.split('\n').map(l => {
+        if(/^[IVX]+\s*[—–]\s*.+$/.test(l.trim()))
+          return `<h3 style="font-size:13pt;border-bottom:1px solid #ccc;padding-bottom:4px;margin:16pt 0 6pt;font-weight:700">${l.trim()}</h3>`;
+        if(/^CLÁUSULA\s+/i.test(l.trim()))
+          return `<h4 style="font-size:11pt;font-weight:700;text-decoration:underline;margin:12pt 0 4pt">${l.trim()}</h4>`;
+        const upper = l.trim();
+        if(upper.length>3 && upper.length<100 && upper === upper.toUpperCase() && !/[a-z0-9]/.test(upper.replace(/[^a-zA-Z]/g,'')))
+          return `<p style="font-weight:700;text-align:center;margin:10pt 0 4pt">${l.trim()}</p>`;
         return l;
       });
-      return '<p>'+linhasHtml.join('<br>')+' </p>';
+      return '<p style="text-align:justify;line-height:1.7;margin:0 0 8pt;font-size:11pt">'+linhas.join('<br>')+'</p>';
     })
     .join('');
 
-  const win = window.open('','_blank','width=900,height=800');
-  if(!win){ showToast('Permita pop-ups para gerar o contrato.','error'); return; }
+  const titulo = [numContrato, nomeCliente].filter(Boolean).join(' — ') || 'Contrato';
 
-  win.document.write(`<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<title>${titulo}</title>
-<style>
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:'Times New Roman',serif; font-size:12pt; color:#000;
-         background:#fff; padding:0; }
-  .page { max-width:210mm; margin:0 auto; padding:25mm 20mm; }
-  h1 { font-size:14pt; text-align:center; margin-bottom:6pt; text-transform:uppercase; }
-  h2 { font-size:13pt; text-align:center; margin-bottom:12pt; }
-  h3 { font-size:12pt; font-weight:bold; margin:16pt 0 6pt;
-       border-bottom:1px solid #000; padding-bottom:3pt; }
-  h4 { font-size:12pt; font-weight:bold; margin:12pt 0 4pt; text-decoration:underline; }
-  p  { text-align:justify; line-height:1.6; margin-bottom:8pt; }
-  .no-print { display:flex; gap:10px; justify-content:center;
-              padding:14px; background:#f5f5f5; border-bottom:1px solid #ddd;
-              position:sticky; top:0; z-index:100; }
-  button { padding:8px 20px; border-radius:6px; border:none; cursor:pointer;
-           font-size:13px; font-weight:600; font-family:sans-serif; }
-  .btn-print  { background:#185FA5; color:#fff; }
-  .btn-fechar { background:#e2e8f0; color:#333; }
-  @media print {
-    .no-print { display:none; }
-    .page     { padding:15mm 15mm; }
-    body      { font-size:11pt; }
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:12px;width:100%;max-width:860px;
+                box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;margin:auto">
+      <!-- Toolbar -->
+      <div style="background:#1a1d23;color:#fff;padding:12px 18px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">${titulo}</div>
+          <div style="font-size:11px;opacity:.7;margin-top:1px">Revise o contrato antes de imprimir</div>
+        </div>
+        <button onclick="imprimirContratoGerado()"
+          style="padding:7px 16px;border-radius:6px;border:none;cursor:pointer;
+                 background:#185FA5;color:#fff;font-size:12px;font-weight:600;font-family:inherit">
+          🖨️ Imprimir / PDF
+        </button>
+        <button onclick="document.getElementById('modal-contrato-gerado').style.display='none'"
+          style="padding:7px 12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);
+                 cursor:pointer;background:transparent;color:#fff;font-size:12px;font-family:inherit">
+          ✕ Fechar
+        </button>
+      </div>
+
+      <!-- Conteúdo do contrato -->
+      <div id="contrato-gerado-body"
+        style="padding:30mm 25mm;font-family:'Times New Roman',Georgia,serif;
+               background:#fff;min-height:200px">
+        ${htmlTexto}
+      </div>
+    </div>`;
+
+  overlay.style.display = 'flex';
+}
+
+function imprimirContratoGerado(){
+  const body = document.getElementById('contrato-gerado-body');
+  if(!body) return;
+  const html = body.innerHTML;
+  const win  = window.open('','_blank');
+  if(!win){
+    // Fallback: blob URL (não depende de pop-up permitido)
+    const blob = new Blob([`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Times New Roman',serif;font-size:11pt;padding:20mm 25mm;color:#000}
+      h3{font-size:13pt;border-bottom:1px solid #ccc;padding-bottom:4px;margin:14pt 0 6pt}
+      h4{font-size:11pt;font-weight:700;text-decoration:underline;margin:10pt 0 4pt}
+      p{text-align:justify;line-height:1.7;margin:0 0 8pt}
+      @media print{body{padding:15mm}}
+    </style></head><body>${html}</body></html>`], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href    = url;
+    a.target  = '_blank';
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 10000);
+    return;
   }
-</style>
-</head>
-<body>
-<div class="no-print">
-  <button class="btn-print"  onclick="window.print()">🖨️ Imprimir / Salvar PDF</button>
-  <button class="btn-fechar" onclick="window.close()">✕ Fechar</button>
-  <span style="font-size:12px;color:#666;align-self:center">Para salvar como PDF: use "Salvar como PDF" na janela de impressão</span>
-</div>
-<div class="page">
-${html}
-</div>
-</body>
-</html>`);
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Times New Roman',serif;font-size:11pt;padding:20mm 25mm;color:#000}
+    h3{font-size:13pt;border-bottom:1px solid #ccc;padding-bottom:4px;margin:14pt 0 6pt}
+    h4{font-size:11pt;font-weight:700;text-decoration:underline;margin:10pt 0 4pt}
+    p{text-align:justify;line-height:1.7;margin:0 0 8pt}
+    .no-print{display:flex;gap:10px;justify-content:center;padding:14px;
+      background:#f5f5f5;border-bottom:1px solid #ddd;position:sticky;top:0}
+    button{padding:8px 20px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600}
+    .btn-print{background:#185FA5;color:#fff}
+    .btn-close{background:#e2e8f0;color:#333}
+    @media print{.no-print{display:none}body{padding:15mm}}
+  </style></head><body>
+  <div class="no-print">
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Salvar como PDF</button>
+    <button class="btn-close" onclick="window.close()">✕ Fechar</button>
+  </div>
+  ${html}</body></html>`);
   win.document.close();
+  setTimeout(()=>win.print(), 400);
 }
 
 // ── Carregar visitas ao abrir o lead ─────────────────────────
