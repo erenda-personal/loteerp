@@ -9386,11 +9386,46 @@ function statusCorCal(status){
 function filtrarLeadsCalendario(){
   const fl=document.getElementById('cal-filtro-lot')?.value||'';
   const fc=document.getElementById('cal-filtro-corretor')?.value||'';
-  return leads.filter(l=>
-    l.dataVisita &&
-    (!fl || l.lote.includes(fl)) &&
-    (!fc || l.corretor===fc)
-  );
+
+  const eventos = [];
+
+  leads.forEach(l => {
+    // 1. Campo legado dataVisita (campo fixo do lead)
+    if(l.dataVisita){
+      const ev = {
+        id: l.id, nome: l.nome, lote: l.lote||'',
+        status: l.status, corretor: l.corretor||'',
+        dataVisita: l.dataVisita, horaVisita: l.horaVisita||'',
+        realizada: false, origem: 'legado',
+      };
+      if((!fl || (l.lote||'').includes(fl)) && (!fc || l.corretor===fc))
+        eventos.push(ev);
+    }
+
+    // 2. Array de visitas agendadas pelo novo sistema (visitas_json)
+    let visitas = [];
+    if(l.visitas_json){
+      try{ visitas = JSON.parse(l.visitas_json); }catch(e){}
+    } else if(Array.isArray(l.visitas)){
+      visitas = l.visitas;
+    }
+
+    visitas.forEach(v => {
+      if(!v.data) return;
+      const evCorretor = v.corretor || l.corretor || '';
+      if(fl && !(v.loteamento||l.lote||'').includes(fl)) return;
+      if(fc && evCorretor !== fc) return;
+      eventos.push({
+        id: l.id, nome: l.nome, lote: v.loteamento || l.lote || '',
+        status: l.status, corretor: evCorretor,
+        dataVisita: v.data, horaVisita: v.hora||'',
+        realizada: v.realizada||false, origem: 'agendada',
+        visitaId: v.id,
+      });
+    });
+  });
+
+  return eventos;
 }
 
 function renderCalendario(){
@@ -9446,14 +9481,15 @@ function renderCalMes(container){
     html+=`</div>`;
 
     leadsNoDia.forEach(l=>{
-      const cor=statusCorCal(l.status);
-      const hora=l.horaVisita||'';
+      const cor = l.realizada ? '#9E9E9E' : statusCorCal(l.status);
+      const hora = l.horaVisita||'';
+      const lotLabel = (l.lote||'').split(' ').slice(-2).join(' ');
       html+=`<div onclick="abrirEditLead('${l.id}')"
-        title="${l.nome} — ${l.lote} — ${l.status}"
-        style="background:${cor};color:#fff;border-radius:4px;padding:2px 5px;margin-bottom:2px;font-size:10px;cursor:pointer;line-height:1.4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:opacity .1s"
-        onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
-        ${hora?hora+' · ':''}${l.nome.split(' ')[0]}
-        <span style="opacity:.8;font-size:9px"> · ${l.lote.split(' ').slice(-2).join(' ')}</span>
+        title="${l.nome}${l.lote?' — '+l.lote:''}${l.realizada?' (Realizada)':''}"
+        style="background:${cor};color:#fff;border-radius:4px;padding:2px 5px;margin-bottom:2px;font-size:10px;cursor:pointer;line-height:1.4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;transition:opacity .1s;opacity:${l.realizada?'.55':'1'}"
+        onmouseenter="this.style.opacity='.75'" onmouseleave="this.style.opacity='${l.realizada?'.55':'1'}'">
+        ${l.realizada?'✓ ':''}${hora?hora+' · ':''}${l.nome.split(' ')[0]}
+        ${lotLabel?`<span style="opacity:.8;font-size:9px"> · ${lotLabel}</span>`:''}
       </div>`;
     });
 
@@ -9564,7 +9600,7 @@ function renderCalSemana(container){
           title="${l.nome} — ${l.lote} — ${l.status}"
           style="background:${cor};color:#fff;border-radius:4px;padding:2px 5px;font-size:10px;cursor:pointer;line-height:1.4;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-bottom:1px;transition:opacity .1s"
           onmouseenter="this.style.opacity='.8'" onmouseleave="this.style.opacity='1'">
-          ${l.horaVisita} · ${l.nome.split(' ')[0]} · ${l.lote.split(' ')[0]}
+          ${l.realizada?'✓ ':''}${l.horaVisita} · ${l.nome.split(' ')[0]} · ${(l.lote||'').split(' ')[0]}
         </div>`;
       });
       html+=`</div>`;
@@ -9643,25 +9679,78 @@ function renderKanban(){
   }).join('');
 }
 
-function onKanbanDrop(event,novoStatus){
+async function onKanbanDrop(event,novoStatus){
   event.preventDefault();
-  if(dragLeadId===null)return;
-  const lead=leads.find(l=>String(l.id)===String(dragLeadId));
-  if(lead){
-    const old=lead.status;
-    lead.status=novoStatus;
-    if(novoStatus==='Contrato assinado')lead.etapas.contrato=true;
-    if(novoStatus==='Entrada paga'){lead.etapas.contrato=true;lead.etapas.entrada=true;}
-    if(novoStatus==='Visita realizada')lead.etapas.visitou=true;
-    persistirEtapas(lead);
-    renderKanban();atualizarKpisCRM();
-    if(old!==novoStatus) showToast(lead.nome+' → '+novoStatus);
-    // Criar venda ao mover para coluna de venda
-    if(novoStatus==='Lote vendido'||novoStatus?.toLowerCase().includes('vendido')){
-      if(typeof criarVendaDeKanban==='function') criarVendaDeKanban(lead);
+  if(dragLeadId===null) return;
+  const lead = leads.find(l=>String(l.id)===String(dragLeadId));
+  dragLeadId = null;
+  if(!lead) return;
+
+  const oldStatus = lead.status;
+  if(oldStatus === novoStatus) return;
+
+  if(!lead.etapas)       lead.etapas       = {};
+  if(!lead.etapas_datas) lead.etapas_datas = {};
+
+  const agora     = new Date();
+  const dataHoje  = agora.toISOString().split('T')[0];
+  const horaAgora = agora.toTimeString().substring(0,5);
+  const etapas    = getLeadEtapas(); // ordenadas cronologicamente
+
+  // Encontrar o índice da coluna de destino nas etapas
+  const idxDestino = etapas.findIndex(e => e.kanbanKey === novoStatus);
+
+  if(idxDestino >= 0){
+    // Marcar TODAS as etapas até a de destino (inclusive) que ainda não estão marcadas
+    for(let i = 0; i <= idxDestino; i++){
+      const etapa = etapas[i];
+      if(!lead.etapas[etapa.key]){
+        lead.etapas[etapa.key]           = true;
+        lead.etapas[etapa.key+'_data']   = dataHoje;
+        lead.etapas[etapa.key+'_hora']   = horaAgora;
+        if(etapa.campo_data){
+          lead[etapa.campo_data]                   = dataHoje;
+          lead.etapas_datas[etapa.campo_data]      = dataHoje;
+        }
+      }
+    }
+
+    // Desmarcar etapas APÓS o destino que estavam marcadas
+    // (caso o lead tenha sido recuado na timeline)
+    for(let i = idxDestino + 1; i < etapas.length; i++){
+      const etapa = etapas[i];
+      if(lead.etapas[etapa.key]){
+        lead.etapas[etapa.key]           = false;
+        lead.etapas[etapa.key+'_data']   = null;
+        lead.etapas[etapa.key+'_hora']   = null;
+        if(etapa.campo_data){
+          lead[etapa.campo_data]                   = null;
+          lead.etapas_datas[etapa.campo_data]      = null;
+        }
+      }
     }
   }
-  dragLeadId=null;
+
+  // Atualizar status = kanbanKey da etapa mais avançada marcada
+  lead.status = 'Novo';
+  for(let i = etapas.length-1; i >= 0; i--){
+    if(lead.etapas[etapas[i].key]){ lead.status = etapas[i].kanbanKey; break; }
+  }
+  // Se novoStatus não é uma etapa da timeline (ex: "Perdido"), setar direto
+  if(idxDestino < 0) lead.status = novoStatus;
+
+  showLoading('Salvando...');
+  await persistirEtapas(lead);
+  hideLoading();
+
+  renderKanban();
+  atualizarKpisCRM();
+  showToast(lead.nome + ' → ' + novoStatus);
+
+  // Criar venda ao mover para coluna de venda
+  if(novoStatus === 'Lote vendido' || novoStatus?.toLowerCase().includes('vendido')){
+    if(typeof criarVendaDeKanban === 'function') criarVendaDeKanban(lead);
+  }
 }
 
 // ================================================================
@@ -13357,11 +13446,32 @@ async function salvarVisitaLead(){
   // Persistir no campo visitas_json do lead
   const lead = leads.find(l=>String(l.id)===String(_editLeadId));
   if(lead){
-    lead.visitas = _visitasLead;
-    await dbUpdate('leads', lead.id, {visitas_json: JSON.stringify(_visitasLead)});
+    // Atualizar array local
+    lead.visitas      = _visitasLead;
+    lead.visitas_json = JSON.stringify(_visitasLead);
+
+    // Manter campo legado dataVisita com a data da visita mais próxima futura
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const proxima = _visitasLead
+      .filter(v => !v.realizada && new Date(v.data+'T12:00') >= hoje)
+      .sort((a,b) => a.data.localeCompare(b.data))[0];
+    if(proxima){
+      lead.dataVisita  = proxima.data;
+      lead.horaVisita  = proxima.hora||'';
+      lead.corretor    = proxima.corretor || lead.corretor;
+    }
+
+    await dbUpdate('leads', lead.id, {
+      visitas_json: JSON.stringify(_visitasLead),
+      data_visita:  lead.dataVisita||null,
+      hora_visita:  lead.horaVisita||null,
+    });
+
     // Marcar etapa de visita automaticamente
-    if(!lead.etapas?.visita_agendada){
-      await ldConcluirEtapa('visita_agendada');
+    const etapas = getLeadEtapas();
+    const etVis  = etapas.find(e=>e.label==='Visita agendada');
+    if(etVis && !lead.etapas?.[etVis.key]){
+      await ldConcluirEtapa(etVis.key);
     }
   }
 
