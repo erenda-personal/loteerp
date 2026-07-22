@@ -654,7 +654,7 @@ tbody tr.clickable{cursor:pointer}
             <div class="tab"        id="ltab-mapa"       onclick="setLotAba('mapa')">Mapa</div>
             <div class="tab"        id="ltab-obra"       onclick="setLotAba('obra')">Obra</div>
             <div class="tab"        id="ltab-negociacao" onclick="setLotAba('negociacao')">Negociação</div>
-            <div class="tab"        id="ltab-minuta"     onclick="setLotAba('minuta')">📄 Minuta</div>
+            <div class="tab"        id="ltab-minuta"     onclick="setLotAba('minuta')">Minuta</div>
           </div>
 
           <!-- ABA: Informações -->
@@ -698,12 +698,9 @@ tbody tr.clickable{cursor:pointer}
 
           <!-- ABA: Minuta do Contrato -->
           <div id="laba-minuta" style="display:none">
-            <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;padding:12px 14px;background:var(--bg-secondary);border-radius:8px;font-size:12px">
-              <span style="font-size:20px;flex-shrink:0">💡</span>
-              <div>
-                <div style="font-weight:600;margin-bottom:3px">Como funciona</div>
-                <div style="color:var(--text-secondary)">Cole o texto da minuta abaixo usando marcadores <code style="background:var(--bg-primary);padding:1px 5px;border-radius:4px;font-size:11px">{{CAMPO}}</code>. Ao gerar o contrato no lead, os campos são substituídos automaticamente pelos dados do adquirente.</div>
-              </div>
+            <div style="padding:10px 14px;background:var(--bg-secondary);border-radius:8px;font-size:12px;margin-bottom:12px">
+              <div style="font-weight:600;margin-bottom:3px">Como funciona</div>
+              <div style="color:var(--text-secondary)">Cole o texto da minuta abaixo usando marcadores <code style="background:var(--bg-primary);padding:1px 5px;border-radius:4px;font-size:11px">{{CAMPO}}</code>. Ao gerar o contrato no lead, os campos são substituídos pelos dados do adquirente.</div>
             </div>
 
             <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
@@ -713,19 +710,35 @@ tbody tr.clickable{cursor:pointer}
               </div>
             </div>
 
-            <textarea id="det-minuta-texto"
-              placeholder="Cole aqui o texto da minuta de contrato para este loteamento..."
-              style="width:100%;height:380px;padding:12px 14px;border:1px solid var(--border-secondary);
-                     border-radius:8px;background:var(--bg-primary);color:var(--text-primary);
-                     font-size:12px;font-family:'Courier New',monospace;resize:vertical;
-                     outline:none;line-height:1.6"></textarea>
+            <!-- Editor + Preview lado a lado quando preview ativo -->
+            <div id="minuta-editor-wrap" style="display:flex;gap:10px">
+              <div style="flex:1;min-width:0">
+                <textarea id="det-minuta-texto"
+                  placeholder="Cole aqui o texto da minuta de contrato para este loteamento..."
+                  oninput="minutaAtualizarPreview()"
+                  style="width:100%;height:420px;padding:12px 14px;border:1px solid var(--border-secondary);
+                         border-radius:8px;background:var(--bg-primary);color:var(--text-primary);
+                         font-size:12px;font-family:'Courier New',monospace;resize:none;
+                         outline:none;line-height:1.6"></textarea>
+              </div>
+              <!-- Painel de preview (oculto por padrão) -->
+              <div id="minuta-preview-panel" style="display:none;flex:1;min-width:0;
+                   border:1px solid var(--border-secondary);border-radius:8px;
+                   background:var(--bg-primary);height:420px;overflow-y:auto;padding:16px 20px">
+                <div id="minuta-preview-content"
+                  style="font-family:'Times New Roman',serif;font-size:11pt;line-height:1.7;color:#111">
+                  <em style="color:var(--text-secondary);font-size:11px">Escreva a minuta para ver o preview.</em>
+                </div>
+              </div>
+            </div>
 
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px">
-              <div style="font-size:11px;color:var(--text-secondary)" id="minuta-char-count">0 caracteres</div>
-              <div style="display:flex;gap:8px">
-                <button class="btn btn-sm" onclick="minutaInserirTemplate()">📋 Inserir template Alto Vitta</button>
-                <button class="btn btn-primary" onclick="salvarMinutaLoteamento()">💾 Salvar minuta</button>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span style="font-size:11px;color:var(--text-secondary)" id="minuta-char-count">0 caracteres</span>
+                <button class="btn btn-sm" id="btn-minuta-preview" onclick="minutaTogglePreview()"
+                  style="font-size:11px">👁 Preview</button>
               </div>
+              <button class="btn btn-primary" onclick="salvarMinutaLoteamento()">💾 Salvar minuta</button>
             </div>
           </div>
 
@@ -1728,21 +1741,21 @@ tbody tr.clickable{cursor:pointer}
 
         <!-- Modal inline: Agendar visita -->
         <div id="modal-agendar-visita" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:800;align-items:center;justify-content:center">
-          <div style="background:var(--bg-primary);border-radius:14px;padding:22px 24px;width:440px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+          <div style="background:var(--bg-primary);border-radius:14px;padding:22px 24px;width:460px;max-width:95vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
               <span style="font-size:15px;font-weight:700">Agendar visita</span>
               <button onclick="fecharAgendarVisita()" style="background:none;border:0.5px solid var(--border-secondary);border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:14px;color:var(--text-secondary)">✕</button>
             </div>
-            <div id="ld-visita-lote-aviso" style="display:none;background:var(--warning-bg);color:var(--warning);padding:10px 12px;border-radius:8px;font-size:12px;margin-bottom:14px">
-              ⚠️ Selecione um loteamento na aba Contrato antes de agendar uma visita.
-            </div>
+            <div id="ld-visita-lote-aviso" style="display:none"></div>
             <div class="form-row col2" style="margin-bottom:10px">
               <div class="field"><label>Data *</label><input id="visita-data" type="date"></div>
               <div class="field"><label>Horário *</label><input id="visita-hora" type="time" value="10:00"></div>
             </div>
             <div class="form-row" style="margin-bottom:10px">
               <div class="field"><label>Loteamento</label>
-                <input id="visita-loteamento-nome" readonly style="background:var(--bg-secondary);opacity:.8">
+                <select id="visita-loteamento-select">
+                  <option value="">— Selecione o loteamento —</option>
+                </select>
               </div>
             </div>
             <div class="form-row" style="margin-bottom:10px">
@@ -7072,10 +7085,10 @@ function renderLeadTimelineHorizontal(lead){
     const isLast  = i === etapas.length-1;
     const cor     = etapa.color || 'var(--accent)';
 
-    // Botões extras por etapa
-    const labelLow = (etapa.label||'').toLowerCase();
-    const isVisita  = labelLow.includes('visita');
-    const isProposta = labelLow.includes('proposta');
+    // Botões extras por etapa — comparação exata com label
+    const isVisitaAgendada  = etapa.label === 'Visita agendada';
+    const isVisitaRealizada = etapa.label === 'Visita realizada';
+    const isProposta        = etapa.label === 'Proposta enviada';
 
     return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;position:relative;min-width:90px">
       <!-- Linha conectora -->
@@ -7121,8 +7134,8 @@ function renderLeadTimelineHorizontal(lead){
                      background:${cor}11;color:${cor};outline:none;width:62px;font-family:inherit;margin-top:2px;cursor:pointer">` : ''}
           </div>` : ''}
 
-        <!-- Botão extra: Agendar visita (abaixo da etapa visita, se marcada) -->
-        ${isVisita && feito ? `
+        <!-- Botão extra: Agendar visita (só em "Visita agendada") -->
+        ${isVisitaAgendada && feito ? `
           <button onclick="setLeadDetalheAba('visitas');abrirAgendarVisita()"
             style="margin-top:5px;font-size:9px;padding:2px 7px;border-radius:10px;
                    border:1px solid var(--accent);background:var(--accent);color:#fff;
@@ -7130,11 +7143,20 @@ function renderLeadTimelineHorizontal(lead){
             📅 Agendar
           </button>` : ''}
 
-        <!-- Botão extra: Gerar contrato (abaixo de proposta, se marcada) -->
+        <!-- Botão extra: Gerar proposta (em "Visita realizada") -->
+        ${isVisitaRealizada && feito ? `
+          <button onclick="showToast('Em breve: geração de proposta comercial.')"
+            style="margin-top:5px;font-size:9px;padding:2px 7px;border-radius:10px;
+                   border:1px solid #3B6D11;background:#3B6D11;color:#fff;
+                   cursor:pointer;font-family:inherit;white-space:nowrap;display:block;margin-left:auto;margin-right:auto">
+            📋 Proposta
+          </button>` : ''}
+
+        <!-- Botão extra: Gerar contrato (em "Proposta enviada") -->
         ${isProposta && feito ? `
           <button onclick="ldGerarContrato()"
             style="margin-top:5px;font-size:9px;padding:2px 7px;border-radius:10px;
-                   border:1px solid var(--teal);background:var(--teal);color:#fff;
+                   border:1px solid #EF9F27;background:#EF9F27;color:#fff;
                    cursor:pointer;font-family:inherit;white-space:nowrap;display:block;margin-left:auto;margin-right:auto">
             📄 Contrato
           </button>` : ''}
@@ -13268,28 +13290,26 @@ function renderVisitasLead(){
   </div>` + (empty ? '' : '');
 }
 
-function abrirAgendarVisita(){
-  const lead = leads.find(l=>String(l.id)===String(_editLeadId));
+async function abrirAgendarVisita(){
   const modal = document.getElementById('modal-agendar-visita');
   if(!modal) return;
 
-  // Verificar se tem loteamento selecionado
-  const lotNome = document.getElementById('ld-loteamento')?.options[
-    document.getElementById('ld-loteamento')?.selectedIndex]?.text || '';
-  const aviso   = document.getElementById('ld-visita-lote-aviso');
-  const btnConf = modal.querySelector('button.btn-primary');
+  // Esconder aviso (não bloquear mais)
+  const aviso = document.getElementById('ld-visita-lote-aviso');
+  if(aviso) aviso.style.display='none';
 
-  if(!lotNome || lotNome==='— Selecione —'){
-    if(aviso)  aviso.style.display='';
-    if(btnConf) btnConf.disabled=true;
-  } else {
-    if(aviso)  aviso.style.display='none';
-    if(btnConf) btnConf.disabled=false;
+  // Preencher loteamento pelo dropdown da aba Contrato (se já selecionado)
+  const lotSel  = document.getElementById('ld-loteamento');
+  const lotOpt  = lotSel?.options[lotSel?.selectedIndex];
+  const lotNome = (lotOpt?.value && lotOpt.text !== '— Selecione —') ? lotOpt.text : '';
+
+  // Populate dropdown de loteamentos no modal
+  const selLotModal = document.getElementById('visita-loteamento-select');
+  if(selLotModal){
+    const lots = await dbSelect('loteamentos',{order:'nome',asc:true});
+    selLotModal.innerHTML = '<option value="">— Selecione o loteamento —</option>' +
+      lots.map(r=>`<option value="${r.nome}" ${r.nome===lotNome?'selected':''}>${r.nome}${r.fase?' · '+r.fase:''}</option>`).join('');
   }
-
-  // Preencher loteamento
-  const lotInput = document.getElementById('visita-loteamento-nome');
-  if(lotInput) lotInput.value = (lotNome==='— Selecione —') ? '' : lotNome;
 
   // Data padrão = amanhã
   const amanha = new Date(); amanha.setDate(amanha.getDate()+1);
@@ -13297,13 +13317,12 @@ function abrirAgendarVisita(){
   if(dataEl) dataEl.value = amanha.toISOString().split('T')[0];
 
   // Popular corretores
-  dbSelect('corretores',{filter:[['status','eq','Ativo']],order:'nome',asc:true}).then(corts=>{
-    const sel = document.getElementById('visita-corretor');
-    if(sel){
-      sel.innerHTML = '<option value="">— Nenhum —</option>' +
-        corts.map(r=>`<option value="${r.nome}">${r.nome}</option>`).join('');
-    }
-  });
+  const corts = await dbSelect('corretores',{filter:[['status','eq','Ativo']],order:'nome',asc:true});
+  const selCor = document.getElementById('visita-corretor');
+  if(selCor){
+    selCor.innerHTML = '<option value="">— Nenhum —</option>' +
+      corts.map(r=>`<option value="${r.nome}">${r.nome}</option>`).join('');
+  }
 
   // Limpar obs
   const obsEl = document.getElementById('visita-obs');
@@ -13320,7 +13339,7 @@ function fecharAgendarVisita(){
 async function salvarVisitaLead(){
   const data     = document.getElementById('visita-data')?.value;
   const hora     = document.getElementById('visita-hora')?.value;
-  const loteNome = document.getElementById('visita-loteamento-nome')?.value;
+  const loteNome = document.getElementById('visita-loteamento-select')?.value||'';
   const corretor = document.getElementById('visita-corretor')?.value||'';
   const obs      = document.getElementById('visita-obs')?.value||'';
 
@@ -13558,15 +13577,54 @@ async function salvarMinutaLoteamento(){
   }finally{ hideLoading(); }
 }
 
-// ── Inserir template Alto Vitta ──────────────────────────────
-function minutaInserirTemplate(){
-  const el = document.getElementById('det-minuta-texto');
-  if(!el) return;
-  if(el.value && !confirm('Substituir o texto atual pelo template do Alto Vitta?')) return;
-  el.value = MINUTA_TEMPLATE_ALTO_VITTA;
+// ── Preview da minuta ────────────────────────────────────────
+let _minutaPreviewAtivo = false;
+
+function minutaTogglePreview(){
+  _minutaPreviewAtivo = !_minutaPreviewAtivo;
+  const painel = document.getElementById('minuta-preview-panel');
+  const btn    = document.getElementById('btn-minuta-preview');
+  if(painel) painel.style.display = _minutaPreviewAtivo ? 'block' : 'none';
+  if(btn)    btn.textContent = _minutaPreviewAtivo ? '✕ Fechar preview' : '👁 Preview';
+  if(_minutaPreviewAtivo) minutaAtualizarPreview();
+}
+
+function minutaAtualizarPreview(){
+  if(!_minutaPreviewAtivo) return;
+  const texto  = document.getElementById('det-minuta-texto')?.value||'';
+  const painel = document.getElementById('minuta-preview-content');
+  if(!painel) return;
+
+  // Marcar campos com fundo amarelo, manter resto do texto formatado
+  const escapado = texto
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+
+  const comMarcadores = escapado.replace(
+    /\{\{([A-Z_]+)\}\}/g,
+    '<mark style="background:#FEF08A;color:#713F12;border-radius:3px;padding:0 3px;font-family:monospace;font-size:10pt">{{$1}}</mark>'
+  );
+
+  const html = comMarcadores
+    .split('\n\n')
+    .map(p => {
+      const linhas = p.split('\n').map(l => {
+        if(/^[IVX]+\s*[—–]\s*.+$/.test(l.trim())) return `<h3 style="font-size:12pt;border-bottom:1px solid #ccc;padding-bottom:3px;margin:14pt 0 6pt">${l.trim()}</h3>`;
+        if(/^CLÁUSULA\s+/i.test(l.trim()))            return `<h4 style="font-size:11pt;text-decoration:underline;margin:10pt 0 4pt">${l.trim()}</h4>`;
+        if(l.trim().length>3&&l.trim().length<80&&l.trim()===l.trim().toUpperCase()&&!/[a-z]/.test(l.trim()))
+          return `<p style="font-weight:600;text-align:center;margin:8pt 0">${l.trim()}</p>`;
+        return l;
+      });
+      return '<p style="text-align:justify;line-height:1.7;margin:0 0 8pt">'+linhas.join('<br>')+'</p>';
+    })
+    .join('');
+
+  painel.innerHTML = html || '<em style="color:#888;font-size:11px">Escreva a minuta para ver o preview.</em>';
+
+  // Atualizar contador
   const cnt=document.getElementById('minuta-char-count');
-  if(cnt) cnt.textContent=el.value.length.toLocaleString('pt-BR')+' caracteres';
-  showToast('Template inserido! Revise e salve.');
+  if(cnt) cnt.textContent=(texto.length).toLocaleString('pt-BR')+' caracteres';
 }
 
 // ── TEMPLATE com a minuta real do Alto Vitta ─────────────────
@@ -13702,7 +13760,7 @@ async function ldGerarContrato(){
   }
 
   // Abrir janela de impressão com o contrato formatado
-  abrirJanelaContrato(contrato, v('ld-cli-nome'), v('ld-contrato-id'));
+  abrirJanelaContrato(contrato, _mVal('ld-cli-nome'), _mVal('ld-contrato-id'));
 }
 
 function abrirJanelaContrato(texto, nomeCliente, numContrato){
