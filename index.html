@@ -13381,77 +13381,77 @@ function removerVisita(idx){
 // Campos mapeados: marcador → função que extrai o valor dos inputs
 const MINUTA_CAMPOS = {
   // Contrato
-  '{{CONTRATO_NUM}}':       () => v('ld-contrato-id') || gerarIdContrato(),
-  '{{LOTEAMENTO_NOME}}':    () => textoOpcao('ld-loteamento') || '',
-  '{{LOTE_NUM}}':           () => textoOpcao('ld-lote')?.split('-')[1]?.trim() || '',
-  '{{QUADRA_NUM}}':         () => v('ld-quadra') || '',
-  '{{LOTE_AREA}}':          () => v('ld-area-lote') || '',
-  '{{DATA_ASSINATURA}}':    () => fmtData(v('ld-dt-assinatura')),
-  '{{DATA_ASSINATURA_EXT}}': () => fmtDataExtenso(v('ld-dt-assinatura')),
+  '{{CONTRATO_NUM}}':       () => _mVal('ld-contrato-id') || gerarIdContrato(),
+  '{{LOTEAMENTO_NOME}}':    () => _mOpcao('ld-loteamento') || '',
+  '{{LOTE_NUM}}':           () => _mOpcao('ld-lote')?.split('-')[1]?.trim() || '',
+  '{{QUADRA_NUM}}':         () => _mVal('ld-quadra') || '',
+  '{{LOTE_AREA}}':          () => _mVal('ld-area-lote') || '',
+  '{{DATA_ASSINATURA}}':    () => _mData(_mVal('ld-dt-assinatura')),
+  '{{DATA_ASSINATURA_EXT}}': () => _mDataExt(_mVal('ld-dt-assinatura')),
   // Financeiro
-  '{{PRECO_TOTAL}}':        () => v('ld-valor-lote') ? 'R$ '+v('ld-valor-lote') : '',
-  '{{PRECO_TOTAL_EXTENSO}}': () => v('ld-valor-lote') ? valorExtenso(parseMoney(v('ld-valor-lote'))) : '',
-  '{{FORMA_PAGAMENTO}}':    () => v('ld-forma-pagamento')==='avista' ? 'à vista' : 'parcelado',
-  '{{SINAL_VALOR}}':        () => v('ld-entrada') ? 'R$ '+v('ld-entrada') : '',
-  '{{SINAL_EXTENSO}}':      () => v('ld-entrada') ? valorExtenso(parseMoney(v('ld-entrada'))) : '',
+  '{{PRECO_TOTAL}}':        () => _mVal('ld-valor-lote') ? 'R$ '+_mVal('ld-valor-lote') : '',
+  '{{PRECO_TOTAL_EXTENSO}}': () => _mVal('ld-valor-lote') ? valorExtenso(_mMoney(_mVal('ld-valor-lote'))) : '',
+  '{{FORMA_PAGAMENTO}}':    () => _mVal('ld-forma-pagamento')==='avista' ? 'à vista' : 'parcelado',
+  '{{SINAL_VALOR}}':        () => _mVal('ld-entrada') ? 'R$ '+_mVal('ld-entrada') : '',
+  '{{SINAL_EXTENSO}}':      () => _mVal('ld-entrada') ? valorExtenso(_mMoney(_mVal('ld-entrada'))) : '',
   '{{SINAL_PCT}}':          () => {
-    const total = parseMoney(v('ld-valor-lote')||'0');
-    const ent   = parseMoney(v('ld-entrada')||'0');
+    const total = _mMoney(_mVal('ld-valor-lote')||'0');
+    const ent   = _mMoney(_mVal('ld-entrada')||'0');
     return total>0 ? Math.round(ent/total*100)+'%' : '';
   },
-  '{{PARCELAS_NUM}}':       () => v('ld-prazo') || '',
-  '{{PARCELA_VALOR}}':      () => v('ld-parcela') ? 'R$ '+v('ld-parcela') : '',
-  '{{PARCELA_EXTENSO}}':    () => v('ld-parcela') ? valorExtenso(parseMoney(v('ld-parcela'))) : '',
-  '{{PARCELA_VENC1}}':      () => fmtData(v('ld-dt-primeira')),
-  '{{TAXA_JUROS_AM}}':      () => v('ld-taxa') ? v('ld-taxa').replace('.',',')+'%' : '0,6%',
-  '{{CARTORIO}}':           () => v('ld-cartorio') || '',
+  '{{PARCELAS_NUM}}':       () => _mVal('ld-prazo') || '',
+  '{{PARCELA_VALOR}}':      () => _mVal('ld-parcela') ? 'R$ '+_mVal('ld-parcela') : '',
+  '{{PARCELA_EXTENSO}}':    () => _mVal('ld-parcela') ? valorExtenso(_mMoney(_mVal('ld-parcela'))) : '',
+  '{{PARCELA_VENC1}}':      () => _mData(_mVal('ld-dt-primeira')),
+  '{{TAXA_JUROS_AM}}':      () => _mVal('ld-taxa') ? _mVal('ld-taxa').replace('.',',')+'%' : '0,6%',
+  '{{CARTORIO}}':           () => _mVal('ld-cartorio') || '',
   // Cliente
-  '{{CLI_NOME}}':           () => v('ld-cli-nome') || '',
-  '{{CLI_CPF}}':            () => v('ld-cli-cpf') || '',
-  '{{CLI_RG}}':             () => v('ld-cli-rg') || '',
-  '{{CLI_RG_ORGAO}}':       () => v('ld-cli-rg-orgao') || '',
-  '{{CLI_NACIONALIDADE}}':  () => v('ld-cli-nacionalidade') || 'brasileira',
-  '{{CLI_PROFISSAO}}':      () => v('ld-cli-profissao') || '',
-  '{{CLI_NASC}}':           () => fmtData(v('ld-cli-nasc')),
-  '{{CLI_ESTCIVIL}}':       () => v('ld-cli-estcivil') || '',
-  '{{CLI_EMAIL}}':          () => v('ld-cli-email') || '',
-  '{{CLI_TELEFONE}}':       () => v('ld-cli-telefone') || '',
-  '{{CLI_RUA}}':            () => v('ld-cli-rua') || '',
-  '{{CLI_CEP}}':            () => v('ld-cli-cep') || '',
-  '{{CLI_CIDADE}}':         () => v('ld-cli-cidade') || '',
-  '{{CLI_ESTADO}}':         () => v('ld-cli-estado') || '',
-  '{{CLI_ENDERECO}}':       () => [v('ld-cli-rua'),v('ld-cli-cidade'),v('ld-cli-estado')].filter(Boolean).join(', '),
+  '{{CLI_NOME}}':           () => _mVal('ld-cli-nome') || '',
+  '{{CLI_CPF}}':            () => _mVal('ld-cli-cpf') || '',
+  '{{CLI_RG}}':             () => _mVal('ld-cli-rg') || '',
+  '{{CLI_RG_ORGAO}}':       () => _mVal('ld-cli-rg-orgao') || '',
+  '{{CLI_NACIONALIDADE}}':  () => _mVal('ld-cli-nacionalidade') || 'brasileira',
+  '{{CLI_PROFISSAO}}':      () => _mVal('ld-cli-profissao') || '',
+  '{{CLI_NASC}}':           () => _mData(_mVal('ld-cli-nasc')),
+  '{{CLI_ESTCIVIL}}':       () => _mVal('ld-cli-estcivil') || '',
+  '{{CLI_EMAIL}}':          () => _mVal('ld-cli-email') || '',
+  '{{CLI_TELEFONE}}':       () => _mVal('ld-cli-telefone') || '',
+  '{{CLI_RUA}}':            () => _mVal('ld-cli-rua') || '',
+  '{{CLI_CEP}}':            () => _mVal('ld-cli-cep') || '',
+  '{{CLI_CIDADE}}':         () => _mVal('ld-cli-cidade') || '',
+  '{{CLI_ESTADO}}':         () => _mVal('ld-cli-estado') || '',
+  '{{CLI_ENDERECO}}':       () => [_mVal('ld-cli-rua'),_mVal('ld-cli-cidade'),_mVal('ld-cli-estado')].filter(Boolean).join(', '),
   // Cônjuge
-  '{{CONJ_NOME}}':          () => v('ld-conj-nome') || '',
-  '{{CONJ_CPF}}':           () => v('ld-conj-cpf') || '',
-  '{{CONJ_RG}}':            () => v('ld-conj-rg') || '',
+  '{{CONJ_NOME}}':          () => _mVal('ld-conj-nome') || '',
+  '{{CONJ_CPF}}':           () => _mVal('ld-conj-cpf') || '',
+  '{{CONJ_RG}}':            () => _mVal('ld-conj-rg') || '',
   // Corretor
-  '{{COR_NOME}}':           () => textoOpcao('ld-cor-select') || '',
-  '{{COR_CRECI}}':          () => v('ld-cor-creci') || '',
-  '{{COR_CPF}}':            () => v('ld-cor-cpf') || '',
-  '{{COR_ENDERECO}}':       () => v('ld-cor-endereco') || '',
+  '{{COR_NOME}}':           () => _mOpcao('ld-cor-select') || '',
+  '{{COR_CRECI}}':          () => _mVal('ld-cor-creci') || '',
+  '{{COR_CPF}}':            () => _mVal('ld-cor-cpf') || '',
+  '{{COR_ENDERECO}}':       () => _mVal('ld-cor-endereco') || '',
   '{{COR_COMISSAO_PCT}}':   () => '3%',
   '{{COR_COMISSAO_VALOR}}': () => {
-    const total = parseMoney(v('ld-valor-lote')||'0');
+    const total = _mMoney(_mVal('ld-valor-lote')||'0');
     return total>0 ? 'R$ '+(total*0.03).toLocaleString('pt-BR',{minimumFractionDigits:2}) : '';
   },
 };
 
-// helpers
-const v    = id => document.getElementById(id)?.value?.trim()||'';
-const textoOpcao = id => {
+// helpers do sistema de minuta (prefixo _m para não conflitar)
+function _mVal(id){ return (document.getElementById(id)?.value||'').trim(); }
+function _mOpcao(id){
   const sel=document.getElementById(id);
   const opt=sel?.options[sel?.selectedIndex];
   return opt?.text&&opt.value ? opt.text : '';
-};
-const parseMoney = s => parseFloat((s||'0').replace(/\./g,'').replace(',','.'))||0;
-const fmtData = iso => iso ? new Date(iso+'T12:00').toLocaleDateString('pt-BR') : '';
-const fmtDataExtenso = iso => {
+}
+function _mMoney(s){ return parseFloat((s||'0').replace(/\./g,'').replace(',','.'))||0; }
+function _mData(iso){ return iso ? new Date(iso+'T12:00').toLocaleDateString('pt-BR') : ''; }
+function _mDataExt(iso){
   if(!iso) return '';
   const d = new Date(iso+'T12:00');
   const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
   return `${d.getDate()} de ${meses[d.getMonth()]} de ${d.getFullYear()}`;
-};
+}
 function gerarIdContrato(){
   const ano = new Date().getFullYear();
   const seq = String(Math.floor(Math.random()*900)+100);
