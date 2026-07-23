@@ -235,6 +235,8 @@ tbody tr.clickable{cursor:pointer}
   #ld-timeline-horizontal { overflow-x: auto; }
 }
 </style>
+  <!-- JSZip para manipulação de DOCX (ZIP) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 </head>
 <body>
 
@@ -14214,7 +14216,19 @@ async function ldGerarContrato(){
   // ── Caminho 1: DOCX disponível → find-replace no XML ─────
   if(docxB64){
     try{
-      if(typeof JSZip === 'undefined') throw new Error('JSZip não disponível');
+      // Carregar JSZip dinamicamente se não estiver disponível
+      if(typeof JSZip === 'undefined'){
+        await new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+          s.crossOrigin = 'anonymous';
+          s.onload  = resolve;
+          s.onerror = () => reject(new Error('Não foi possível carregar JSZip do CDN'));
+          document.head.appendChild(s);
+        });
+      }
+      if(typeof JSZip === 'undefined') throw new Error('JSZip indisponível');
+
       const bytes = Uint8Array.from(atob(docxB64), c=>c.charCodeAt(0));
       const zip   = await JSZip.loadAsync(bytes);
       let xml     = await zip.file('word/document.xml').async('string');
@@ -14222,14 +14236,15 @@ async function ldGerarContrato(){
       // Substituir variáveis no XML (escapar valores para XML)
       const escXml = s => (s||'')
         .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-        .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+        .replace(/"/g,'&quot;');
 
       for(const [marcador, valor] of Object.entries(dadosContrato)){
-        xml = xml.split(marcador).join(escXml(valor));
+        const valorEsc = escXml(valor);
+        xml = xml.split(marcador).join(valorEsc);
       }
 
       zip.file('word/document.xml', xml);
-      const out  = await zip.generateAsync({type:'uint8array',compression:'DEFLATE'});
+      const out  = await zip.generateAsync({type:'uint8array',compression:'DEFLATE',compressionOptions:{level:6}});
       const blob = new Blob([out],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a'); a.href=url; a.download=nomeArq; a.click();
@@ -14238,7 +14253,7 @@ async function ldGerarContrato(){
       return;
     }catch(err){
       console.error('Erro ao processar DOCX:', err);
-      showToast('Erro ao processar DOCX: '+err.message+'. Gerando versão texto...','error');
+      showToast('Erro ao processar DOCX: '+err.message,'error');
       // Continua para o caminho de texto
     }
   }
