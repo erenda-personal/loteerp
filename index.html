@@ -7001,7 +7001,7 @@ function removerDocLead(){
 
 let _editLeadId = null;
 
-function abrirEditLead(id){
+async function abrirEditLead(id){
   const lead=leads.find(l=>String(l.id)===String(id));
   if(!lead){showToast('Lead não encontrado.','error');return;}
   _editLeadId = lead.id;
@@ -7093,6 +7093,43 @@ function abrirEditLead(id){
       }
     }
   });
+
+  // ── Puxar dados do cliente vinculado ─────────────────────
+  // Prioridade: cliente_id → CPF → nome
+  const cidVinculado = lead.clienteId;
+  if(cidVinculado){
+    try{
+      const cliRows = await dbSelect('clientes',{filter:[['id','eq',cidVinculado]]});
+      const cli = cliRows[0];
+      if(cli){
+        const sf=(id,v)=>{const el=document.getElementById(id);if(el&&v)el.value=v;};
+        sf('ld-cli-nome',         cli.nome);
+        sf('ld-cli-cpf',          cli.cpf);
+        sf('ld-cli-rg',           cli.rg);
+        sf('ld-cli-rg-orgao',     cli.rg_orgao);
+        sf('ld-cli-nacionalidade',cli.nacionalidade||'brasileira');
+        sf('ld-cli-nasc',         cli.data_nasc);
+        sf('ld-cli-profissao',    cli.profissao);
+        sf('ld-cli-email',        cli.email);
+        sf('ld-cli-telefone',     cli.celular);
+        sf('ld-cli-cep',          cli.cep);
+        sf('ld-cli-rua',          cli.endereco||cli.logradouro);
+        sf('ld-cli-cidade',       cli.cidade);
+        // Estado civil — selecionar opção
+        const selEC = document.getElementById('ld-cli-estcivil');
+        if(selEC && cli.estado_civil){
+          [...selEC.options].forEach(o=>{ if(o.value===cli.estado_civil||o.text===cli.estado_civil) selEC.value=o.value; });
+        }
+      }
+    }catch(e){ console.warn('Erro ao buscar cliente do lead:', e.message); }
+  } else {
+    // Sem cliente vinculado: pré-preencher com dados básicos do lead
+    const sf=(id,v)=>{const el=document.getElementById(id);if(el&&v&&!el.value)el.value=v;};
+    sf('ld-cli-nome',     lead.nome);
+    sf('ld-cli-email',    lead.email);
+    sf('ld-cli-telefone', lead.tel);
+    sf('ld-cli-cpf',      lead.cpf);
+  }
 
   // ── Documentos ────────────────────────────────────────────
   window._leadDocBase64 = null;
@@ -7723,32 +7760,62 @@ async function salvarEdicaoLead(){
     dt_entrada:   dtEntrada,
   });
 
-  // Atualizar/criar cliente
-  if(cpf||nomeCliente){
+  // ── Sincronizar cliente ──────────────────────────────────
+  {
     const dadosCliente = {};
-    if(cpf)       dadosCliente.cpf          = cpf;
-    if(rg)        dadosCliente.rg           = rg;
-    if(rgOrgao)   dadosCliente.rg_orgao     = rgOrgao;
-    if(nac)       dadosCliente.nacionalidade = nac;
-    if(nasc)      dadosCliente.data_nasc    = nasc;
-    if(estcivil)  dadosCliente.estado_civil = estcivil;
-    if(profissao) dadosCliente.profissao    = profissao;
-    if(email)     dadosCliente.email        = email;
-    if(telefone)  dadosCliente.celular      = telefone;
-    if(nomeCliente) dadosCliente.nome       = nomeCliente;
+    if(nomeCliente) dadosCliente.nome         = nomeCliente;
+    if(cpf)         dadosCliente.cpf          = cpf;
+    if(rg)          dadosCliente.rg           = rg;
+    if(rgOrgao)     dadosCliente.rg_orgao     = rgOrgao;
+    if(nac)         dadosCliente.nacionalidade = nac;
+    if(nasc)        dadosCliente.data_nasc    = nasc;
+    if(estcivil)    dadosCliente.estado_civil = estcivil;
+    if(profissao)   dadosCliente.profissao    = profissao;
+    if(email)       dadosCliente.email        = email;
+    if(telefone)    dadosCliente.celular      = telefone;
 
-    // Buscar ou criar cliente
-    let clienteId = lead.clienteId;
+    // Buscar cliente: 1º pelo id já vinculado, 2º CPF, 3º telefone, 4º nome
+    let clienteId = lead.clienteId || null;
+
+    if(!clienteId){
+      // Tentar buscar pelo cliente_id salvo no banco (pode ter sido vinculado por outra sessão)
+      try{
+        const ldDb = await dbSelect('leads',{filter:[['id','eq',lead.id]],select:'cliente_id'});
+        if(ldDb[0]?.cliente_id) clienteId = ldDb[0].cliente_id;
+      }catch(e){}
+    }
     if(!clienteId && cpf){
-      const porCpf = await dbSelect('clientes',{filter:[['cpf','eq',cpf]]});
-      if(porCpf.length) clienteId = porCpf[0].id;
+      const r = await dbSelect('clientes',{filter:[['cpf','eq',cpf]],select:'id'});
+      if(r.length) clienteId = r[0].id;
     }
+    if(!clienteId && telefone){
+      const r = await dbSelect('clientes',{filter:[['celular','eq',telefone]],select:'id'});
+      if(r.length) clienteId = r[0].id;
+    }
+    if(!clienteId && nomeCliente){
+      const r = await dbSelect('clientes',{filter:[['nome','eq',nomeCliente]],select:'id'});
+      if(r.length) clienteId = r[0].id;
+    }
+
     if(clienteId){
-      await dbUpdate('clientes', clienteId, dadosCliente);
+      // Atualizar cliente existente
+      if(Object.keys(dadosCliente).length){
+        await dbUpdate('clientes', clienteId, dadosCliente);
+      }
+      // Garantir que o lead aponta para esse cliente
+      if(clienteId !== lead.clienteId){
+        await dbUpdate('leads', lead.id, {cliente_id: clienteId});
+      }
     } else if(nomeCliente){
-      const novo = await dbInsert('clientes',{nome:nomeCliente,...dadosCliente});
-      if(novo){ clienteId=novo.id; await dbUpdate('leads',lead.id,{cliente_id:novo.id}); }
+      // Criar novo cliente e vincular ao lead
+      const novo = await dbInsert('clientes', {nome:nomeCliente, ...dadosCliente});
+      if(novo){
+        clienteId = novo.id;
+        await dbUpdate('leads', lead.id, {cliente_id: novo.id});
+        showToast('👤 Cliente "'+nomeCliente+'" criado e vinculado ao lead.');
+      }
     }
+
     if(clienteId) lead.clienteId = clienteId;
   }
 
@@ -8289,6 +8356,43 @@ async function salvarLead(){
 
   showLoading('Salvando lead...');
   try{
+    // ── 1. Criar ou encontrar o cliente ──────────────────────
+    let clienteId = null;
+    const tel = newLead.tel;
+    const cpfVal = newLead.cpf;
+    const emailVal = newLead.email;
+
+    // Buscar cliente existente por CPF ou nome+telefone
+    if(cpfVal){
+      const porCpf = await dbSelect('clientes',{filter:[['cpf','eq',cpfVal]],select:'id'});
+      if(porCpf.length) clienteId = porCpf[0].id;
+    }
+    if(!clienteId && tel){
+      const porTel = await dbSelect('clientes',{filter:[['celular','eq',tel]],select:'id'});
+      if(porTel.length) clienteId = porTel[0].id;
+    }
+
+    if(!clienteId){
+      // Criar novo cliente
+      const novoCliente = await dbInsert('clientes',{
+        nome:    newLead.nome,
+        cpf:     cpfVal||null,
+        celular: tel||null,
+        email:   emailVal||null,
+        tipo:    'Cliente final',
+      });
+      if(novoCliente) clienteId = novoCliente.id;
+    } else {
+      // Atualizar cliente existente com dados que temos
+      const upd = {};
+      if(newLead.nome) upd.nome   = newLead.nome;
+      if(tel)          upd.celular= tel;
+      if(emailVal)     upd.email  = emailVal;
+      if(Object.keys(upd).length) await dbUpdate('clientes', clienteId, upd);
+    }
+    newLead.clienteId = clienteId;
+
+    // ── 2. Criar o lead linkado ao cliente ───────────────────
     const {data, error} = await sb.from('leads').insert({
       nome:           newLead.nome,
       tel:            newLead.tel,
@@ -8301,10 +8405,12 @@ async function salvarLead(){
       corretor:       newLead.corretor||null,
       obs:            newLead.obs||null,
       etapas_json:    JSON.stringify(newLead.etapas),
+      cliente_id:     clienteId||null,
     }).select().single();
 
     if(error) throw error;
     if(data) newLead.id = data.id;
+
   }catch(e){
     console.warn('salvarLead DB:', e.message);
     // Continua com id local caso offline
