@@ -672,6 +672,8 @@ tbody tr.clickable{cursor:pointer}
               <div class="field"><label>Área verde (m²)</label><input id="det-lot-area-verde" type="number" placeholder="0" min="0"></div>
               <div class="field"><label>Qtd. de lotes</label><input id="det-lot-qtd" type="number" placeholder="0" min="0"></div>
               <div class="field"><label>Conta bancária</label><input id="det-lot-conta" placeholder="Banco · Agência · Conta"></div>
+              <div class="field"><label>Data de registro do loteamento</label><input id="det-lot-dt-reg" type="date" title="Data em que o loteamento foi registrado no Cartório de Imóveis"></div>
+              <div class="field"><label>Nº do registro no cartório</label><input id="det-lot-num-reg" placeholder="Ex: R-1/23.239" title="Número do registro do loteamento"></div>
             </div>
             <div class="field" style="margin-top:4px"><label>Observações</label>
               <textarea id="det-lot-obs" rows="2" placeholder="Informações adicionais..." style="width:100%;padding:8px 10px;border:1px solid var(--border-secondary);border-radius:8px;background:var(--bg-primary);color:var(--text-primary);font-size:12px;resize:vertical;font-family:var(--font)"></textarea>
@@ -1639,6 +1641,10 @@ tbody tr.clickable{cursor:pointer}
                 <div class="field"><label>Valor da parcela (R$)</label><input id="ld-parcela" type="text" placeholder="Calculado auto." readonly style="background:var(--bg-secondary);opacity:.8"></div>
                 <div class="field"><label>Data da 1ª parcela</label><input id="ld-dt-primeira" type="date"></div>
               </div>
+              <div class="form-row col2">
+                <div class="field"><label>Saldo remanescente (R$)</label><input id="ld-saldo-rem" type="text" placeholder="Calculado auto." readonly style="background:var(--bg-secondary);opacity:.8"></div>
+                <div class="field"><label>Vencimento do saldo</label><input id="ld-dt-saldo" type="date" title="Data do pagamento do saldo remanescente / balloon"></div>
+              </div>
             </div>
             <div class="form-row col2">
               <div class="field"><label>Data da assinatura</label><input id="ld-dt-assinatura" type="date"></div>
@@ -1666,12 +1672,28 @@ tbody tr.clickable{cursor:pointer}
             <div class="form-row col3">
               <div class="field"><label>Data de nascimento</label><input id="ld-cli-nasc" type="date"></div>
               <div class="field"><label>Estado civil</label>
-                <select id="ld-cli-estcivil">
+                <select id="ld-cli-estcivil" onchange="ldToggleRegimeBens(this.value)">
                   <option>Solteiro(a)</option><option>Casado(a)</option>
                   <option>Divorciado(a)</option><option>Viúvo(a)</option><option>União estável</option>
                 </select>
               </div>
               <div class="field"><label>Profissão</label><input id="ld-cli-profissao" placeholder="Ex: Engenheiro(a)"></div>
+              <!-- Regime de bens e data — visíveis só quando Casado(a) -->
+              <div class="field" id="ld-cli-regime-wrap" style="display:none">
+                <label>Regime de bens</label>
+                <select id="ld-cli-regime-bens">
+                  <option value="">— Selecione —</option>
+                  <option>Comunhão parcial de bens</option>
+                  <option>Comunhão universal de bens</option>
+                  <option>Separação total de bens</option>
+                  <option>Separação obrigatória de bens</option>
+                  <option>Participação final nos aquestos</option>
+                </select>
+              </div>
+              <div class="field" id="ld-cli-dt-casamento-wrap" style="display:none">
+                <label>Data do casamento</label>
+                <input id="ld-cli-dt-casamento" type="date">
+              </div>
             </div>
             <div class="form-section">Contato</div>
             <div class="form-row col2">
@@ -7387,6 +7409,19 @@ function ldCalcFinanciado(){
   const el  = document.getElementById('ld-financiado');
   if(el) el.value = fin.toLocaleString('pt-BR',{minimumFractionDigits:2});
   ldCalcParcela();
+  ldCalcSaldoRemanescente();
+}
+
+function ldCalcSaldoRemanescente(){
+  const v    = parseFloat((document.getElementById('ld-valor-lote')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const ent  = parseFloat((document.getElementById('ld-entrada')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const n    = parseInt(document.getElementById('ld-prazo')?.value)||0;
+  const parc = parseFloat((document.getElementById('ld-parcela')?.value||'0').replace(/\./g,'').replace(',','.'))||0;
+  const el   = document.getElementById('ld-saldo-rem');
+  if(!el) return;
+  // Saldo = valor total - entrada - (n parcelas × valor parcela)
+  const saldo = Math.max(0, v - ent - (n * parc));
+  el.value = saldo > 0 ? saldo.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '';
 }
 
 function ldCalcParcela(){
@@ -7397,6 +7432,7 @@ function ldCalcParcela(){
   if(!el||fin<=0||n<=0||taxa<=0){ if(el)el.value=''; return; }
   const pmt  = fin*(taxa*Math.pow(1+taxa,n))/(Math.pow(1+taxa,n)-1);
   el.value   = pmt.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  ldCalcSaldoRemanescente();
 }
 
 function ldToggleConjuge(cb){
@@ -7404,6 +7440,14 @@ function ldToggleConjuge(cb){
   const empty = document.getElementById('ld-conjuge-empty');
   if(wrap)  wrap.style.display  = cb.checked ? '' : 'none';
   if(empty) empty.style.display = cb.checked ? 'none' : '';
+}
+
+function ldToggleRegimeBens(estcivil){
+  const showRegime = estcivil === 'Casado(a)' || estcivil === 'União estável';
+  const rwrap = document.getElementById('ld-cli-regime-wrap');
+  const dwrap = document.getElementById('ld-cli-dt-casamento-wrap');
+  if(rwrap) rwrap.style.display = showRegime ? '' : 'none';
+  if(dwrap) dwrap.style.display = showRegime ? '' : 'none';
 }
 
 async function ldPreencherDadosCorretor(){
@@ -7728,6 +7772,8 @@ async function salvarEdicaoLead(){
   const profissao   = document.getElementById('ld-cli-profissao')?.value?.trim()||null;
   const email       = document.getElementById('ld-cli-email')?.value?.trim()||null;
   const telefone    = document.getElementById('ld-cli-telefone')?.value?.trim()||null;
+  const regimeBens  = document.getElementById('ld-cli-regime-bens')?.value||null;
+  const dtCasamento = document.getElementById('ld-cli-dt-casamento')?.value||null;
 
   // Datas comerciais
   const dtProposta  = document.getElementById('ld-dt-proposta')?.value||null;
@@ -7769,8 +7815,10 @@ async function salvarEdicaoLead(){
     if(rgOrgao)     dadosCliente.rg_orgao     = rgOrgao;
     if(nac)         dadosCliente.nacionalidade = nac;
     if(nasc)        dadosCliente.data_nasc    = nasc;
-    if(estcivil)    dadosCliente.estado_civil = estcivil;
-    if(profissao)   dadosCliente.profissao    = profissao;
+    if(estcivil)    dadosCliente.estado_civil     = estcivil;
+    if(profissao)   dadosCliente.profissao        = profissao;
+    if(regimeBens)  dadosCliente.regime_bens      = regimeBens;
+    if(dtCasamento) dadosCliente.dt_casamento     = dtCasamento;
     if(email)       dadosCliente.email        = email;
     if(telefone)    dadosCliente.celular      = telefone;
 
@@ -12177,6 +12225,8 @@ async function abrirDetalheLoteamento(lotId){
   sv('det-lot-qtd',        lots.qtd_lotes||lots.total_lotes||'');
   sv('det-lot-conta',      lots.conta_bancaria||'');
   sv('det-lot-obs',        lots.observacoes||'');
+  sv('det-lot-dt-reg',     lots.dt_registro||'');
+  sv('det-lot-num-reg',    lots.num_registro||'');
 
   // Mapa
   const imgEl  = document.getElementById('det-mapa-img');
@@ -12372,6 +12422,8 @@ async function salvarDetalheLoteamento(){
     qtd_lotes:      parseInt(document.getElementById('det-lot-qtd')?.value)||null,
     conta_bancaria: document.getElementById('det-lot-conta')?.value?.trim()||null,
     observacoes:    document.getElementById('det-lot-obs')?.value?.trim()||null,
+    dt_registro:    document.getElementById('det-lot-dt-reg')?.value||null,
+    num_registro:   document.getElementById('det-lot-num-reg')?.value?.trim()||null,
   };
 
   showLoading('Salvando...');
@@ -13804,6 +13856,17 @@ const MINUTA_CAMPOS = {
   // Contrato
   '{{CONTRATO_NUM}}':       () => _mVal('ld-contrato-id') || gerarIdContrato(),
   '{{LOTEAMENTO_NOME}}':    () => _mOpcao('ld-loteamento') || '',
+  '{{DATA_REG_LOTEAMENTO}}': () => {
+    // Buscar do cache do loteamento carregado
+    const lotId = document.getElementById('ld-loteamento')?.value;
+    const lot   = loteamentos?.find?.(l=>String(l.id)===String(lotId));
+    return lot?.dt_registro ? new Date(lot.dt_registro+'T12:00').toLocaleDateString('pt-BR') : '';
+  },
+  '{{NUM_REG_LOTEAMENTO}}':  () => {
+    const lotId = document.getElementById('ld-loteamento')?.value;
+    const lot   = loteamentos?.find?.(l=>String(l.id)===String(lotId));
+    return lot?.num_registro || '';
+  },
   '{{LOTE_NUM}}':           () => _mOpcao('ld-lote')?.split('-')[1]?.trim() || '',
   '{{QUADRA_NUM}}':         () => _mVal('ld-quadra') || '',
   '{{LOTE_AREA}}':          () => _mVal('ld-area-lote') || '',
