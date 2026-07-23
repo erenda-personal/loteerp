@@ -8249,6 +8249,12 @@ async function salvarLead(){
   const dataHoje = agora.toISOString().split('T')[0];
   const horaAgora= agora.toTimeString().substring(0,5);
 
+  // Garantir que as colunas do kanban estejam carregadas
+  // (podem não estar se o usuário não abriu CRM ainda)
+  if(KANBAN_COLUNAS.length <= 1 || KANBAN_COLUNAS[0].key === 'Novo'){
+    try{ await carregarColunasKanban(); }catch(e){}
+  }
+
   // Pegar a primeira coluna do kanban (ex: "Sem contato" ou "Novo")
   const primeiraColuna = KANBAN_COLUNAS[0];
 
@@ -13208,7 +13214,9 @@ async function entrarNoApp(user){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('app-main').style.display='';
 
-  // Inicializar dados
+  // Inicializar dados — carregar colunas do kanban SEMPRE ao iniciar
+  // (necessário para salvarLead usar os slugs corretos mesmo sem abrir CRM)
+  if(typeof carregarColunasKanban==='function') carregarColunasKanban().catch(()=>{});
   if(typeof carregarFiltroLoteamentos==='function') carregarFiltroLoteamentos();
   if(typeof initFromURL==='function') initFromURL();
   else if(typeof initPageDB==='function') initPageDB('loteamentos');
@@ -13858,6 +13866,7 @@ async function uploadMinutaDocx(input){
   reader.onload = async (e) => {
     const b64 = e.target.result.split(',')[1]; // remover prefixo data:...;base64,
     window._minutaDocxBase64 = b64;
+    window._minutaDocxLotId  = _detLotId; // cache vinculado ao loteamento atual
 
     // Salvar no banco
     showLoading('Salvando DOCX da minuta...');
@@ -14138,22 +14147,40 @@ async function ldGerarContrato(){
 
   showLoading('Buscando minuta do loteamento...');
 
-  // Tentar buscar DOCX base64 do banco
-  let docxB64 = window._minutaDocxBase64 || null;
+  // Invalidar cache se mudou de loteamento
+  const _cachedLotId = window._minutaDocxLotId;
+  if(_cachedLotId && _cachedLotId !== loteamentoId){
+    window._minutaDocxBase64 = null;
+  }
+
+  // Buscar sempre do banco (garante versão atualizada)
+  let docxB64 = null;
   let textoTemplate = '';
   try{
-    const {data} = await sb.from('loteamentos')
+    const {data, error} = await sb.from('loteamentos')
       .select('minuta_docx_base64,minuta_contrato')
       .eq('id', loteamentoId)
       .single();
-    docxB64        = data?.minuta_docx_base64 || docxB64;
-    textoTemplate  = data?.minuta_contrato    || '';
-    if(docxB64) window._minutaDocxBase64 = docxB64;
+
+    if(error) console.warn('Erro Supabase ao buscar minuta:', error);
+
+    docxB64       = data?.minuta_docx_base64 || null;
+    textoTemplate = data?.minuta_contrato    || '';
+
+    // Atualizar cache
+    if(docxB64){
+      window._minutaDocxBase64 = docxB64;
+      window._minutaDocxLotId  = loteamentoId;
+    }
+
+    console.log('Minuta buscada — loteamentoId:', loteamentoId,
+      '| DOCX:', docxB64 ? docxB64.substring(0,20)+'...' : 'null',
+      '| texto:', textoTemplate ? textoTemplate.length+'chars' : 'vazio');
   }catch(e){
     console.error('Erro ao buscar minuta:', e);
   }
 
-  hideLoading(); // Sempre fechar loading ANTES de qualquer confirm/alert
+  hideLoading(); // SEMPRE antes de confirm/alert
 
   // ── Caminho 1: DOCX disponível → find-replace no XML ─────
   if(docxB64){
