@@ -7235,16 +7235,62 @@ async function ldCarregarLotes(){
     >${r.quadra}-${(r.numero||'').padStart(2,'0')} · ${r.area_m2||'—'}m² · R$ ${(r.valor_tabela||0).toLocaleString('pt-BR')}</option>`).join('');
 }
 
-function ldPreencherDadosLote(){
+async function ldPreencherDadosLote(){
   const sel = document.getElementById('ld-lote');
-  const opt = sel?.options[sel.selectedIndex];
+  const opt = sel?.options[sel?.selectedIndex];
   if(!opt||!opt.value) return;
-  document.getElementById('ld-quadra').value     = opt.dataset.quadra||'';
-  document.getElementById('ld-area-lote').value  = opt.dataset.area||'';
+
+  // Autofill quadra e área
+  const setEl = (id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
+  setEl('ld-quadra',    opt.dataset.quadra||'');
+  setEl('ld-area-lote', opt.dataset.area||'');
+
+  // Valor do lote
   const valor = parseFloat(opt.dataset.valor)||0;
-  const valEl = document.getElementById('ld-valor-lote');
-  if(valEl && valor>0)
-    valEl.value = valor.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(valor>0){
+    setEl('ld-valor-lote', valor.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
+    // Remover readonly para permitir edição manual
+    document.getElementById('ld-valor-lote')?.removeAttribute('readonly');
+  }
+
+  // Buscar configurações financeiras padrão do loteamento
+  const lotId = document.getElementById('ld-loteamento')?.value;
+  let cfg = {
+    taxa_juros_am:     simCfg.taxaJuros     || 0.90,
+    prazo_max_meses:   simCfg.prazoMax      || 120,
+    entrada_pct:       simCfg.entradaPctDefault || 10,
+    sistema_amort:     'price',
+  };
+
+  if(lotId){
+    try{
+      const {data} = await sb.from('loteamentos')
+        .select('taxa_juros_am,prazo_max_meses,entrada_pct,sistema_amort')
+        .eq('id', lotId).single();
+      if(data){
+        if(data.taxa_juros_am)   cfg.taxa_juros_am   = parseFloat(data.taxa_juros_am);
+        if(data.prazo_max_meses) cfg.prazo_max_meses = parseInt(data.prazo_max_meses);
+        if(data.entrada_pct)     cfg.entrada_pct     = parseFloat(data.entrada_pct);
+        if(data.sistema_amort)   cfg.sistema_amort   = data.sistema_amort;
+      }
+    }catch(e){}
+  }
+
+  // Preencher campos financeiros com os padrões
+  setEl('ld-taxa',   cfg.taxa_juros_am.toLocaleString('pt-BR',{minimumFractionDigits:2}));
+  setEl('ld-prazo',  cfg.prazo_max_meses);
+
+  const selSis = document.getElementById('ld-sistema');
+  if(selSis) selSis.value = cfg.sistema_amort;
+
+  // Entrada padrão em R$
+  if(valor>0 && cfg.entrada_pct>0){
+    const entVal = valor * (cfg.entrada_pct/100);
+    setEl('ld-entrada', entVal.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}));
+  }
+
+  // Recalcular financiado e parcela
+  ldCalcFinanciado();
 }
 
 function ldToggleParcelamento(){
@@ -7279,15 +7325,37 @@ function ldToggleConjuge(cb){
   if(empty) empty.style.display = cb.checked ? 'none' : '';
 }
 
-function ldPreencherDadosCorretor(){
+async function ldPreencherDadosCorretor(){
   const sel = document.getElementById('ld-cor-select');
   const opt = sel?.options[sel?.selectedIndex];
   if(!opt||!opt.value) return;
+
   const sv=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v||'';};
-  sv('ld-cor-creci',    opt.dataset.creci);
-  sv('ld-cor-cpf',      opt.dataset.cpf);
-  sv('ld-cor-telefone', opt.dataset.telefone);
-  sv('ld-cor-endereco', opt.dataset.endereco);
+
+  // Se os data-* já estão no option, usar diretamente
+  if(opt.dataset.creci || opt.dataset.cpf || opt.dataset.endereco){
+    sv('ld-cor-creci',    opt.dataset.creci);
+    sv('ld-cor-cpf',      opt.dataset.cpf);
+    sv('ld-cor-telefone', opt.dataset.telefone);
+    sv('ld-cor-endereco', opt.dataset.endereco);
+    return;
+  }
+
+  // Fallback: buscar do banco pelo id do corretor
+  try{
+    const {data} = await sb.from('corretores').select('creci,cpf,celular,endereco').eq('id', opt.value).single();
+    if(data){
+      sv('ld-cor-creci',    data.creci);
+      sv('ld-cor-cpf',      data.cpf);
+      sv('ld-cor-telefone', data.celular);
+      sv('ld-cor-endereco', data.endereco);
+      // Cachear nos data-* para próximas chamadas
+      opt.dataset.creci    = data.creci||'';
+      opt.dataset.cpf      = data.cpf||'';
+      opt.dataset.telefone = data.celular||'';
+      opt.dataset.endereco = data.endereco||'';
+    }
+  }catch(e){ console.warn('ldPreencherDadosCorretor:', e.message); }
 }
 
 // ── Abas do modal de venda ────────────────────────────────────
@@ -8120,23 +8188,65 @@ function renderFunil(){
     </div>`).join('');
 }
 
-function salvarLead(){
-  const nome=document.getElementById('nl2-nome')?.value?.trim();
-  const tel=document.getElementById('nl2-tel')?.value?.trim();
-  if(!nome||!tel){showToast('Informe nome e telefone.','error');return;}
-  const newLead={
-    id:Date.now(),nome,tel,
-    origem:document.getElementById('nl2-origem')?.value||'Outros',
-    lote:document.getElementById('nl2-lot')?.value||'Verde Vale',
-    status:document.getElementById('nl2-status')?.value||'Novo',
-    corretor:document.getElementById('nl2-corretor')?.value||'',
-    etapas:{},obs:document.getElementById('nl2-obs')?.value||'',
-    dataVisita:document.getElementById('nl2-data-visita')?.value||'',
-    horaVisita:document.getElementById('nl2-hora-visita')?.value||'10:00',
+async function salvarLead(){
+  const nome = document.getElementById('nl2-nome')?.value?.trim();
+  const tel  = document.getElementById('nl2-tel')?.value?.trim();
+  if(!nome||!tel){ showToast('Informe nome e telefone.','error'); return; }
+
+  // Loteamento de interesse
+  const lotSel   = document.getElementById('nl2-lot');
+  const lotId    = lotSel?.value || '';
+  const lotNome  = lotSel?.options[lotSel?.selectedIndex]?.text || '';
+  const lotLabel = (lotNome && lotNome !== '— Selecione o loteamento —') ? lotNome : '';
+
+  const newLead = {
+    id:              Date.now(),
+    nome, tel,
+    origem:          document.getElementById('nl2-origem')?.value||'Outros',
+    lote:            lotLabel,          // nome do loteamento de interesse (sem lote específico)
+    loteamento_id:   lotId||null,       // id para buscas futuras
+    lote_id:         null,              // nenhum lote específico ainda
+    status:          'Novo',
+    corretor:        document.getElementById('nl2-corretor')?.value||'',
+    etapas:          {},
+    obs:             document.getElementById('nl2-obs')?.value||'',
+    dataVisita:      '',
+    horaVisita:      '',
+    cpf:             document.getElementById('nl2-cpf')?.value?.trim()||'',
+    email:           document.getElementById('nl2-email')?.value?.trim()||'',
   };
+
+  showLoading('Salvando lead...');
+  try{
+    const {data, error} = await sb.from('leads').insert({
+      nome:           newLead.nome,
+      tel:            newLead.tel,
+      email:          newLead.email||null,
+      cpf:            newLead.cpf||null,
+      origem:         newLead.origem,
+      lote:           newLead.lote,
+      loteamento_id:  newLead.loteamento_id||null,
+      status:         newLead.status,
+      corretor:       newLead.corretor||null,
+      obs:            newLead.obs||null,
+      etapas_json:    '{}',
+    }).select().single();
+
+    if(error) throw error;
+    if(data) newLead.id = data.id;
+  }catch(e){
+    console.warn('salvarLead DB:', e.message);
+    // Continua com id local caso offline
+  }
+  hideLoading();
+
   leads.unshift(newLead);
   closeModal('modal-new-lead');
-  ['nl2-nome','nl2-tel','nl2-email','nl2-obs','nl2-data-visita'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); 
+  ['nl2-nome','nl2-tel','nl2-email','nl2-cpf','nl2-obs'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  if(lotSel) lotSel.selectedIndex=0;
+
   renderLeads();
   showToast('Lead "'+nome+'" adicionado!');
 }
@@ -13894,7 +14004,7 @@ async function ldGerarContrato(){
 }
 
 function mostrarModalContrato(texto, nomeCliente, numContrato){
-  // Criar ou reutilizar modal de visualização do contrato
+  // Criar ou reutilizar modal
   let overlay = document.getElementById('modal-contrato-gerado');
   if(!overlay){
     overlay = document.createElement('div');
@@ -13903,38 +14013,64 @@ function mostrarModalContrato(texto, nomeCliente, numContrato){
     document.body.appendChild(overlay);
   }
 
-  // Formatar texto para HTML
-  const htmlTexto = texto
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .split('\n\n')
-    .map(p => {
-      const linhas = p.split('\n').map(l => {
-        if(/^[IVX]+\s*[—–]\s*.+$/.test(l.trim()))
-          return `<h3 style="font-size:13pt;border-bottom:1px solid #ccc;padding-bottom:4px;margin:16pt 0 6pt;font-weight:700">${l.trim()}</h3>`;
-        if(/^CLÁUSULA\s+/i.test(l.trim()))
-          return `<h4 style="font-size:11pt;font-weight:700;text-decoration:underline;margin:12pt 0 4pt">${l.trim()}</h4>`;
-        const upper = l.trim();
-        if(upper.length>3 && upper.length<100 && upper === upper.toUpperCase() && !/[a-z0-9]/.test(upper.replace(/[^a-zA-Z]/g,'')))
-          return `<p style="font-weight:700;text-align:center;margin:10pt 0 4pt">${l.trim()}</p>`;
-        return l;
-      });
-      return '<p style="text-align:justify;line-height:1.7;margin:0 0 8pt;font-size:11pt">'+linhas.join('<br>')+'</p>';
-    })
-    .join('');
-
   const titulo = [numContrato, nomeCliente].filter(Boolean).join(' — ') || 'Contrato';
+
+  // Formatar texto linha a linha
+  function _fmtLinha(l){
+    const t = l.trim();
+    if(!t) return null;
+    if(/^[IVX]+\s*[—–-]\s*.{2,}$/.test(t))
+      return `<h3>${t}</h3>`;
+    if(/^CLÁUSULA\s+/i.test(t)||/^SEÇÃO\s+/i.test(t))
+      return `<h4>${t}</h4>`;
+    if(t.length>=4&&t.length<=120&&t===t.toUpperCase()&&/[A-ZÁÉÍÓÚÀÃÂÊÔÇÜ]/.test(t)&&!/[a-záéíóúàãâêôçü]/.test(t))
+      return `<p class="titulo-secao">${t}</p>`;
+    if(/^_{4,}/.test(t))
+      return `<div class="assinatura">${t}</div>`;
+    return null;
+  }
+
+  const linhas = texto.split('\n');
+  let htmlTexto = '';
+  let buffer = [];
+  const flushBuffer = () => {
+    if(!buffer.length) return;
+    const esc = buffer.join('<br>');
+    htmlTexto += `<p>${esc}</p>`;
+    buffer = [];
+  };
+  linhas.forEach(l => {
+    const esc = l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const fmt = _fmtLinha(l);
+    if(fmt){ flushBuffer(); htmlTexto += fmt; }
+    else if(l.trim()==='') flushBuffer();
+    else buffer.push(esc);
+  });
+  flushBuffer();
 
   overlay.innerHTML = `
     <div style="background:#fff;border-radius:12px;width:100%;max-width:860px;
                 box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;margin:auto">
+      <style>
+        #contrato-gerado-body h3{font-size:12pt;font-weight:700;border-bottom:1px solid #ccc;
+          padding-bottom:4px;margin:20pt 0 8pt;text-transform:uppercase}
+        #contrato-gerado-body h4{font-size:11pt;font-weight:700;text-decoration:underline;margin:14pt 0 5pt}
+        #contrato-gerado-body p{text-align:justify;line-height:1.75;margin:0 0 9pt;font-size:11pt;text-indent:1.5em}
+        #contrato-gerado-body p.titulo-secao{font-weight:700;text-align:center;text-indent:0;margin:14pt 0 5pt}
+        #contrato-gerado-body div.assinatura{font-family:monospace;margin:6pt 0;color:#444;font-size:10pt}
+      </style>
       <!-- Toolbar -->
       <div style="background:#1a1d23;color:#fff;padding:12px 18px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10">
         <div style="flex:1">
           <div style="font-size:13px;font-weight:700">${titulo}</div>
-          <div style="font-size:11px;opacity:.7;margin-top:1px">Revise o contrato antes de imprimir</div>
+          <div style="font-size:11px;opacity:.7;margin-top:1px">Revise o contrato antes de baixar</div>
         </div>
+        <button onclick="gerarDocxContrato()"
+          style="padding:7px 16px;border-radius:6px;border:none;cursor:pointer;
+                 background:#3B6D11;color:#fff;font-size:12px;font-weight:600;font-family:inherit"
+          id="btn-baixar-docx">
+          📄 Baixar Word (.docx)
+        </button>
         <button onclick="imprimirContratoGerado()"
           style="padding:7px 16px;border-radius:6px;border:none;cursor:pointer;
                  background:#185FA5;color:#fff;font-size:12px;font-weight:600;font-family:inherit">
@@ -13946,16 +14082,116 @@ function mostrarModalContrato(texto, nomeCliente, numContrato){
           ✕ Fechar
         </button>
       </div>
-
-      <!-- Conteúdo do contrato -->
+      <!-- Conteúdo -->
       <div id="contrato-gerado-body"
-        style="padding:30mm 25mm;font-family:'Times New Roman',Georgia,serif;
-               background:#fff;min-height:200px">
+        style="padding:28mm 22mm;font-family:'Times New Roman',Georgia,serif;
+               background:#fff;min-height:200px;color:#111">
         ${htmlTexto}
       </div>
     </div>`;
 
   overlay.style.display = 'flex';
+
+  // Guardar texto para geração do DOCX
+  window._contratoTexto    = texto;
+  window._contratoCliente  = nomeCliente;
+  window._contratoNum      = numContrato;
+}
+
+async function gerarDocxContrato(){
+  const btn = document.getElementById('btn-baixar-docx');
+  if(btn){ btn.textContent='⏳ Gerando...'; btn.disabled=true; }
+
+  try{
+    // Coletar dados do lead para enviar ao gerador
+    const dados = {
+      CONTRATO_NUM:       _mVal('ld-contrato-id'),
+      LOTEAMENTO_NOME:    _mOpcao('ld-loteamento'),
+      LOTE_NUM:           _mOpcao('ld-lote')?.match(/^([^-·]+)/)?.[1]?.trim()||'',
+      QUADRA_NUM:         _mVal('ld-quadra'),
+      LOTE_AREA:          _mVal('ld-area-lote'),
+      DATA_DIA:           _mVal('ld-dt-assinatura') ? new Date(_mVal('ld-dt-assinatura')+'T12:00').getDate().toString() : '___',
+      DATA_MES:           _mVal('ld-dt-assinatura') ? ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][new Date(_mVal('ld-dt-assinatura')+'T12:00').getMonth()] : '_____________',
+      DATA_ANO:           _mVal('ld-dt-assinatura') ? new Date(_mVal('ld-dt-assinatura')+'T12:00').getFullYear().toString() : '____',
+      PRECO_TOTAL:        _mVal('ld-valor-lote') ? 'R$ '+_mVal('ld-valor-lote') : 'R$ _______________',
+      PRECO_EXTENSO:      _mVal('ld-valor-lote') ? valorExtenso(_mMoney(_mVal('ld-valor-lote'))) : '___________________________',
+      SINAL_VALOR:        _mVal('ld-entrada') ? 'R$ '+_mVal('ld-entrada') : 'R$ _______________',
+      SINAL_EXTENSO:      _mVal('ld-entrada') ? valorExtenso(_mMoney(_mVal('ld-entrada'))) : '___________________________',
+      SINAL_PCT:          (()=>{ const t=_mMoney(_mVal('ld-valor-lote')||'0'),e=_mMoney(_mVal('ld-entrada')||'0'); return t>0?Math.round(e/t*100)+'%':'___'; })(),
+      PARCELAS_NUM:       _mVal('ld-prazo')||'___',
+      PARCELA_VALOR:      _mVal('ld-parcela') ? 'R$ '+_mVal('ld-parcela') : 'R$ _______________',
+      PARCELA_EXTENSO:    _mVal('ld-parcela') ? valorExtenso(_mMoney(_mVal('ld-parcela'))) : '___________________________',
+      PARCELA_VENC1:      _mData(_mVal('ld-dt-primeira'))||'__/__/____',
+      CLI_NOME:           _mVal('ld-cli-nome')||'_________________________________',
+      CLI_CPF:            _mVal('ld-cli-cpf')||'___________________________',
+      CLI_RG:             _mVal('ld-cli-rg')||'_______________',
+      CLI_RG_ORGAO:       _mVal('ld-cli-rg-orgao')||'_______',
+      CLI_NACIONALIDADE:  _mVal('ld-cli-nacionalidade')||'brasileira',
+      CLI_PROFISSAO:      _mVal('ld-cli-profissao')||'___________________________',
+      CLI_NASC:           _mData(_mVal('ld-cli-nasc'))||'___________________________',
+      CLI_ESTCIVIL:       _mVal('ld-cli-estcivil')||'___________________________',
+      CLI_ENDERECO:       [_mVal('ld-cli-rua'),_mVal('ld-cli-cidade'),_mVal('ld-cli-estado')].filter(Boolean).join(', ')||'___________________________',
+      CLI_EMAIL:          _mVal('ld-cli-email')||'___________________________',
+      CLI_TELEFONE:       _mVal('ld-cli-telefone')||'___________________________',
+      CONJ_NOME:          _mVal('ld-conj-nome')||'___________________________',
+      CONJ_CPF:           _mVal('ld-conj-cpf')||'___________________________',
+      CONJ_RG:            _mVal('ld-conj-rg')||'___________________________',
+      COR_NOME:           _mOpcao('ld-cor-select')||'___________________________',
+      COR_CRECI:          _mVal('ld-cor-creci')||'___________________________',
+      COR_CPF:            _mVal('ld-cor-cpf')||'___________________________',
+      COR_ENDERECO:       _mVal('ld-cor-endereco')||'___________________________',
+      COR_COMISSAO_PCT:   '3%',
+      COR_COMISSAO_VALOR: (()=>{ const t=_mMoney(_mVal('ld-valor-lote')||'0'); return t>0?'R$ '+(t*0.03).toLocaleString('pt-BR',{minimumFractionDigits:2}):'R$ _______________'; })(),
+    };
+
+    // Chamar Anthropic API para gerar o DOCX
+    const prompt = `Você é um gerador de documentos DOCX. Gere um arquivo Word (.docx) para um contrato de compra e venda de lote, usando os dados abaixo.
+
+DADOS DO CONTRATO:
+${JSON.stringify(dados, null, 2)}
+
+Gere o DOCX usando a biblioteca docx (npm) em Node.js e retorne APENAS o buffer base64 do arquivo, sem nenhum texto antes ou depois. Use Times New Roman 11pt, margens de 2.5cm, estrutura com tabelas do quadro-resumo (partes, lote, preço, pagamento) e cláusulas. O arquivo deve estar pronto para assinatura.
+
+Retorne SOMENTE o base64 do arquivo .docx, sem explicações, sem markdown, sem prefixo.`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await resp.json();
+    const b64  = (data.content?.[0]?.text||'').trim();
+
+    if(!b64 || b64.length < 100){
+      throw new Error('Resposta inválida da API');
+    }
+
+    // Converter base64 para Blob e fazer download
+    const bin  = atob(b64);
+    const arr  = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) arr[i]=bin.charCodeAt(i);
+    const blob = new Blob([arr], {type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `Contrato_${dados.CONTRATO_NUM}_${dados.CLI_NOME.split(' ')[0]}.docx`;
+    a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 5000);
+
+    showToast('✅ Contrato Word baixado com sucesso!');
+
+  }catch(e){
+    console.error('gerarDocxContrato:', e);
+    // Fallback: baixar como HTML para impressão
+    showToast('⚠️ Gerando versão para impressão...','error');
+    imprimirContratoGerado();
+  }finally{
+    if(btn){ btn.textContent='📄 Baixar Word (.docx)'; btn.disabled=false; }
+  }
 }
 
 function imprimirContratoGerado(){
@@ -13983,12 +14219,15 @@ function imprimirContratoGerado(){
   }
   win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Times New Roman',serif;font-size:11pt;padding:20mm 25mm;color:#000}
-    h3{font-size:13pt;border-bottom:1px solid #ccc;padding-bottom:4px;margin:14pt 0 6pt}
-    h4{font-size:11pt;font-weight:700;text-decoration:underline;margin:10pt 0 4pt}
-    p{text-align:justify;line-height:1.7;margin:0 0 8pt}
+    body{font-family:'Times New Roman',serif;font-size:11pt;padding:20mm 22mm;color:#000}
+    h3{font-size:12pt;font-weight:700;border-bottom:1px solid #ccc;padding-bottom:4px;
+       margin:20pt 0 8pt;text-transform:uppercase;letter-spacing:.03em}
+    h4{font-size:11pt;font-weight:700;text-decoration:underline;margin:14pt 0 5pt}
+    p{text-align:justify;line-height:1.75;margin:0 0 9pt;font-size:11pt;text-indent:1.5em}
+    p.titulo-secao{font-weight:700;text-align:center;text-indent:0;margin:14pt 0 5pt;font-size:12pt}
+    div.assinatura{font-family:monospace;margin:6pt 0;color:#444;font-size:10pt}
     .no-print{display:flex;gap:10px;justify-content:center;padding:14px;
-      background:#f5f5f5;border-bottom:1px solid #ddd;position:sticky;top:0}
+      background:#f5f5f5;border-bottom:1px solid #ddd;position:sticky;top:0;z-index:100}
     button{padding:8px 20px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600}
     .btn-print{background:#185FA5;color:#fff}
     .btn-close{background:#e2e8f0;color:#333}
