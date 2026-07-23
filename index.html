@@ -714,7 +714,7 @@ tbody tr.clickable{cursor:pointer}
                 </button>
                 <input type="file" id="minuta-docx-input" accept=".docx" style="display:none" onchange="uploadMinutaDocx(this)">
                 <div id="minuta-docx-status" style="font-size:12px;color:var(--text-secondary)">Nenhum DOCX carregado</div>
-                <div id="minuta-docx-actions" style="display:none;display:flex;gap:6px">
+                <div id="minuta-docx-actions" style="display:none;gap:6px">
                   <a id="minuta-docx-link" href="#" download="minuta.docx"
                     style="font-size:11px;color:var(--accent);text-decoration:none;align-self:center">
                     📥 Baixar DOCX atual
@@ -8243,17 +8243,26 @@ async function salvarLead(){
   const lotNome  = lotSel?.options[lotSel?.selectedIndex]?.text || '';
   const lotLabel = (lotNome && lotNome !== '— Selecione o loteamento —') ? lotNome : '';
 
-  // Marcar etapa inicial com data/hora atual
-  const agora       = new Date();
-  const dataHoje    = agora.toISOString().split('T')[0];
-  const horaAgora   = agora.toTimeString().substring(0,5);
-  const etapaInicial = getLeadEtapas()[0]; // primeira etapa (Novo / Sem contato)
+  // Marcar etapa inicial (primeira coluna do kanban) com data/hora atual
+  // Usar KANBAN_COLUNAS diretamente — já está carregado quando o modal abre
+  const agora    = new Date();
+  const dataHoje = agora.toISOString().split('T')[0];
+  const horaAgora= agora.toTimeString().substring(0,5);
+
+  // Pegar a primeira coluna do kanban (ex: "Sem contato" ou "Novo")
+  const primeiraColuna = KANBAN_COLUNAS[0];
+
+  // Gerar a chave slug igual ao que getLeadEtapas() gera
+  const slugPrimeira = primeiraColuna
+    ? primeiraColuna.key.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[^a-z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'')
+    : 'novo';
+
   const etapasIniciais = {};
-  if(etapaInicial){
-    etapasIniciais[etapaInicial.key]             = true;
-    etapasIniciais[etapaInicial.key+'_data']     = dataHoje;
-    etapasIniciais[etapaInicial.key+'_hora']     = horaAgora;
-  }
+  etapasIniciais[slugPrimeira]            = true;
+  etapasIniciais[slugPrimeira+'_data']    = dataHoje;
+  etapasIniciais[slugPrimeira+'_hora']    = horaAgora;
 
   const newLead = {
     id:              Date.now(),
@@ -8262,7 +8271,7 @@ async function salvarLead(){
     lote:            lotLabel,
     loteamento_id:   lotId||null,
     lote_id:         null,
-    status:          etapaInicial?.kanbanKey || 'Novo',
+    status:          primeiraColuna?.key || 'Novo',
     corretor:        document.getElementById('nl2-corretor')?.value||'',
     etapas:          etapasIniciais,
     obs:             document.getElementById('nl2-obs')?.value||'',
@@ -13797,6 +13806,12 @@ async function carregarMinutaLoteamento(lotId){
   renderMinutaTags();
   window._minutaDocxBase64 = null;
 
+  // Resetar estado visual do DOCX
+  const statusEl  = document.getElementById('minuta-docx-status');
+  const actionsEl = document.getElementById('minuta-docx-actions');
+  if(statusEl)  statusEl.textContent = 'Nenhum DOCX carregado';
+  if(actionsEl) actionsEl.style.display = 'none';
+
   try{
     const {data} = await sb.from('loteamentos')
       .select('minuta_contrato,minuta_docx_base64')
@@ -14072,54 +14087,123 @@ async function ldGerarContrato(){
   const idContEl = document.getElementById('ld-contrato-id');
   if(idContEl && !idContEl.value.trim()) gerarIdContrato();
 
+  // Montar mapa de valores dos campos
+  const dadosContrato = {
+    '{{CONTRATO_NUM}}':        _mVal('ld-contrato-id'),
+    '{{LOTEAMENTO_NOME}}':     _mOpcao('ld-loteamento'),
+    '{{LOTE_NUM}}':            _mOpcao('ld-lote')?.match(/^([^-·]+)/)?.[1]?.trim()||'',
+    '{{QUADRA_NUM}}':          _mVal('ld-quadra'),
+    '{{LOTE_AREA}}':           _mVal('ld-area-lote'),
+    '{{DATA_DIA}}':            _mVal('ld-dt-assinatura') ? new Date(_mVal('ld-dt-assinatura')+'T12:00').getDate().toString() : '___',
+    '{{DATA_MES}}':            _mVal('ld-dt-assinatura') ? ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'][new Date(_mVal('ld-dt-assinatura')+'T12:00').getMonth()] : '_____________',
+    '{{DATA_ANO}}':            _mVal('ld-dt-assinatura') ? new Date(_mVal('ld-dt-assinatura')+'T12:00').getFullYear().toString() : '____',
+    '{{DATA_ASSINATURA}}':     _mData(_mVal('ld-dt-assinatura')),
+    '{{DATA_ASSINATURA_EXT}}': _mDataExt(_mVal('ld-dt-assinatura')),
+    '{{PRECO_TOTAL}}':         _mVal('ld-valor-lote') ? 'R$ '+_mVal('ld-valor-lote') : '',
+    '{{PRECO_TOTAL_EXTENSO}}': _mVal('ld-valor-lote') ? valorExtenso(_mMoney(_mVal('ld-valor-lote'))) : '',
+    '{{FORMA_PAGAMENTO}}':     _mVal('ld-forma-pagamento')==='avista' ? 'à vista' : 'parcelado',
+    '{{SINAL_VALOR}}':         _mVal('ld-entrada') ? 'R$ '+_mVal('ld-entrada') : '',
+    '{{SINAL_EXTENSO}}':       _mVal('ld-entrada') ? valorExtenso(_mMoney(_mVal('ld-entrada'))) : '',
+    '{{SINAL_PCT}}':           (()=>{ const t=_mMoney(_mVal('ld-valor-lote')||'0'),e=_mMoney(_mVal('ld-entrada')||'0'); return t>0?Math.round(e/t*100)+'%':''; })(),
+    '{{PARCELAS_NUM}}':        _mVal('ld-prazo'),
+    '{{PARCELA_VALOR}}':       _mVal('ld-parcela') ? 'R$ '+_mVal('ld-parcela') : '',
+    '{{PARCELA_EXTENSO}}':     _mVal('ld-parcela') ? valorExtenso(_mMoney(_mVal('ld-parcela'))) : '',
+    '{{PARCELA_VENC1}}':       _mData(_mVal('ld-dt-primeira')),
+    '{{TAXA_JUROS_AM}}':       _mVal('ld-taxa') ? _mVal('ld-taxa').replace('.',',')+'%' : '0,6%',
+    '{{CARTORIO}}':            _mVal('ld-cartorio'),
+    '{{CLI_NOME}}':            cliente,
+    '{{CLI_CPF}}':             _mVal('ld-cli-cpf'),
+    '{{CLI_RG}}':              _mVal('ld-cli-rg'),
+    '{{CLI_RG_ORGAO}}':        _mVal('ld-cli-rg-orgao'),
+    '{{CLI_NACIONALIDADE}}':   _mVal('ld-cli-nacionalidade')||'brasileira',
+    '{{CLI_PROFISSAO}}':       _mVal('ld-cli-profissao'),
+    '{{CLI_NASC}}':            _mData(_mVal('ld-cli-nasc')),
+    '{{CLI_ESTCIVIL}}':        _mVal('ld-cli-estcivil'),
+    '{{CLI_EMAIL}}':           _mVal('ld-cli-email'),
+    '{{CLI_TELEFONE}}':        _mVal('ld-cli-telefone'),
+    '{{CLI_ENDERECO}}':        [_mVal('ld-cli-rua'),_mVal('ld-cli-cidade'),_mVal('ld-cli-estado')].filter(Boolean).join(', '),
+    '{{CONJ_NOME}}':           _mVal('ld-conj-nome'),
+    '{{CONJ_CPF}}':            _mVal('ld-conj-cpf'),
+    '{{CONJ_RG}}':             _mVal('ld-conj-rg'),
+    '{{COR_NOME}}':            _mOpcao('ld-cor-select'),
+    '{{COR_CRECI}}':           _mVal('ld-cor-creci'),
+    '{{COR_CPF}}':             _mVal('ld-cor-cpf'),
+    '{{COR_ENDERECO}}':        _mVal('ld-cor-endereco'),
+    '{{COR_COMISSAO_PCT}}':    '3%',
+    '{{COR_COMISSAO_VALOR}}':  (()=>{ const tt=_mMoney(_mVal('ld-valor-lote')||'0'); return tt>0?'R$ '+(tt*0.03).toLocaleString('pt-BR',{minimumFractionDigits:2}):''; })(),
+  };
+
+  const numContrato = _mVal('ld-contrato-id');
+  const nomeArq     = `Contrato_${numContrato||'s-n'}_${cliente.split(' ')[0]}.docx`;
+
   showLoading('Buscando minuta do loteamento...');
-  let template = '';
+
+  // Tentar buscar DOCX base64 do banco
+  let docxB64 = window._minutaDocxBase64 || null;
+  let textoTemplate = '';
   try{
     const {data} = await sb.from('loteamentos')
-      .select('minuta_contrato')
+      .select('minuta_docx_base64,minuta_contrato')
       .eq('id', loteamentoId)
       .single();
-    template = data?.minuta_contrato || '';
+    docxB64        = data?.minuta_docx_base64 || docxB64;
+    textoTemplate  = data?.minuta_contrato    || '';
+    if(docxB64) window._minutaDocxBase64 = docxB64;
   }catch(e){
     console.error('Erro ao buscar minuta:', e);
   }
-  hideLoading();
 
-  if(!template){
-    // Sem minuta cadastrada — usar template embutido com confirmação
-    const usar = confirm('Este loteamento não possui minuta cadastrada ainda.\n\nDeseja gerar o contrato usando o template padrão do Alto Vitta?');
-    if(!usar) return;
-    template = MINUTA_TEMPLATE_ALTO_VITTA;
-  }
+  hideLoading(); // Sempre fechar loading ANTES de qualquer confirm/alert
 
-  // Substituir todos os marcadores {{CAMPO}} pelos valores reais
-  let contrato = template;
-  const errosCampos = [];
-  for(const [marcador, fn] of Object.entries(MINUTA_CAMPOS)){
+  // ── Caminho 1: DOCX disponível → find-replace no XML ─────
+  if(docxB64){
     try{
-      const valor = fn() || '';
-      contrato = contrato.split(marcador).join(valor);
-    }catch(e){
-      errosCampos.push(marcador);
+      if(typeof JSZip === 'undefined') throw new Error('JSZip não disponível');
+      const bytes = Uint8Array.from(atob(docxB64), c=>c.charCodeAt(0));
+      const zip   = await JSZip.loadAsync(bytes);
+      let xml     = await zip.file('word/document.xml').async('string');
+
+      // Substituir variáveis no XML (escapar valores para XML)
+      const escXml = s => (s||'')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+
+      for(const [marcador, valor] of Object.entries(dadosContrato)){
+        xml = xml.split(marcador).join(escXml(valor));
+      }
+
+      zip.file('word/document.xml', xml);
+      const out  = await zip.generateAsync({type:'uint8array',compression:'DEFLATE'});
+      const blob = new Blob([out],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a'); a.href=url; a.download=nomeArq; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+      showToast('✅ Contrato Word baixado com sucesso!');
+      return;
+    }catch(err){
+      console.error('Erro ao processar DOCX:', err);
+      showToast('Erro ao processar DOCX: '+err.message+'. Gerando versão texto...','error');
+      // Continua para o caminho de texto
     }
   }
 
-  // Detectar marcadores não substituídos (campos não preenchidos)
-  const naoPreenchidos = [];
-  const matchRe = /\{\{[A-Z_]+\}\}/g;
-  let m;
-  while((m = matchRe.exec(contrato)) !== null){
-    if(!naoPreenchidos.includes(m[0])) naoPreenchidos.push(m[0]);
+  // ── Caminho 2: Texto simples disponível ──────────────────
+  if(textoTemplate){
+    let contrato = textoTemplate;
+    for(const [m,v2] of Object.entries(dadosContrato))
+      contrato = contrato.split(m).join(v2||'');
+    mostrarModalContrato(contrato, cliente, numContrato);
+    return;
   }
 
-  if(naoPreenchidos.length){
-    // Mostrar quais campos faltam — com opção de continuar
-    const msg = `${naoPreenchidos.length} campo(s) não preenchido(s):\n\n${naoPreenchidos.slice(0,10).join('\n')}${naoPreenchidos.length>10?`\n... e mais ${naoPreenchidos.length-10}`:''}\n\nGerar mesmo assim (campos aparecerão em branco)?`;
-    if(!confirm(msg)) return;
-  }
+  // ── Caminho 3: Nenhuma minuta → perguntar template padrão ─
+  const usar = confirm('Este loteamento não possui minuta cadastrada.\n\nDeseja gerar o contrato usando o template padrão do Alto Vitta?');
+  if(!usar) return;
 
-  // Mostrar contrato em modal inline (sem window.open — evita bloqueio de pop-up)
-  mostrarModalContrato(contrato, cliente, (document.getElementById('ld-contrato-id')?.value||''));
+  let contrato = MINUTA_TEMPLATE_ALTO_VITTA;
+  for(const [m,v2] of Object.entries(dadosContrato))
+    contrato = contrato.split(m).join(v2||'');
+  mostrarModalContrato(contrato, cliente, numContrato);
 }
 
 function mostrarModalContrato(texto, nomeCliente, numContrato){
