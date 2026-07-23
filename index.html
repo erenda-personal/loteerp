@@ -884,9 +884,7 @@ tbody tr.clickable{cursor:pointer}
             </div>
           </div>
 
-          <div class="modal-footer">
-            <button class="btn" onclick="closeModal('modal-det-loteamento')">Fechar</button>
-          </div>
+
         </div>
       </div>
 
@@ -13864,21 +13862,29 @@ async function uploadMinutaDocx(input){
 
   const reader = new FileReader();
   reader.onload = async (e) => {
-    const b64 = e.target.result.split(',')[1]; // remover prefixo data:...;base64,
+    const b64 = e.target.result.split(',')[1];
+    const lotId = _detLotId;
+
+    // Validar que temos o ID do loteamento
+    if(!lotId){
+      showToast('Erro: ID do loteamento não encontrado. Feche e abra o loteamento novamente.','error');
+      if(statusEl) statusEl.textContent = 'Erro: loteamento não identificado';
+      return;
+    }
+
+    // Verificar tamanho (Supabase limita ~1MB por coluna texto)
+    const sizeKB = Math.round(b64.length * 0.75 / 1024);
+    console.log(`Upload DOCX: ${file.name} — ${sizeKB}KB — loteamento ${lotId}`);
+
+    if(sizeKB > 900){
+      showToast(`⚠️ Arquivo grande (${sizeKB}KB). Pode falhar ao salvar. Tente um DOCX menor.`,'error');
+    }
+
+    // Guardar em cache local imediatamente (funciona mesmo se banco falhar)
     window._minutaDocxBase64 = b64;
-    window._minutaDocxLotId  = _detLotId; // cache vinculado ao loteamento atual
+    window._minutaDocxLotId  = lotId;
 
-    // Salvar no banco
-    showLoading('Salvando DOCX da minuta...');
-    try{
-      await sb.from('loteamentos')
-        .update({minuta_docx_base64: b64})
-        .eq('id', _detLotId);
-      showToast('✅ Minuta DOCX salva! Será usada ao gerar contratos.');
-    }catch(err){
-      showToast('Erro ao salvar: '+err.message,'error');
-    }finally{ hideLoading(); }
-
+    // Atualizar UI antes de salvar (para o usuário ver o arquivo já carregado)
     if(statusEl) statusEl.textContent = '✅ ' + file.name + ' carregado';
     const actionsEl = document.getElementById('minuta-docx-actions');
     if(actionsEl) actionsEl.style.display='flex';
@@ -13889,6 +13895,29 @@ async function uploadMinutaDocx(input){
       const blob=new Blob([arr],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
       linkEl.href=URL.createObjectURL(blob);
     }
+
+    // Tentar salvar no banco (coluna text — requer coluna minuta_docx_base64 na tabela loteamentos)
+    showLoading('Salvando DOCX da minuta...');
+    try{
+      const {error} = await sb.from('loteamentos')
+        .update({minuta_docx_base64: b64})
+        .eq('id', lotId);
+
+      if(error){
+        console.error('Erro Supabase ao salvar DOCX:', error);
+        // Verificar se é erro de coluna inexistente
+        if(error.message?.includes('column') || error.code === 'PGRST204' || error.code === '42703'){
+          showToast('⚠️ Coluna minuta_docx_base64 não existe na tabela. O arquivo foi carregado localmente para esta sessão, mas não será persistido. Adicione a coluna no Supabase.','error');
+        } else {
+          showToast('Erro ao salvar no banco: '+error.message,'error');
+        }
+      } else {
+        showToast('✅ Minuta DOCX salva com sucesso!');
+      }
+    }catch(err){
+      console.error('Erro ao salvar DOCX:', err);
+      showToast('Erro ao salvar: '+err.message+' — arquivo disponível apenas nesta sessão.','error');
+    }finally{ hideLoading(); }
   };
   reader.readAsDataURL(file);
 }
